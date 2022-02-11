@@ -1,11 +1,7 @@
 defmodule Twitter.HTTP.Request do
-  @moduledoc """
-  An internal data structure for HTTP request.
-  """
+  @moduledoc false
 
   defstruct [:method, :uri, :headers, :body]
-
-  alias Twitter.OAuth.V1_0a, as: OAuth
 
   @type t :: %__MODULE__{
           method: atom,
@@ -14,23 +10,18 @@ defmodule Twitter.HTTP.Request do
           body: nil | binary
         }
 
+  @spec new(atom, URI.t()) :: t
+  def new(method, uri) do
+    %__MODULE__{
+      method: method,
+      uri: uri,
+      headers: [],
+      body: ""
+    }
+  end
+
   @spec add_header(t, binary, binary) :: t
   def add_header(%__MODULE__{headers: headers} = request, key, value) do
     %{request | headers: [{key, value} | headers]}
-  end
-
-  @doc """
-  Add authorization header for OAuth 1.0a to a given request.
-  """
-  @spec sign(t, OAuth.credentials()) :: t
-  def sign(%__MODULE__{} = request, credentials) do
-    params = OAuth.params(credentials)
-
-    value =
-      OAuth.signature(request, credentials, params)
-      |> OAuth.authorization_header_value(params)
-
-    request
-    |> add_header("Authorization", value)
   end
 end

@@ -29,3 +29,7 @@ twitter-*.tar
 /priv/plts/*.plt.hash
 
 .elixir_ls
+
+.iex.exs
+bin
+

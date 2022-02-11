@@ -1,22 +1,33 @@
 defmodule Twitter.HTTP.Client do
   @moduledoc """
-  Specification for a HTTP Client.
+  HTTP Client contract.
   """
 
   @type method() :: atom()
 
-  @type url() :: String.t()
+  @type url() :: binary()
 
   @type status() :: non_neg_integer()
 
-  @type header() :: {String.t(), String.t()}
-  @type headers() :: list(header())
+  @type header() :: {binary(), binary()}
 
-  @type body() :: String.t()
+  @type body() :: binary()
 
-  @type client() :: map()
+  @doc """
+  Callback to make an HTTP request.
+  """
+  @callback request(method(), url(), [header()], body(), opts :: keyword()) ::
+              {:ok, %{status: status, headers: [header()], body: body()}}
+              | {:error, Exception.t()}
 
-  @callback new(opts :: keyword()) :: client()
-  @callback request(client(), method(), url(), headers(), body(), opts :: keyword()) ::
-              {:ok, %{status: status(), headers: headers(), body: body()}} | {:error, term()}
+  @doc false
+  def request(module, request, opts) do
+    module.request(
+      request.method,
+      request.uri |> URI.to_string(),
+      request.headers,
+      request.body,
+      opts
+    )
+  end
 end

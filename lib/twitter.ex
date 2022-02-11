@@ -1,18 +1,7 @@
 defmodule Twitter do
-  @moduledoc """
-  Documentation for `Twitter`.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Twitter.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  @external_resource "README.md"
+  @moduledoc "README.md"
+             |> File.read!()
+             |> String.split("<!-- MDOC !-->")
+             |> Enum.fetch!(1)
 end

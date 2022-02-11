@@ -1,14 +1,9 @@
 defmodule Twitter.OAuth.V1_0a do
   @moduledoc false
 
-  # Based on https://developer.twitter.com/en/docs/authentication/oauth-1-0a/creating-a-signature
+  alias Twitter.OAuth.V1_0a.Credentials
 
-  @type credentials :: %{
-          consumer_key: binary,
-          consumer_secret: binary,
-          access_token: binary,
-          access_token_secret: binary
-        }
+  # Based on https://developer.twitter.com/en/docs/authentication/oauth-1-0a/creating-a-signature
 
   @type request :: %{
           optional(atom) => any,
@@ -35,7 +30,7 @@ defmodule Twitter.OAuth.V1_0a do
     "OAuth " <> dst
   end
 
-  @spec signature(request, credentials, params) :: binary
+  @spec signature(request, Credentials.t(), params) :: binary
   def signature(request, credentials, oauth_params) do
     parameter_string = parameter_string(request, oauth_params)
     signature_base_string = signature_base_string(request, parameter_string)
@@ -46,14 +41,29 @@ defmodule Twitter.OAuth.V1_0a do
   @spec parameter_string(request, params) :: binary
   def parameter_string(request, oauth_params) do
     body_params =
-      request.body
-      |> URI.query_decoder(:www_form)
-      |> Enum.to_list()
+      case request.body do
+        nil ->
+          []
+
+        "" ->
+          []
+
+        body ->
+          body
+          |> URI.query_decoder(:www_form)
+          |> Enum.to_list()
+      end
 
     query_params =
-      request.uri.query
-      |> URI.query_decoder(:rfc3986)
-      |> Enum.to_list()
+      case request.uri.query do
+        nil ->
+          []
+
+        query ->
+          query
+          |> URI.query_decoder(:rfc3986)
+          |> Enum.to_list()
+      end
 
     params = oauth_params ++ query_params ++ body_params
 
@@ -75,7 +85,7 @@ defmodule Twitter.OAuth.V1_0a do
     |> Enum.map_join("&", &encode/1)
   end
 
-  @spec signing_key(credentials) :: binary
+  @spec signing_key(Credentials.t()) :: binary
   def signing_key(credentials) do
     [
       credentials.consumer_secret,
@@ -84,7 +94,7 @@ defmodule Twitter.OAuth.V1_0a do
     |> Enum.map_join("&", &encode/1)
   end
 
-  @spec params(credentials, (() -> binary), (() -> binary)) :: params
+  @spec params(Credentials.t(), (() -> binary), (() -> binary)) :: params
   def params(credentials, nonce_fn \\ &nonce/0, timestamp_fn \\ &timestamp/0) do
     [
       {"oauth_consumer_key", credentials.consumer_key},
