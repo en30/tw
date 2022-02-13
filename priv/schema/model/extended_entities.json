@@ -1,0 +1,8 @@
+[
+  {
+    "attribute": "media",
+    "nullable": true,
+    "required": true,
+    "type": "Array of Media Objects"
+  }
+]

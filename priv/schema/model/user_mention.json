@@ -1,0 +1,37 @@
+[
+  {
+    "attribute": "id",
+    "description": "ID of the mentioned user, as an integer. Example:\"id\":6253282\n",
+    "nullable": false,
+    "required": true,
+    "type": "Int64"
+  },
+  {
+    "attribute": "id_str",
+    "description": "If of the mentioned user, as a string. Example:\"id_str\":\"6253282\"\n",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  },
+  {
+    "attribute": "indices",
+    "description": "An array of integers representing the offsets within the Tweet text where the user reference begins and ends. The first integer represents the location of the ‘@’ character of the user mention. The second integer represents the location of the first non-screenname character following the user mention. Example:\"indices\":[4,15]\n",
+    "nullable": false,
+    "required": true,
+    "type": "Array of Int"
+  },
+  {
+    "attribute": "name",
+    "description": "Display name of the referenced user. Example:\"name\":\"Twitter API\"\n",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  },
+  {
+    "attribute": "screen_name",
+    "description": "Screen name of the referenced user. Example:\"screen_name\":\"twitterapi\"\n",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  }
+]

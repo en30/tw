@@ -10,8 +10,15 @@ defmodule Twitter.V1_1.Client do
 
   defstruct [:http_client, :credentials]
 
+  @type t :: %__MODULE__{
+          http_client: HTTP.Client,
+          credentials: OAuth.V1_0a.Credentials.t()
+        }
+
+  @spec new(keyword) :: t
   def new(opts), do: struct!(__MODULE__, opts)
 
+  @spec request(t, atom, binary, keyword) :: HTTP.Client.result()
   def request(client, method, path, query_params \\ []) do
     uri =
       @base_uri

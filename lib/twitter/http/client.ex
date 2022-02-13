@@ -3,24 +3,27 @@ defmodule Twitter.HTTP.Client do
   HTTP Client contract.
   """
 
-  @type method() :: atom()
+  @type method :: atom()
 
-  @type url() :: binary()
+  @type url :: binary()
 
-  @type status() :: non_neg_integer()
+  @type status :: non_neg_integer()
 
-  @type header() :: {binary(), binary()}
+  @type header :: {binary(), binary()}
 
-  @type body() :: binary()
+  @type body :: binary()
+
+  @type response :: %{status: status, headers: [header()], body: body}
+
+  @type result :: {:ok, response()} | {:error, Exception.t()}
 
   @doc """
   Callback to make an HTTP request.
   """
-  @callback request(method(), url(), [header()], body(), opts :: keyword()) ::
-              {:ok, %{status: status, headers: [header()], body: body()}}
-              | {:error, Exception.t()}
+  @callback request(method(), url(), [header()], body(), opts :: keyword()) :: result
 
   @doc false
+  @spec request(atom, Twitter.HTTP.Request.t(), keyword) :: result
   def request(module, request, opts) do
     module.request(
       request.method,

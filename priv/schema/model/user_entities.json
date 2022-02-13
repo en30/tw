@@ -1,0 +1,14 @@
+[
+  {
+    "attribute": "description",
+    "nullable": false,
+    "required": true,
+    "type": "Entities"
+  },
+  {
+    "attribute": "url",
+    "nullable": false,
+    "required": false,
+    "type": "Entities"
+  }
+]

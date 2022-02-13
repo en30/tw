@@ -1,0 +1,16 @@
+[
+  {
+    "attribute": "coordinates",
+    "description": "The longitude and latitude of the Tweet’s location, as a collection in the form [longitude, latitude]. Example:\"coordinates\":[-97.51087576,35.46500176]\n",
+    "nullable": false,
+    "required": true,
+    "type": "Collection of Float"
+  },
+  {
+    "attribute": "type",
+    "description": "The type of data encoded in the coordinates property. This will be “Point” for Tweet coordinates fields. Example:\"type\": \"Point\"\n",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  }
+]
