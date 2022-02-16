@@ -28,6 +28,45 @@ defmodule Twitter.V1_1.Schema do
     end
   end
 
+  defmacro map_endpoint(method, path, to: {fn_name, _meta, nil}) do
+    schema =
+      endpoint_schema_path(method, path)
+      |> File.read!()
+      |> Jason.decode!()
+
+    params_type_name = :"#{fn_name}_param"
+
+    type = to_ex_type("", schema["type"])
+    decode = decoder(schema["type"])
+
+    quote do
+      @type unquote({params_type_name, [], Elixir}) :: unquote(params_type(params_type_name, schema))
+      unquote_splicing(params_type_defs(params_type_name, schema))
+
+      @spec unquote(fn_name)(Twitter.V1_1.Client.t(), list(unquote({params_type_name, [], Elixir}))) ::
+              {:ok, unquote(type)} | {:error, Exception.t()}
+      @doc """
+      #{unquote(cite(schema["description"]))}
+
+      See [the Twitter API documentation](#{unquote(schema["doc_url"])}) for details.
+      """
+      def unquote(fn_name)(client, opts \\ []) do
+        with {:ok, resp} <- Twitter.V1_1.Client.request(client, unquote(method), unquote(path), opts),
+             {:ok, json} <- Jason.decode(resp.body) do
+          {:ok, apply(unquote(decode), [json])}
+        else
+          {:error, message} ->
+            {:error, message}
+        end
+      end
+    end
+  end
+
+  defp endpoint_schema_path(method, path) do
+    path = path |> String.replace("/", "_")
+    Path.join(["priv/schema/endpoint", to_string(method) <> path])
+  end
+
   defp fields(schema) do
     schema
     |> Enum.map(&String.to_atom(&1["attribute"]))
@@ -145,6 +184,14 @@ defmodule Twitter.V1_1.Schema do
 
   def decode_field(json_value, _field, _type), do: json_value
 
+  defp decoder("Array of " <> twitter_type) do
+    quote(do: fn x -> Enum.map(x, unquote(decoder(twitter_type |> String.trim_trailing("s")))) end)
+  end
+
+  defp decoder("Tweet") do
+    quote(do: &Twitter.V1_1.Tweet.decode/1)
+  end
+
   @spec decode_twitter_datetime!(binary) :: NaiveDateTime.t()
   @doc """
   Decode Twitter's datetime format into NaiveDateTime.
@@ -206,5 +253,34 @@ defmodule Twitter.V1_1.Schema do
       end
     )
     |> elem(1)
+  end
+
+  defp params_type(params_type_name, schema) do
+    schema["parameters"]
+    |> Enum.map(fn
+      %{"name" => name, "required" => false} ->
+        quote do
+          {unquote(String.to_atom(name)), unquote({:"#{params_type_name}_#{name}", [], Elixir})}
+        end
+    end)
+    |> Enum.reduce(fn e, acc ->
+      quote(do: unquote(acc) | unquote(e))
+    end)
+  end
+
+  def params_type_defs(params_type_name, schema) do
+    schema["parameters"]
+    |> Enum.map(fn
+      %{"name" => name, "description" => description, "required" => false, "type" => type} ->
+        quote do
+          @typedoc unquote(description)
+          @type unquote({:"#{params_type_name}_#{name}", [], Elixir}) ::
+                  unquote(to_ex_type(name, type, false))
+        end
+    end)
+  end
+
+  def cite(text) do
+    "> " <> String.replace(text, "\n", "\n> ")
   end
 end

@@ -5,25 +5,28 @@ Mix.install([
 
 defmodule Twitter.V1_1.Schema do
   def fetch do
-    files = [
-      &fetch_tweet_object/0,
-      &fetch_user_object/0,
-      &fetch_geo_objects/0,
-      &fetch_entities_objects/0,
-    ]
-    |> Enum.map(& Task.async(&1))
-    |> Task.await_many(10_000)
+    files =
+      [
+        &fetch_tweet_object/0,
+        &fetch_user_object/0,
+        &fetch_geo_objects/0,
+        &fetch_entities_objects/0,
+        fetch_endpoint(:get, "/statuses/home_timeline.json"),
+        fetch_endpoint(:get, "/statuses/user_timeline.json"),
+        fetch_endpoint(:get, "/statuses/mentions_timeline.json")
+      ]
+      |> Enum.map(&Task.async(&1))
+      |> Task.await_many(10_000)
 
     IO.puts("Gnerated files below.")
+
     files
     |> Enum.each(&IO.puts/1)
   end
 
   defp fetch_tweet_object() do
     {:ok, html} =
-      Req.get!(
-        "https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/tweet"
-      )
+      Req.get!("https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/tweet")
       |> Map.fetch!(:body)
       |> Floki.parse_document()
 
@@ -46,16 +49,14 @@ defmodule Twitter.V1_1.Schema do
       %{"attribute" => "display_text_range", "type" => "Array of Int", "required" => false, "nullable" => true},
       %{"attribute" => "full_text", "type" => "String", "required" => false, "nullable" => true},
       %{"attribute" => "possibly_sensitive_appealable", "type" => "Boolean", "required" => false, "nullable" => true},
-      %{"attribute" => "quoted_status_permalink", "type" => "Object", "required" => false, "nullable" => true},
+      %{"attribute" => "quoted_status_permalink", "type" => "Object", "required" => false, "nullable" => true}
     ])
     |> write_schema(to: "priv/schema/model/tweet.json")
   end
 
   defp fetch_user_object() do
     {:ok, html} =
-      Req.get!(
-        "https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/user"
-      )
+      Req.get!("https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/user")
       |> Map.fetch!(:body)
       |> Floki.parse_document()
 
@@ -83,9 +84,7 @@ defmodule Twitter.V1_1.Schema do
 
   defp fetch_geo_objects() do
     {:ok, html} =
-      Req.get!(
-        "https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/geo"
-      )
+      Req.get!("https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/geo")
       |> Map.fetch!(:body)
       |> Floki.parse_document()
 
@@ -114,9 +113,7 @@ defmodule Twitter.V1_1.Schema do
 
   defp fetch_entities_objects() do
     {:ok, html} =
-      Req.get!(
-        "https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/entities"
-      )
+      Req.get!("https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/entities")
       |> Map.fetch!(:body)
       |> Floki.parse_document()
 
@@ -133,7 +130,7 @@ defmodule Twitter.V1_1.Schema do
       # Extended Entities
       # https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/extended-entities
       [
-        %{"attribute" => "media", "type" => "Array of Media Objects", "required" => true, "nullable" => true},
+        %{"attribute" => "media", "type" => "Array of Media Objects", "required" => true, "nullable" => true}
       ]
       |> write_schema(to: "priv/schema/model/extended_entities.json")
     )
@@ -207,18 +204,30 @@ defmodule Twitter.V1_1.Schema do
       {"table", _, _} = table, [] ->
         [{to_map(table)}]
 
-      {"table", _, _} = table, [{_,_} | _] = acc ->
+      {"table", _, _} = table, [{_, _} | _] = acc ->
         [{to_map(table)} | acc]
 
       {"table", _, _} = table, [{_} | tail] ->
         [{to_map(table)} | tail]
 
       {"h" <> _, _, _} = heading, [{fields} | tail] ->
-        [{Floki.text(heading) |> String.trim(), fields} | tail]
+        [{Floki.text(heading) |> String.trim() |> String.trim("¶"), fields} | tail]
 
-      _, acc -> acc
+      _, acc ->
+        acc
     end)
     |> Map.new()
+  end
+
+  defp main_paragraph(html) do
+    Floki.find(html, "h1 ~ *")
+    |> Enum.take_while(fn
+      {"h2", _, _} -> false
+      _ -> true
+    end)
+    |> Enum.map(&Floki.text/1)
+    |> Enum.reject(&(String.trim(&1) == ""))
+    |> Enum.join("\n\n")
   end
 
   defp to_map(table) do
@@ -273,6 +282,62 @@ defmodule Twitter.V1_1.Schema do
 
     html
   end
+
+  defp fetch_endpoint(method, path) do
+    type = return_type(method, path)
+
+    fn ->
+      method = to_string(method)
+
+      basename = "#{method}" <> (path |> String.replace("/", "-") |> Path.basename(".json"))
+      url = "https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/#{basename}"
+
+      {:ok, html} =
+        Req.get!(url)
+        |> Map.fetch!(:body)
+        |> Floki.parse_document()
+
+      ts = tables(html, h_levels: [2])
+
+      parameters =
+        ts["Parameters"]
+        |> Enum.map(fn param ->
+          param
+          |> Map.put("type", infer_type(param["name"], param["example"]))
+          |> Map.update!("required", fn
+            "required" -> true
+            "optional" -> false
+          end)
+        end)
+
+      schema = %{
+        "doc_url" => url,
+        "type" => type,
+        "description" => main_paragraph(html),
+        "parameters" => parameters
+      }
+
+      dest = Path.join(["priv/schema/endpoint", method <> String.replace(path, "/", "_")])
+
+      schema |> write_schema(to: dest)
+    end
+  end
+
+  defp infer_type(name, example)
+  defp infer_type(_name, "true"), do: "Boolean"
+  defp infer_type(_name, "false"), do: "Boolean"
+  defp infer_type("count", _), do: "Int"
+
+  defp infer_type(_name, example) do
+    case Integer.parse(example) do
+      {_, _} -> "Int"
+      :error -> "String"
+    end
+  end
+
+  defp return_type(:get, "/statuses/home_timeline.json"), do: "Array of Tweets"
+  defp return_type(:get, "/statuses/user_timeline.json"), do: "Array of Tweets"
+  defp return_type(:get, "/statuses/mentions_timeline.json"), do: "Array of Tweets"
 end
 
 Twitter.V1_1.Schema.fetch()
