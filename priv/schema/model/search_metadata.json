@@ -1,0 +1,50 @@
+[
+  {
+    "attribute": "completed_in",
+    "nullable": false,
+    "required": true,
+    "type": "Float"
+  },
+  {
+    "attribute": "max_id",
+    "nullable": false,
+    "required": true,
+    "type": "Int"
+  },
+  {
+    "attribute": "max_id_str",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  },
+  {
+    "attribute": "next_results",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  },
+  {
+    "attribute": "query",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  },
+  {
+    "attribute": "count",
+    "nullable": false,
+    "required": true,
+    "type": "Int"
+  },
+  {
+    "attribute": "since_id",
+    "nullable": false,
+    "required": true,
+    "type": "Int"
+  },
+  {
+    "attribute": "since_id_str",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  }
+]

@@ -143,6 +143,8 @@ defmodule Twitter.V1_1.Schema do
   def to_ex_type(_name, "Option Object"), do: quote(do: map)
   def to_ex_type(_name, "User Entities"), do: quote(do: Twitter.V1_1.UserEntities.t())
   def to_ex_type(_name, "Extended Entities"), do: quote(do: Twitter.V1_1.ExtendedEntities.t())
+  def to_ex_type(_name, "Search Result Object"), do: quote(do: Twitter.V1_1.SearchResult.t())
+  def to_ex_type(_name, "Search Metadata Object"), do: quote(do: Twitter.V1_1.SearchMetadata.t())
 
   # TODO
   def to_ex_type(_name, "Rule Object"), do: quote(do: map)
@@ -181,6 +183,7 @@ defmodule Twitter.V1_1.Schema do
   def decode_field(json_value, _name, "Size Object"), do: Twitter.V1_1.Size.decode(json_value)
   def decode_field(json_value, _name, "User Entities"), do: Twitter.V1_1.UserEntities.decode(json_value)
   def decode_field(json_value, _name, "Extended Entities"), do: Twitter.V1_1.ExtendedEntities.decode(json_value)
+  def decode_field(json_value, _name, "Search Metadata Object"), do: Twitter.V1_1.SearchMetadata.decode(json_value)
 
   def decode_field(json_value, _field, _type), do: json_value
 
@@ -188,9 +191,9 @@ defmodule Twitter.V1_1.Schema do
     quote(do: fn x -> Enum.map(x, unquote(decoder(twitter_type |> String.trim_trailing("s")))) end)
   end
 
-  defp decoder("Tweet") do
-    quote(do: &Twitter.V1_1.Tweet.decode/1)
-  end
+  defp decoder("Tweet"), do: quote(do: &Twitter.V1_1.Tweet.decode/1)
+  defp decoder("User object"), do: quote(do: &Twitter.V1_1.User.decode/1)
+  defp decoder("Search Result Object"), do: quote(do: &Twitter.V1_1.SearchResult.decode/1)
 
   @spec decode_twitter_datetime!(binary) :: NaiveDateTime.t()
   @doc """
@@ -258,7 +261,7 @@ defmodule Twitter.V1_1.Schema do
   defp params_type(params_type_name, schema) do
     schema["parameters"]
     |> Enum.map(fn
-      %{"name" => name, "required" => false} ->
+      %{"name" => name, "required" => _} ->
         quote do
           {unquote(String.to_atom(name)), unquote({:"#{params_type_name}_#{name}", [], Elixir})}
         end
@@ -271,7 +274,7 @@ defmodule Twitter.V1_1.Schema do
   def params_type_defs(params_type_name, schema) do
     schema["parameters"]
     |> Enum.map(fn
-      %{"name" => name, "description" => description, "required" => false, "type" => type} ->
+      %{"name" => name, "description" => description, "required" => _, "type" => type} ->
         quote do
           @typedoc unquote(description)
           @type unquote({:"#{params_type_name}_#{name}", [], Elixir}) ::

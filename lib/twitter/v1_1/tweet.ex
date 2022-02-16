@@ -11,4 +11,5 @@ defmodule Twitter.V1_1.Tweet do
   map_endpoint(:get, "/statuses/home_timeline.json", to: home_timeline)
   map_endpoint(:get, "/statuses/user_timeline.json", to: user_timeline)
   map_endpoint(:get, "/statuses/mentions_timeline.json", to: mentions_timeline)
+  map_endpoint(:get, "/search/tweets.json", to: search)
 end

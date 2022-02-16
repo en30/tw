@@ -7,4 +7,6 @@ defmodule Twitter.V1_1.User do
   import Twitter.V1_1.Schema, only: :macros
 
   defobject("priv/schema/model/user.json")
+
+  map_endpoint(:get, "/users/show.json", to: find)
 end

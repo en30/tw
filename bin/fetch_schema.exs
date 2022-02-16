@@ -5,15 +5,20 @@ Mix.install([
 
 defmodule Twitter.V1_1.Schema do
   def fetch do
+    endpoints = File.read!("priv/schema/endpoint/index.json") |> Jason.decode!()
+
     files =
       [
+        &generate_endpoint_result_objects/0,
         &fetch_tweet_object/0,
         &fetch_user_object/0,
         &fetch_geo_objects/0,
         &fetch_entities_objects/0,
-        fetch_endpoint(:get, "/statuses/home_timeline.json"),
-        fetch_endpoint(:get, "/statuses/user_timeline.json"),
-        fetch_endpoint(:get, "/statuses/mentions_timeline.json")
+        fetch_endpoint("GET statuses/home_timeline", endpoints["GET statuses/home_timeline"]),
+        fetch_endpoint("GET statuses/user_timeline", endpoints["GET statuses/user_timeline"]),
+        fetch_endpoint("GET statuses/mentions_timeline", endpoints["GET statuses/mentions_timeline"]),
+        fetch_endpoint("Standard search API", endpoints["Standard search API"]),
+        fetch_endpoint("GET users/show", endpoints["GET users/show"])
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -184,6 +189,30 @@ defmodule Twitter.V1_1.Schema do
     )
   end
 
+  defp generate_endpoint_result_objects do
+    []
+    |> Kernel.++(
+      [
+        %{"attribute" => "statuses", "type" => "Array of Tweets", "required" => true, "nullable" => false},
+        %{"attribute" => "search_metadata", "type" => "Search Metadata Object", "required" => true, "nullable" => false},
+      ]
+      |> write_schema(to: "priv/schema/model/search_result.json")
+    )
+    |> Kernel.++(
+      [
+        %{"attribute" => "completed_in", "type" => "Float", "required" => true, "nullable" => false},
+        %{"attribute" => "max_id", "type" => "Int", "required" => true, "nullable" => false},
+        %{"attribute" => "max_id_str", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "next_results", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "query", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "count", "type" => "Int", "required" => true, "nullable" => false},
+        %{"attribute" => "since_id", "type" => "Int", "required" => true, "nullable" => false},
+        %{"attribute" => "since_id_str", "type" => "String", "required" => true, "nullable" => false},
+      ]
+      |> write_schema(to: "priv/schema/model/search_metadata.json")
+    )
+  end
+
   defp write_schema(schema, to: path) do
     json = schema |> Jason.encode!(pretty: true)
 
@@ -283,19 +312,15 @@ defmodule Twitter.V1_1.Schema do
     html
   end
 
-  defp fetch_endpoint(method, path) do
-    type = return_type(method, path)
+  defp fetch_endpoint(name, url) do
+    type = return_type(name)
 
     fn ->
-      method = to_string(method)
-
-      basename = "#{method}" <> (path |> String.replace("/", "-") |> Path.basename(".json"))
-      url = "https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/#{basename}"
-
       {:ok, html} =
         Req.get!(url)
         |> Map.fetch!(:body)
         |> Floki.parse_document()
+
 
       ts = tables(html, h_levels: [2])
 
@@ -317,10 +342,26 @@ defmodule Twitter.V1_1.Schema do
         "parameters" => parameters
       }
 
-      dest = Path.join(["priv/schema/endpoint", method <> String.replace(path, "/", "_")])
+      dest = Path.join(["priv/schema/endpoint", (url |> Path.basename() |> String.replace("-", "_")) <> ".json"])
 
       schema |> write_schema(to: dest)
     end
+  end
+
+  def fetch_endpoint_index() do
+    {:ok, html} =
+      Req.get!("https://developer.twitter.com/en/docs/api-reference-index#twitter-api-standard")
+      |> Map.fetch!(:body)
+      |> Floki.parse_document()
+
+    Floki.find(html, "a")
+    |> Enum.filter(&match?(["https://developer.twitter.com/en/docs/twitter-api/v1/"<>_], Floki.attribute(&1, "href")))
+    |> Enum.map(fn e ->
+      [url] = Floki.attribute(e, "href")
+      {Floki.text(e), url}
+    end)
+    |> Map.new()
+    |> write_schema(to: "priv/schema/endpoint/index.json")
   end
 
   defp infer_type(name, example)
@@ -335,9 +376,11 @@ defmodule Twitter.V1_1.Schema do
     end
   end
 
-  defp return_type(:get, "/statuses/home_timeline.json"), do: "Array of Tweets"
-  defp return_type(:get, "/statuses/user_timeline.json"), do: "Array of Tweets"
-  defp return_type(:get, "/statuses/mentions_timeline.json"), do: "Array of Tweets"
+  defp return_type("GET statuses/home_timeline"), do: "Array of Tweets"
+  defp return_type("GET statuses/user_timeline"), do: "Array of Tweets"
+  defp return_type("GET statuses/mentions_timeline"), do: "Array of Tweets"
+  defp return_type("GET users/show"), do: "User object"
+  defp return_type("Standard search API"), do: "Search Result Object"
 end
 
 Twitter.V1_1.Schema.fetch()
