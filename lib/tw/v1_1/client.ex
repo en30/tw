@@ -24,7 +24,7 @@ defmodule Tw.V1_1.Client do
       @base_uri
       |> URI.merge(%URI{
         path: Path.join(@base_uri.path, path),
-        query: URI.encode_query(query_params)
+        query: URI.encode_query(query_params, :rfc3986)
       })
 
     req =
