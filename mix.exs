@@ -36,7 +36,7 @@ defmodule Tw.MixProject do
       {:jason, "~> 1.2"},
       {:hackney, "~> 1.0", optional: true},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
