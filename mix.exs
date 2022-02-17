@@ -1,12 +1,12 @@
-defmodule Twitter.MixProject do
+defmodule Tw.MixProject do
   use Mix.Project
 
-  @version "0.0.1"
-  @source_url "https://github.com/en30/twitter-elixir"
+  @version "0.1.0"
+  @source_url "https://github.com/en30/tw"
 
   def project do
     [
-      app: :twitter,
+      app: :tw,
       version: @version,
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
@@ -16,7 +16,7 @@ defmodule Twitter.MixProject do
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         plt_add_apps: [:hackney]
       ],
-      name: "Twitter",
+      name: "Tw",
       source_url: @source_url,
       package: package(),
       docs: docs()
@@ -44,7 +44,7 @@ defmodule Twitter.MixProject do
   def docs do
     [
       source_ref: "v:#{@version}",
-      main: "Twitter"
+      main: "Tw"
     ]
   end
 
@@ -61,6 +61,7 @@ defmodule Twitter.MixProject do
 
   defp package do
     [
+      description: "A Twitter API client that has not been implemented at all yet.",
       maintainers: ["en30"],
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url}

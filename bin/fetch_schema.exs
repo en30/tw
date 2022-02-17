@@ -3,7 +3,7 @@ Mix.install([
   {:req, "~> 0.2.0"}
 ])
 
-defmodule Twitter.V1_1.Schema do
+defmodule Tw.V1_1.Schema do
   def fetch do
     endpoints = File.read!("priv/schema/endpoint/index.json") |> Jason.decode!()
 
@@ -383,4 +383,4 @@ defmodule Twitter.V1_1.Schema do
   defp return_type("Standard search API"), do: "Search Result Object"
 end
 
-Twitter.V1_1.Schema.fetch()
+Tw.V1_1.Schema.fetch()
