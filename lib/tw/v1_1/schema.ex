@@ -51,10 +51,15 @@ defmodule Tw.V1_1.Schema do
       See [the Twitter API documentation](#{unquote(schema["doc_url"])}) for details.
       """
       def unquote(fn_name)(client, opts \\ []) do
-        with {:ok, resp} <- Tw.V1_1.Client.request(client, unquote(method), unquote(path), opts),
+        with {:ok, %{status: status} = resp} when status < 400 <-
+               Tw.V1_1.Client.request(client, unquote(method), unquote(path), opts),
              {:ok, json} <- Jason.decode(resp.body) do
           {:ok, apply(unquote(decode), [json])}
         else
+          {:ok, resp} ->
+            # TODO: meaningful error
+            {:error, RuntimeError.exception(resp.body)}
+
           {:error, message} ->
             {:error, message}
         end
