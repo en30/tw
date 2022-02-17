@@ -25,7 +25,7 @@ credentials = Tw.OAuth.V1_0a.Credentials.new(
   consumer_key: "xxx",
   consumer_secret: "xxx",
   access_token: "xxx",
-  acess_token_secret: "xxx",
+  access_token_secret: "xxx",
 )
 client = Tw.V1_1.Client.new(
   http_client: Tw.HTTP.Client.Hackney, # or another module which implements Tw.HTTP.Client
