@@ -3,6 +3,14 @@ defmodule Tw.V1_1.Schema do
   Map JSON-decoded Twitter data to Elixir data.
   """
 
+  @type cursored_result(key, type) :: %{
+          key => type,
+          next_cursor: integer,
+          next_cursor_str: binary,
+          previous_cursor: integer,
+          previous_cursor_str: binary
+        }
+
   defmacro defobject(schema_file) do
     schema =
       File.read!(schema_file)
@@ -155,13 +163,7 @@ defmodule Tw.V1_1.Schema do
     [k, v] = String.split(kv, " ", parts: 2)
 
     quote do
-      %{
-        unquote(String.to_atom(k)) => unquote(to_ex_type("", v)),
-        next_cursor: integer,
-        next_cursor_str: binary,
-        previous_cursor: integer,
-        previous_cursor_str: binary
-      }
+      Tw.V1_1.Schema.cursored_result(unquote(String.to_atom(k)), unquote(to_ex_type("", v)))
     end
   end
 
