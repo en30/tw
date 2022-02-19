@@ -9,7 +9,7 @@ defmodule Tw.V1_1.Schema do
 
     files =
       [
-        # &generate_endpoint_result_objects/0,
+        &generate_endpoint_result_objects/0,
         # &fetch_tweet_object/0,
         # &fetch_user_object/0,
         # &fetch_geo_objects/0,
@@ -23,9 +23,10 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET friends/ids"),
         # fetch_endpoint(endpoints, "GET followers/list"),
         # fetch_endpoint(endpoints, "GET friends/list"),
-        fetch_endpoint(endpoints, "GET friendships/incoming"),
-        fetch_endpoint(endpoints, "GET friendships/outgoing"),
-        fetch_endpoint(endpoints, "GET friendships/no_retweets/ids"),
+        # fetch_endpoint(endpoints, "GET friendships/incoming"),
+        # fetch_endpoint(endpoints, "GET friendships/outgoing"),
+        # fetch_endpoint(endpoints, "GET friendships/no_retweets/ids"),
+        fetch_endpoint(endpoints, "GET friendships/lookup"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -218,6 +219,16 @@ defmodule Tw.V1_1.Schema do
       ]
       |> write_schema(to: "priv/schema/model/search_metadata.json")
     )
+    |> Kernel.++(
+      [
+        %{"attribute" => "name", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "screen_name", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "id", "type" => "Int", "required" => true, "nullable" => false},
+        %{"attribute" => "id_str", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "connections", "type" => "Array of Connection Enum", "required" => true, "nullable" => false},
+      ]
+      |> write_schema(to: "priv/schema/model/friendship_lookup_result.json")
+    )
   end
 
   defp write_schema(schema, to: path) do
@@ -394,6 +405,7 @@ defmodule Tw.V1_1.Schema do
   defp return_type("GET followers/list"), do: "Cursored Result Object with users Array of User objects"
   defp return_type("GET friends/list"), do: "Cursored Result Object with users Array of User objects"
   defp return_type("GET friendships/no_retweets/ids"), do: "Array of Int"
+  defp return_type("GET friendships/lookup"), do: "Array of Friendship Lookup Result Objects"
 end
 
 Tw.V1_1.Schema.fetch()

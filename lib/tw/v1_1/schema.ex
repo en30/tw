@@ -150,6 +150,10 @@ defmodule Tw.V1_1.Schema do
   def to_ex_type(_name, "Extended Entities"), do: quote(do: Tw.V1_1.ExtendedEntities.t())
   def to_ex_type(_name, "Search Result Object"), do: quote(do: Tw.V1_1.SearchResult.t())
   def to_ex_type(_name, "Search Metadata Object"), do: quote(do: Tw.V1_1.SearchMetadata.t())
+  def to_ex_type(_name, "Friendship Lookup Result Object"), do: quote(do: Tw.V1_1.FriendshipLookupResult.t())
+
+  def to_ex_type(_name, "Connection Enum"),
+    do: quote(do: :following | :following_requested | :followed_by | :none | :blocking | :muting)
 
   def to_ex_type(_name, "Cursored Result Object with " <> kv) do
     [k, v] = String.split(kv, " ", parts: 2)
@@ -198,6 +202,9 @@ defmodule Tw.V1_1.Schema do
   def decode_field(json_value, _name, "Extended Entities"), do: Tw.V1_1.ExtendedEntities.decode(json_value)
   def decode_field(json_value, _name, "Search Metadata Object"), do: Tw.V1_1.SearchMetadata.decode(json_value)
 
+  def decode_field(json_value, _name, "Connection Enum"),
+    do: Tw.V1_1.FriendshipLookupResult.decode_connection(json_value)
+
   def decode_field(json_value, _field, _type), do: json_value
 
   defp decoder("Array of " <> twitter_type) do
@@ -207,6 +214,7 @@ defmodule Tw.V1_1.Schema do
   defp decoder("Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode/1)
   defp decoder("User object"), do: quote(do: &Tw.V1_1.User.decode/1)
   defp decoder("Search Result Object"), do: quote(do: &Tw.V1_1.SearchResult.decode/1)
+  defp decoder("Friendship Lookup Result Object"), do: quote(do: &Tw.V1_1.FriendshipLookupResult.decode/1)
 
   defp decoder("Cursored Result Object with " <> kv) do
     [k, v] = String.split(kv, " ", parts: 2)

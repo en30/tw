@@ -25,7 +25,7 @@ defmodule Tw.V1_1.Client do
       @base_uri
       |> URI.merge(%URI{
         path: Path.join(@base_uri.path, path),
-        query: URI.encode_query(query_params, :rfc3986)
+        query: encode_query_params(query_params)
       })
 
     req =
@@ -53,5 +53,14 @@ defmodule Tw.V1_1.Client do
 
     request
     |> HTTP.Request.add_header("Authorization", value)
+  end
+
+  defp encode_query_params(query_params) do
+    query_params
+    |> Enum.map(fn
+      {k, v} when is_list(v) -> {k, Enum.join(v, ",")}
+      {k, v} -> {k, v}
+    end)
+    |> URI.encode_query(:rfc3986)
   end
 end

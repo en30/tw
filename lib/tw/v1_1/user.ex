@@ -16,4 +16,5 @@ defmodule Tw.V1_1.User do
   map_endpoint(:get, "/friendships/incoming.json", to: pending_incoming_follow_requests)
   map_endpoint(:get, "/friendships/outgoing.json", to: pending_outgoing_follow_requests)
   map_endpoint(:get, "/friendships/no_retweets/ids.json", to: no_retweet_ids)
+  map_endpoint(:get, "/friendships/lookup.json", to: list_friendships)
 end
