@@ -18,7 +18,7 @@ defmodule Tw.V1_1.Client do
   @spec new(keyword) :: t
   def new(opts), do: struct!(__MODULE__, opts)
 
-  @spec request(t, atom, binary, keyword) :: HTTP.Client.result()
+  @spec request(t, atom, binary, keyword) :: {:ok, Tw.HTTP.Response.t()} | {:error, Exception.t()}
   def request(client, method, path, query_params \\ []) do
     uri =
       @base_uri

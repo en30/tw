@@ -7,14 +7,16 @@ defmodule Tw.V1_1.TwitterAPIError do
 
   defexception [:message, :errors, :response]
 
+  alias Tw.HTTP.Response
+
   @type t :: %__MODULE__{
           __exception__: true,
           message: binary(),
           errors: list(%{message: binary(), code: pos_integer()}),
-          response: Tw.HTTP.Client.response()
+          response: Response.t()
         }
 
-  @spec from_response(Tw.HTTP.Client.response()) :: t
+  @spec from_response(Response.t()) :: t
   @doc false
   def from_response(response) do
     case Jason.decode(response.body) do
@@ -32,7 +34,7 @@ defmodule Tw.V1_1.TwitterAPIError do
   end
 
   def rate_limit_reset_at(%__MODULE__{} = error) do
-    with {"x-rate-limit-reset", v} <- Enum.find(error.response.headers, &match?({"x-rate-limit-reset", _}, &1)),
+    with [v] <- Response.get_header(error.response, "x-rate-limit-reset"),
          {unix, ""} <- Integer.parse(v),
          {:ok, dt} <- DateTime.from_unix(unix, :second) do
       dt

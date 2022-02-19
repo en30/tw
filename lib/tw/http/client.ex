@@ -3,6 +3,9 @@ defmodule Tw.HTTP.Client do
   HTTP Client contract.
   """
 
+  alias Tw.HTTP.Request
+  alias Tw.HTTP.Response
+
   @type method :: atom()
 
   @type url :: binary()
@@ -23,14 +26,17 @@ defmodule Tw.HTTP.Client do
   @callback request(method(), url(), [header()], body(), opts :: keyword()) :: result
 
   @doc false
-  @spec request(atom, Tw.HTTP.Request.t(), keyword) :: result
+  @spec request(atom, Request.t(), keyword) :: {:ok, Response.t()} | {:error, Exception.t()}
   def request(module, request, opts) do
-    module.request(
-      request.method,
-      request.uri |> URI.to_string(),
-      request.headers,
-      request.body,
-      opts
-    )
+    case module.request(
+           request.method,
+           request.uri |> URI.to_string(),
+           request.headers,
+           request.body,
+           opts
+         ) do
+      {:ok, response} -> {:ok, response |> Keyword.new() |> Response.new()}
+      {:error, error} -> {:error, error}
+    end
   end
 end

@@ -1,34 +1,35 @@
 defmodule Tw.V1_1.TwitterAPIErrorTest do
   use ExUnit.Case, async: true
 
+  alias Tw.HTTP.Response
   alias Tw.V1_1.TwitterAPIError
 
-  @not_found_response %{
-    status: 404,
-    headers: [],
-    body: """
-    {"errors":[{"message":"Sorry, that page does not exist","code":34}]}
-    """
-  }
+  @not_found_response Response.new(
+                        status: 404,
+                        headers: [],
+                        body: """
+                        {"errors":[{"message":"Sorry, that page does not exist","code":34}]}
+                        """
+                      )
 
-  @rate_limite_exceeded_response %{
-    status: 429,
-    headers: [
-      {"x-rate-limit-limit", "180"},
-      {"x-rate-limit-remaining", "0"},
-      {"x-rate-limit-reset", "1645095195"}
-    ],
-    body: """
-    { "errors": [ { "code": 88, "message": "Rate limit exceeded" } ] }
-    """
-  }
+  @rate_limite_exceeded_response Response.new(
+                                   status: 429,
+                                   headers: [
+                                     {"x-rate-limit-limit", "180"},
+                                     {"x-rate-limit-remaining", "0"},
+                                     {"x-rate-limit-reset", "1645095195"}
+                                   ],
+                                   body: """
+                                   { "errors": [ { "code": 88, "message": "Rate limit exceeded" } ] }
+                                   """
+                                 )
 
   describe "from_response/1" do
-    @invalid_response %{
-      status: 500,
-      headers: [],
-      body: ""
-    }
+    @invalid_response Response.new(
+                        status: 500,
+                        headers: [],
+                        body: ""
+                      )
 
     test "decodes valid error json and returns TwitterAPIError" do
       error = TwitterAPIError.from_response(@not_found_response)
