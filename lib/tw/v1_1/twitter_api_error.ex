@@ -26,4 +26,18 @@ defmodule Tw.V1_1.TwitterAPIError do
         exception(message: "Unknown Twitter API Error", errors: [], response: response)
     end
   end
+
+  def rate_limit_exceeded?(%__MODULE__{} = error) do
+    error.response.status == 429 && Enum.any?(error.errors, &(&1.code == 88))
+  end
+
+  def rate_limit_reset_at(%__MODULE__{} = error) do
+    with {"x-rate-limit-reset", v} <- Enum.find(error.response.headers, &match?({"x-rate-limit-reset", _}, &1)),
+         {unix, ""} <- Integer.parse(v),
+         {:ok, dt} <- DateTime.from_unix(unix, :second) do
+      dt
+    else
+      _ -> nil
+    end
+  end
 end
