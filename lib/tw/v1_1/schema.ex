@@ -50,6 +50,7 @@ defmodule Tw.V1_1.Schema do
       @spec unquote(fn_name)(Tw.V1_1.Client.t(), list(unquote({params_type_name, [], Elixir}))) ::
               {:ok, unquote(type)} | {:error, Tw.V1_1.TwitterAPIError.t() | Jason.DecodeError.t()}
       @doc """
+      Request `#{unquote(method |> to_string() |> String.upcase())} #{unquote(path)}` and return decoded result.
       #{unquote(cite(schema["description"]))}
 
       See [the Twitter API documentation](#{unquote(schema["doc_url"])}) for details.
