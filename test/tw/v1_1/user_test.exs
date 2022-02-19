@@ -48,8 +48,8 @@ defmodule Tw.V1_1.UserTest do
       assert %UserEntities{} = user.entities
     end
 
-    test "decodes created_at into NaiveDateTime", %{user: user} do
-      assert ~N[2007-05-23 06:01:13] = user.created_at
+    test "decodes created_at into DateTime", %{user: user} do
+      assert ~U[2007-05-23 06:01:13Z] = user.created_at
     end
 
     test "uses all keys of the json", %{user: user, json: json} do

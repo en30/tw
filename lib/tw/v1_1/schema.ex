@@ -117,7 +117,7 @@ defmodule Tw.V1_1.Schema do
     end)
   end
 
-  def to_ex_type("created_at", "String"), do: quote(do: NaiveDateTime.t())
+  def to_ex_type("created_at", "String"), do: quote(do: DateTime.t())
   def to_ex_type("bounding_box", "Object"), do: quote(do: Tw.V1_1.BoundingBox.t())
   def to_ex_type(name, "Array of " <> t), do: quote(do: list(unquote(to_ex_type(name, t |> String.trim_trailing("s")))))
 
@@ -200,11 +200,11 @@ defmodule Tw.V1_1.Schema do
   defp decoder("User object"), do: quote(do: &Tw.V1_1.User.decode/1)
   defp decoder("Search Result Object"), do: quote(do: &Tw.V1_1.SearchResult.decode/1)
 
-  @spec decode_twitter_datetime!(binary) :: NaiveDateTime.t()
+  @spec decode_twitter_datetime!(binary) :: DateTime.t()
   @doc """
-  Decode Twitter's datetime format into NaiveDateTime.
+  Decode Twitter's datetime format into DateTime.
   iex> Schema.decode_twitter_datetime!("Sun Feb 13 00:28:45 +0000 2022")
-  ~N[2022-02-13 00:28:45]
+  ~U[2022-02-13 00:28:45Z]
 
   iex> Schema.decode_twitter_datetime!("a")
   ** (RuntimeError) Parsing datetime failed: a
@@ -222,7 +222,7 @@ defmodule Tw.V1_1.Schema do
          {second, rest} <- Integer.parse(rest),
          " +0000 " <> rest <- rest,
          {year, ""} <- Integer.parse(rest) do
-      NaiveDateTime.new!(year, month + 1, day, hour, minute, second)
+      DateTime.new!(Date.new!(year, month + 1, day), Time.new!(hour, minute, second), "Etc/UTC")
     else
       _ -> raise "Parsing datetime failed: #{str}"
     end

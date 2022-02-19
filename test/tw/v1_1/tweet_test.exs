@@ -35,8 +35,8 @@ defmodule Tw.V1_1.TweetTest do
         assert %Tweet{} = tweet
       end
 
-      test "decodes created_at into NaiveDateTime", %{tweet: tweet} do
-        assert %NaiveDateTime{} = tweet.created_at
+      test "decodes created_at into DateTime", %{tweet: tweet} do
+        assert %DateTime{} = tweet.created_at
       end
 
       test "decodes user into User", %{tweet: tweet} do
