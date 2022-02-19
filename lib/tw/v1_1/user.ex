@@ -13,4 +13,7 @@ defmodule Tw.V1_1.User do
   map_endpoint(:get, "/friends/ids.json", to: friend_ids)
   map_endpoint(:get, "/followers/list.json", to: followers)
   map_endpoint(:get, "/friends/list.json", to: friends)
+  map_endpoint(:get, "/friendships/incoming.json", to: pending_incoming_follow_requests)
+  map_endpoint(:get, "/friendships/outgoing.json", to: pending_outgoing_follow_requests)
+  map_endpoint(:get, "/friendships/no_retweets/ids.json", to: no_retweet_ids)
 end

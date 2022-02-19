@@ -227,6 +227,8 @@ defmodule Tw.V1_1.Schema do
     end
   end
 
+  defp decoder(_), do: quote(do: &Function.identity/1)
+
   @spec decode_twitter_datetime!(binary) :: DateTime.t()
   @doc """
   Decode Twitter's datetime format into DateTime.

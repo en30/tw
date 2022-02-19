@@ -21,8 +21,11 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET users/show"),
         # fetch_endpoint(endpoints, "GET followers/ids"),
         # fetch_endpoint(endpoints, "GET friends/ids"),
-        fetch_endpoint(endpoints, "GET followers/list"),
-        fetch_endpoint(endpoints, "GET friends/list"),
+        # fetch_endpoint(endpoints, "GET followers/list"),
+        # fetch_endpoint(endpoints, "GET friends/list"),
+        fetch_endpoint(endpoints, "GET friendships/incoming"),
+        fetch_endpoint(endpoints, "GET friendships/outgoing"),
+        fetch_endpoint(endpoints, "GET friendships/no_retweets/ids"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -387,10 +390,10 @@ defmodule Tw.V1_1.Schema do
   defp return_type("GET statuses/mentions_timeline"), do: "Array of Tweets"
   defp return_type("GET users/show"), do: "User object"
   defp return_type("Standard search API"), do: "Search Result Object"
-  defp return_type("GET followers/ids"), do: "Cursored Result Object with ids Array of Int"
-  defp return_type("GET friends/ids"), do: "Cursored Result Object with ids Array of Int"
+  defp return_type(endpoint) when endpoint in ["GET followers/ids", "GET friends/ids", "GET friendships/incoming", "GET friendships/outgoing"], do: "Cursored Result Object with ids Array of Int"
   defp return_type("GET followers/list"), do: "Cursored Result Object with users Array of User objects"
   defp return_type("GET friends/list"), do: "Cursored Result Object with users Array of User objects"
+  defp return_type("GET friendships/no_retweets/ids"), do: "Array of Int"
 end
 
 Tw.V1_1.Schema.fetch()
