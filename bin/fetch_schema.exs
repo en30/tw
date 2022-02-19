@@ -9,16 +9,20 @@ defmodule Tw.V1_1.Schema do
 
     files =
       [
-        &generate_endpoint_result_objects/0,
-        &fetch_tweet_object/0,
-        &fetch_user_object/0,
-        &fetch_geo_objects/0,
-        &fetch_entities_objects/0,
-        fetch_endpoint("GET statuses/home_timeline", endpoints["GET statuses/home_timeline"]),
-        fetch_endpoint("GET statuses/user_timeline", endpoints["GET statuses/user_timeline"]),
-        fetch_endpoint("GET statuses/mentions_timeline", endpoints["GET statuses/mentions_timeline"]),
-        fetch_endpoint("Standard search API", endpoints["Standard search API"]),
-        fetch_endpoint("GET users/show", endpoints["GET users/show"])
+        # &generate_endpoint_result_objects/0,
+        # &fetch_tweet_object/0,
+        # &fetch_user_object/0,
+        # &fetch_geo_objects/0,
+        # &fetch_entities_objects/0,
+        # fetch_endpoint(endpoints, "GET statuses/home_timeline"),
+        # fetch_endpoint(endpoints, "GET statuses/user_timeline"),
+        # fetch_endpoint(endpoints, "GET statuses/mentions_timeline"),
+        # fetch_endpoint(endpoints, "Standard search API"),
+        # fetch_endpoint(endpoints, "GET users/show"),
+        # fetch_endpoint(endpoints, "GET followers/ids"),
+        # fetch_endpoint(endpoints, "GET friends/ids"),
+        fetch_endpoint(endpoints, "GET followers/list"),
+        fetch_endpoint(endpoints, "GET friends/list"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -312,7 +316,8 @@ defmodule Tw.V1_1.Schema do
     html
   end
 
-  defp fetch_endpoint(name, url) do
+  defp fetch_endpoint(endpoints, name) do
+    url = endpoints[name]
     type = return_type(name)
 
     fn ->
@@ -332,6 +337,7 @@ defmodule Tw.V1_1.Schema do
           |> Map.update!("required", fn
             "required" -> true
             "optional" -> false
+            "semi-optional" -> false
           end)
         end)
 
@@ -381,6 +387,10 @@ defmodule Tw.V1_1.Schema do
   defp return_type("GET statuses/mentions_timeline"), do: "Array of Tweets"
   defp return_type("GET users/show"), do: "User object"
   defp return_type("Standard search API"), do: "Search Result Object"
+  defp return_type("GET followers/ids"), do: "Cursored Result Object with ids Array of Int"
+  defp return_type("GET friends/ids"), do: "Cursored Result Object with ids Array of Int"
+  defp return_type("GET followers/list"), do: "Cursored Result Object with users Array of User objects"
+  defp return_type("GET friends/list"), do: "Cursored Result Object with users Array of User objects"
 end
 
 Tw.V1_1.Schema.fetch()

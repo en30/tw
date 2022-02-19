@@ -150,6 +150,20 @@ defmodule Tw.V1_1.Schema do
   def to_ex_type(_name, "Search Result Object"), do: quote(do: Tw.V1_1.SearchResult.t())
   def to_ex_type(_name, "Search Metadata Object"), do: quote(do: Tw.V1_1.SearchMetadata.t())
 
+  def to_ex_type(_name, "Cursored Result Object with " <> kv) do
+    [k, v] = String.split(kv, " ", parts: 2)
+
+    quote do
+      %{
+        unquote(String.to_atom(k)) => unquote(to_ex_type("", v)),
+        next_cursor: integer,
+        next_cursor_str: binary,
+        previous_cursor: integer,
+        previous_cursor_str: binary
+      }
+    end
+  end
+
   # TODO
   def to_ex_type(_name, "Rule Object"), do: quote(do: map)
   def to_ex_type(_name, "Arrays of Enrichment Objects"), do: quote(do: list(map))
@@ -198,6 +212,25 @@ defmodule Tw.V1_1.Schema do
   defp decoder("Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode/1)
   defp decoder("User object"), do: quote(do: &Tw.V1_1.User.decode/1)
   defp decoder("Search Result Object"), do: quote(do: &Tw.V1_1.SearchResult.decode/1)
+
+  defp decoder("Cursored Result Object with " <> kv) do
+    [k, v] = String.split(kv, " ", parts: 2)
+
+    quote do
+      fn json ->
+        %{
+          next_cursor: json["next_cursor"],
+          next_cursor_str: json["next_cursor_str"],
+          previous_cursor: json["previous_cursor"],
+          previous_cursor_str: json["previous_cursor_str"]
+        }
+        |> Map.put(
+          String.to_existing_atom(unquote(k)),
+          Tw.V1_1.Schema.decode_field(json[unquote(k)], unquote(k), unquote(v))
+        )
+      end
+    end
+  end
 
   @spec decode_twitter_datetime!(binary) :: DateTime.t()
   @doc """
