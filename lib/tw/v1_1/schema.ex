@@ -29,8 +29,10 @@ defmodule Tw.V1_1.Schema do
   end
 
   defmacro map_endpoint(method, path, to: {fn_name, _meta, nil}) do
+    schema_file = endpoint_schema_path(method, path)
+
     schema =
-      endpoint_schema_path(method, path)
+      schema_file
       |> File.read!()
       |> Jason.decode!()
 
@@ -40,6 +42,8 @@ defmodule Tw.V1_1.Schema do
     decode = decoder(schema["type"])
 
     quote do
+      @external_resource unquote(schema_file)
+
       @type unquote({params_type_name, [], Elixir}) :: unquote(params_type(params_type_name, schema))
       unquote_splicing(params_type_defs(params_type_name, schema))
 
