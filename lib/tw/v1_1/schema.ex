@@ -44,24 +44,19 @@ defmodule Tw.V1_1.Schema do
       unquote_splicing(params_type_defs(params_type_name, schema))
 
       @spec unquote(fn_name)(Tw.V1_1.Client.t(), list(unquote({params_type_name, [], Elixir}))) ::
-              {:ok, unquote(type)} | {:error, Exception.t()}
+              {:ok, unquote(type)} | {:error, Tw.V1_1.TwitterAPIError.t() | Jason.DecodeError.t()}
       @doc """
       #{unquote(cite(schema["description"]))}
 
       See [the Twitter API documentation](#{unquote(schema["doc_url"])}) for details.
       """
       def unquote(fn_name)(client, opts \\ []) do
-        with {:ok, %{status: status} = resp} when status < 400 <-
-               Tw.V1_1.Client.request(client, unquote(method), unquote(path), opts),
+        with {:ok, resp} <- Tw.V1_1.Client.request(client, unquote(method), unquote(path), opts),
              {:ok, json} <- Jason.decode(resp.body) do
           {:ok, apply(unquote(decode), [json])}
         else
-          {:ok, resp} ->
-            # TODO: meaningful error
-            {:error, RuntimeError.exception(resp.body)}
-
-          {:error, message} ->
-            {:error, message}
+          {:error, error} ->
+            {:error, error}
         end
       end
     end

@@ -5,6 +5,7 @@ defmodule Tw.V1_1.Client do
 
   alias Tw.HTTP
   alias Tw.OAuth
+  alias Tw.V1_1.TwitterAPIError
 
   @base_uri URI.parse("https://api.twitter.com/1.1")
 
@@ -18,7 +19,7 @@ defmodule Tw.V1_1.Client do
   @spec new(keyword) :: t
   def new(opts), do: struct!(__MODULE__, opts)
 
-  @spec request(t, atom, binary, keyword) :: {:ok, Tw.HTTP.Response.t()} | {:error, Exception.t()}
+  @spec request(t, atom, binary, keyword) :: {:ok, HTTP.Response.t()} | {:error, TwitterAPIError.t()}
   def request(client, method, path, query_params \\ []) do
     uri =
       @base_uri
@@ -31,11 +32,20 @@ defmodule Tw.V1_1.Client do
       HTTP.Request.new(method, uri)
       |> sign(client.credentials)
 
-    HTTP.Client.request(client.http_client, req, [])
+    case HTTP.Client.request(client.http_client, req, []) do
+      {:ok, %{status: status} = resp} when status < 400 ->
+        {:ok, resp}
+
+      {:ok, error_resp} ->
+        {:error, TwitterAPIError.from_response(error_resp)}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp sign(%HTTP.Request{} = request, credentials) do
-    params = Tw.OAuth.V1_0a.params(credentials)
+    params = OAuth.V1_0a.params(credentials)
 
     value =
       OAuth.V1_0a.signature(request, credentials, params)
