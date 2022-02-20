@@ -1,0 +1,23 @@
+{
+  "description": "Untweets a retweeted status. Returns the original Tweet with Retweet details embedded.\n\nUsage Notes:\n\nThis method is subject to update limits. A HTTP 429 will be returned if this limit has been hit.The untweeted retweet status ID must be authored by the user backing the authentication token.An application must have write privileges to POST. A HTTP 401 will be returned for read-only applications.When passing a source status ID instead of the retweet status ID a HTTP 200 response will be returned with the same Tweet object but no action.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-statuses-unretweet-id",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "The numerical ID of the desired status.",
+      "example": "123",
+      "name": "id",
+      "required": true,
+      "type": "Int"
+    },
+    {
+      "default value": "",
+      "description": "When set to either true , t or 1 , each Tweet returned in a timeline will include a user object including only the status authors numerical ID. Omit this parameter to receive the complete user object.",
+      "example": "true",
+      "name": "trim_user",
+      "required": false,
+      "type": "Boolean"
+    }
+  ],
+  "type": "Tweet"
+}

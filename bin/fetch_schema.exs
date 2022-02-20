@@ -48,7 +48,12 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET trends/closest"),
         # fetch_endpoint(endpoints, "GET trends/available"),
         # fetch_endpoint(endpoints, "GET trends/place"),
-        fetch_endpoint(endpoints, "POST statuses/update"),
+        # fetch_endpoint(endpoints, "POST statuses/update"),
+        fetch_endpoint(endpoints, "POST statuses/destroy/:id"),
+        fetch_endpoint(endpoints, "POST statuses/retweet/:id"),
+        fetch_endpoint(endpoints, "POST statuses/unretweet/:id"),
+        fetch_endpoint(endpoints, "POST favorites/create"),
+        fetch_endpoint(endpoints, "POST favorites/destroy"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -580,6 +585,11 @@ defmodule Tw.V1_1.Schema do
   defp return_type(endpoint) when endpoint in [
     "GET statuses/show/:id",
     "POST statuses/update",
+    "POST statuses/destroy/:id",
+    "POST statuses/retweet/:id",
+    "POST statuses/unretweet/:id",
+    "POST favorites/create",
+    "POST favorites/destroy",
   ] do
     "Tweet"
   end

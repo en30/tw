@@ -1,0 +1,23 @@
+{
+  "description": "Destroys the status specified by the required ID parameter. The authenticating user must be the author of the specified status. Returns the destroyed status if successful.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-statuses-destroy-id",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "The numerical ID of the desired status.",
+      "example": "123",
+      "name": "id",
+      "required": true,
+      "type": "Int"
+    },
+    {
+      "default value": "",
+      "description": "When set to either true , t or 1 , each tweet returned in a timeline will include a user object including only the status authors numerical ID. Omit this parameter to receive the complete user object.",
+      "example": "true",
+      "name": "trim_user",
+      "required": false,
+      "type": "Boolean"
+    }
+  ],
+  "type": "Tweet"
+}

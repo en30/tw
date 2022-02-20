@@ -20,4 +20,9 @@ defmodule Tw.V1_1.Tweet do
   map_endpoint(:get, "/statuses/show/:id.json", to: find)
   map_endpoint(:get, "/statuses/oembed.json", to: oembed)
   map_endpoint(:post, "/statuses/update.json", to: create)
+  map_endpoint(:post, "/statuses/destroy/:id.json", to: delete)
+  map_endpoint(:post, "/statuses/retweet/:id.json", to: retweet)
+  map_endpoint(:post, "/statuses/unretweet/:id.json", to: unretweet)
+  map_endpoint(:post, "/favorites/create.json", to: favorite)
+  map_endpoint(:post, "/favorites/destroy.json", to: unfavorite)
 end
