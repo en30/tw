@@ -1,0 +1,23 @@
+{
+  "description": "Returns the locations that Twitter has trending topic information for, closest to a specified location.\n\nThe response is an array of \"locations\" that encode the location's WOEID and some other human-readable information such as a canonical name and country the location belongs in.\n\nNote: The \"where on earth identifier\" or WOEID, is a legacy identifier created by Yahoo and has been deprecated. Twitter API v1.1 still uses the numeric value to identify town and country trend locations. Reference our legacy blog post, or archived data. The url returned in the response, where.yahooapis.com is no longer valid.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/trends/locations-with-trending-topics/api-reference/get-trends-closest",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "If provided with a long parameter the available trend locations will be sorted by distance, nearest to furthest, to the co-ordinate pair. The valid ranges for longitude is -180.0 to +180.0 (West is negative, East is positive) inclusive.",
+      "example": "37.781157",
+      "name": "lat",
+      "required": true,
+      "type": "String"
+    },
+    {
+      "default value": "",
+      "description": "If provided with a lat parameter the available trend locations will be sorted by distance, nearest to furthest, to the co-ordinate pair. The valid ranges for longitude is -180.0 to +180.0 (West is negative, East is positive) inclusive.",
+      "example": "-122.400612831116",
+      "name": "long",
+      "required": true,
+      "type": "String"
+    }
+  ],
+  "type": "Array of Trend Location Objects"
+}

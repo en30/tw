@@ -199,6 +199,19 @@ defmodule Tw.V1_1.Schema do
   def to_ex_type(_name, "Enum(Language)"), do: quote(do: Tw.V1_1.Schema.language())
   def to_ex_type(_name, "Enum {light, dark}"), do: quote(do: :light | :dark)
   def to_ex_type(_name, "Enum {video}"), do: quote(do: :video)
+  def to_ex_type(_name, "Place Type Object"), do: quote(do: %{code: non_neg_integer, name: binary})
+  def to_ex_type(_name, "Trend Location Object"), do: quote(do: Tw.V1_1.TrendLocation.t())
+
+  def to_ex_type(_name, "Trends Object"),
+    do:
+      quote(
+        do: %{
+          trends: list(Tw.V1_1.Trend.t()),
+          as_of: DateTime.t(),
+          created_at: DateTime.t(),
+          locations: list(%{name: binary, woeid: non_neg_integer()})
+        }
+      )
 
   def to_ex_type(_name, "oEmbed Object"),
     do:
@@ -272,6 +285,7 @@ defmodule Tw.V1_1.Schema do
   def decode_field(json_value, _name, "Search Metadata Object"), do: Tw.V1_1.SearchMetadata.decode(json_value)
   def decode_field(json_value, _name, "Friendship Source Object"), do: Tw.V1_1.FriendshipSource.decode(json_value)
   def decode_field(json_value, _name, "Friendship Target Object"), do: Tw.V1_1.FriendshipTarget.decode(json_value)
+  def decode_field(json_value, _name, "Place Type Object"), do: %{code: json_value["code"], name: json_value["name"]}
 
   def decode_field(json_value, _name, "Connection Enum"),
     do: Tw.V1_1.FriendshipLookupResult.decode_connection(json_value)
@@ -287,6 +301,7 @@ defmodule Tw.V1_1.Schema do
   defp decoder("Me Object"), do: quote(do: &Tw.V1_1.Me.decode/1)
   defp decoder("Search Result Object"), do: quote(do: &Tw.V1_1.SearchResult.decode/1)
   defp decoder("Friendship Lookup Result Object"), do: quote(do: &Tw.V1_1.FriendshipLookupResult.decode/1)
+  defp decoder("Trend Location Object"), do: quote(do: &Tw.V1_1.TrendLocation.decode/1)
 
   defp decoder("Cursored Result Object with " <> kv) do
     [k, v] = String.split(kv, " ", parts: 2)
@@ -322,6 +337,19 @@ defmodule Tw.V1_1.Schema do
         |> Enum.reduce(%{}, fn key, a ->
           Map.put(a, String.to_atom(key), json[key])
         end)
+      end
+    end
+  end
+
+  defp decoder("Trends Object") do
+    quote do
+      fn json ->
+        %{
+          trends: Enum.map(json["trends"], &Tw.V1_1.Trend.decode/1),
+          as_of: json["as_of"] |> DateTime.from_iso8601(),
+          created_at: json["created_at"] |> DateTime.from_iso8601(),
+          locations: Enum.map(json["locations"], &%{name: &1["name"], woeid: &1["woeid"]})
+        }
       end
     end
   end
@@ -399,7 +427,7 @@ defmodule Tw.V1_1.Schema do
           {unquote(String.to_atom(name)), unquote({:"#{params_type_name}_#{name}", [], Elixir})}
         end
     end)
-    |> Enum.reduce(fn e, acc ->
+    |> Enum.reduce([], fn e, acc ->
       quote(do: unquote(acc) | unquote(e))
     end)
   end

@@ -1,0 +1,6 @@
+{
+  "description": "Returns the locations that Twitter has trending topic information for.\n\nThe response is an array of \"locations\" that encode the location's WOEID and some other human-readable information such as a canonical name and country the location belongs in.\n\nNote: This endpoint uses the \"where on earth identifier\" or WOEID, which is a legacy identifier created by Yahoo and has been deprecated. Twitter API v1.1 still uses the numeric value to identify town and country trend locations. Reference our legacy blog post for more details. The url returned in the response, where.yahooapis.com is no longer valid.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/trends/locations-with-trending-topics/api-reference/get-trends-available",
+  "parameters": [],
+  "type": "Array of Trend Location Objects"
+}

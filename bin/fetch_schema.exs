@@ -44,7 +44,10 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET statuses/retweets_of_me"),
         # fetch_endpoint(endpoints, "GET statuses/retweets/:id"),
         # fetch_endpoint(endpoints, "GET statuses/show/:id"),
-        fetch_oembed_endpoint(endpoints, "GET statuses/oembed"),
+        # fetch_oembed_endpoint(endpoints, "GET statuses/oembed"),
+        fetch_endpoint(endpoints, "GET trends/closest"),
+        fetch_endpoint(endpoints, "GET trends/available"),
+        fetch_endpoint(endpoints, "GET trends/place"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -300,6 +303,28 @@ defmodule Tw.V1_1.Schema do
       ]
       |> write_schema(to: "priv/schema/model/friendship_target.json")
     )
+    |> Kernel.++(
+      [
+        %{"attribute" => "country", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "countryCode", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "name", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "parentid", "type" => "Int", "required" => true, "nullable" => false},
+        %{"attribute" => "placeType", "type" => "Place Type Object", "required" => true, "nullable" => false},
+        %{"attribute" => "url", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "woeid", "type" => "Int", "required" => true, "nullable" => false},
+      ]
+      |> write_schema(to: "priv/schema/model/trend_location.json")
+    )
+    |> Kernel.++(
+      [
+        %{"attribute" => "name", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "url", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "promoted_content", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "query", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "tweet_volume", "type" => "Int", "required" => true, "nullable" => true},
+      ]
+      |> write_schema(to: "priv/schema/model/trend.json")
+    )
   end
 
   defp write_schema(schema, to: path) do
@@ -415,7 +440,7 @@ defmodule Tw.V1_1.Schema do
       ts = tables(html, h_levels: [2])
 
       parameters =
-        ts["Parameters"]
+        (ts["Parameters"] || [])
         |> Enum.map(fn param ->
           param
           |> Map.put("type", infer_type(param["name"], param["example"]))
@@ -505,8 +530,8 @@ defmodule Tw.V1_1.Schema do
 
   defp infer_type(_name, example) do
     case Integer.parse(example) do
-      {_, _} -> "Int"
-      :error -> "String"
+      {_, ""} -> "Int"
+      _ -> "String"
     end
   end
 
@@ -557,6 +582,13 @@ defmodule Tw.V1_1.Schema do
     "Tweet"
   end
   defp return_type("GET statuses/oembed"), do: "oEmbed Object"
+  defp return_type(endpoint) when endpoint in [
+    "GET trends/closest",
+    "GET trends/available"
+  ] do
+    "Array of Trend Location Objects"
+  end
+  defp return_type("GET trends/place"), do: "Array of Trends Objects"
 end
 
 Tw.V1_1.Schema.fetch()
