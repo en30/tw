@@ -1,0 +1,39 @@
+{
+  "description": "Returns fully-hydrated user objects for up to 100 users per request, as specified by comma-separated values passed to the user_id and/or screen_name parameters.\n\nThis method is especially useful when used in conjunction with collections of user IDs returned from GET friends / ids and GET followers / ids.\n\nGET users / show is used to retrieve a single user object.\n\nThere are a few things to note when using this method.\n\nYou must be following a protected user to be able to see their most recent status update. If you don't follow a protected user their status will be removed.The order of user IDs or screen names may not match the order of users in the returned array.If a requested user is unknown, suspended, or deleted, then that user will not be returned in the results list.If none of your lookup criteria can be satisfied by returning a user object, a HTTP 404 will be thrown.You are strongly encouraged to use a POST for larger requests.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-users-lookup",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "A comma separated list of screen names, up to 100 are allowed in a single request. You are strongly encouraged to use a POST for larger (up to 100 screen names) requests.",
+      "example": "twitterapi twitter",
+      "name": "screen_name",
+      "required": false,
+      "type": "Array of Strings"
+    },
+    {
+      "default value": "",
+      "description": "A comma separated list of user IDs, up to 100 are allowed in a single request. You are strongly encouraged to use a POST for larger requests.",
+      "example": "783214 6253282",
+      "name": "user_id",
+      "required": false,
+      "type": "Array of Int"
+    },
+    {
+      "default value": "",
+      "description": "The entities node that may appear within embedded statuses will not be included when set to false.",
+      "example": "false",
+      "name": "include_entities",
+      "required": false,
+      "type": "Boolean"
+    },
+    {
+      "default value": "",
+      "description": "Valid request values are compat and extended, which give compatibility mode and extended mode, respectively for Tweets that contain over 140 characters",
+      "example": "false",
+      "name": "tweet_mode",
+      "required": false,
+      "type": "Boolean"
+    }
+  ],
+  "type": "Array of User objects"
+}

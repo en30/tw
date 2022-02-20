@@ -9,6 +9,8 @@ defmodule Tw.V1_1.User do
   defobject("priv/schema/model/user.json")
 
   map_endpoint(:get, "/users/show.json", to: find)
+  map_endpoint(:get, "/users/lookup.json", to: list)
+  map_endpoint(:get, "/users/search.json", to: search)
   map_endpoint(:get, "/followers/ids.json", to: follower_ids)
   map_endpoint(:get, "/friends/ids.json", to: friend_ids)
   map_endpoint(:get, "/followers/list.json", to: followers)
