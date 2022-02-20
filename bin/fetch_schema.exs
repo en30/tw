@@ -49,11 +49,19 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET trends/available"),
         # fetch_endpoint(endpoints, "GET trends/place"),
         # fetch_endpoint(endpoints, "POST statuses/update"),
-        fetch_endpoint(endpoints, "POST statuses/destroy/:id"),
-        fetch_endpoint(endpoints, "POST statuses/retweet/:id"),
-        fetch_endpoint(endpoints, "POST statuses/unretweet/:id"),
-        fetch_endpoint(endpoints, "POST favorites/create"),
-        fetch_endpoint(endpoints, "POST favorites/destroy"),
+        # fetch_endpoint(endpoints, "POST statuses/destroy/:id"),
+        # fetch_endpoint(endpoints, "POST statuses/retweet/:id"),
+        # fetch_endpoint(endpoints, "POST statuses/unretweet/:id"),
+        # fetch_endpoint(endpoints, "POST favorites/create"),
+        # fetch_endpoint(endpoints, "POST favorites/destroy"),
+        fetch_endpoint(endpoints, "POST blocks/create"),
+        fetch_endpoint(endpoints, "POST blocks/destroy"),
+        fetch_endpoint(endpoints, "POST mutes/users/create"),
+        fetch_endpoint(endpoints, "POST mutes/users/destroy"),
+        fetch_endpoint(endpoints, "POST users/report_spam"),
+        fetch_endpoint(endpoints, "POST friendships/create"),
+        fetch_endpoint(endpoints, "POST friendships/destroy"),
+        fetch_endpoint(endpoints, "POST friendships/update"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -553,7 +561,18 @@ defmodule Tw.V1_1.Schema do
   ] do
     "Array of Tweets"
   end
-  defp return_type("GET users/show"), do: "User object"
+  defp return_type(endpoint) when endpoint in [
+    "GET users/show",
+    "POST blocks/create",
+    "POST blocks/destroy",
+    "POST mutes/users/create",
+    "POST mutes/users/destroy",
+    "POST users/report_spam",
+    "POST friendships/create",
+    "POST friendships/destroy",
+  ] do
+    "User object"
+  end
   defp return_type("GET users/lookup"), do: "Array of User objects"
   defp return_type("GET users/search"), do: "Array of User objects"
   defp return_type("Standard search API"), do: "Search Result Object"
@@ -580,7 +599,12 @@ defmodule Tw.V1_1.Schema do
   end
   defp return_type("GET friendships/no_retweets/ids"), do: "Array of Int"
   defp return_type("GET friendships/lookup"), do: "Array of Friendship Lookup Result Objects"
-  defp return_type("GET friendships/show"), do: "Friendship Relationship Object"
+  defp return_type(endpoint) when endpoint in [
+    "GET friendships/show",
+    "POST friendships/update",
+  ] do
+    "Friendship Relationship Object"
+  end
   defp return_type("GET account/verify_credentials"), do: "Me Object"
   defp return_type(endpoint) when endpoint in [
     "GET statuses/show/:id",

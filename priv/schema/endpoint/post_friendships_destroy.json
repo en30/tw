@@ -1,0 +1,23 @@
+{
+  "description": "Allows the authenticating user to unfollow the user specified in the ID parameter.\n\nReturns the unfollowed user when successful. Returns a string describing the failure condition when unsuccessful.\n\nActions taken in this method are asynchronous. Changes will be eventually consistent.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/post-friendships-destroy",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "The screen name of the user to unfollow.",
+      "example": "twitterdev",
+      "name": "screen_name",
+      "required": false,
+      "type": "String"
+    },
+    {
+      "default value": "",
+      "description": "The ID of the user to unfollow.",
+      "example": "2244994945",
+      "name": "user_id",
+      "required": false,
+      "type": "Int"
+    }
+  ],
+  "type": "User object"
+}

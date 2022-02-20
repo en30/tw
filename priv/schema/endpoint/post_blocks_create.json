@@ -1,0 +1,39 @@
+{
+  "description": "Blocks the specified user from following the authenticating user. In addition the blocked user will not show in the authenticating users mentions or timeline (unless retweeted by another user). If a follow or friend relationship exists it is destroyed.\n\nThe URL pattern /version/block/create/:screen_name_or_user_id.format is still accepted but not recommended. As a sequence of numbers is a valid screen name we recommend using the screen_name or user_id parameter instead.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/post-blocks-create",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "The screen name of the potentially blocked user. Helpful for disambiguating when a valid screen name is also a user ID.",
+      "example": "noradio",
+      "name": "screen_name",
+      "required": false,
+      "type": "String"
+    },
+    {
+      "default value": "",
+      "description": "The ID of the potentially blocked user. Helpful for disambiguating when a valid user ID is also a valid screen name.",
+      "example": "12345",
+      "name": "user_id",
+      "required": false,
+      "type": "Int"
+    },
+    {
+      "default value": "",
+      "description": "The entities node will not be included when set to false .",
+      "example": "false",
+      "name": "include_entities",
+      "required": false,
+      "type": "Boolean"
+    },
+    {
+      "default value": "",
+      "description": "When set to either true , t or 1 statuses will not be included in the returned user objects.",
+      "example": "true",
+      "name": "skip_status",
+      "required": false,
+      "type": "Boolean"
+    }
+  ],
+  "type": "User object"
+}

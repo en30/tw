@@ -14,4 +14,7 @@ defmodule Tw.V1_1.Friendship do
   map_endpoint(:get, "/friendships/no_retweets/ids.json", to: no_retweet_ids)
   map_endpoint(:get, "/friendships/lookup.json", to: list)
   map_endpoint(:get, "/friendships/show.json", to: find)
+  map_endpoint(:post, "/friendships/create.json", to: create)
+  map_endpoint(:post, "/friendships/destroy.json", to: destroy)
+  map_endpoint(:post, "/friendships/update.json", to: update)
 end

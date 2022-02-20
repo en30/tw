@@ -1,0 +1,23 @@
+{
+  "description": "Un-mutes the user specified in the ID parameter for the authenticating user.\n\nReturns the unmuted user when successful. Returns a string describing the failure condition when unsuccessful.\n\nActions taken in this method are asynchronous. Changes will be eventually consistent.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/post-mutes-users-destroy",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "The screen name of the potentially muted user. Helpful for disambiguating when a valid screen name is also a user ID.",
+      "example": "whiteleaf",
+      "name": "screen_name",
+      "required": false,
+      "type": "String"
+    },
+    {
+      "default value": "",
+      "description": "The ID of the potentially muted user. Helpful for disambiguating when a valid user ID is also a valid screen name.",
+      "example": "12345",
+      "name": "user_id",
+      "required": false,
+      "type": "Int"
+    }
+  ],
+  "type": "User object"
+}

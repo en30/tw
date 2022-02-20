@@ -1,0 +1,39 @@
+{
+  "description": "Un-blocks the user specified in the ID parameter for the authenticating user. Returns the un-blocked user when successful. If relationships existed before the block was instantiated, they will not be restored.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/post-blocks-destroy",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "The screen name of the potentially blocked user. Helpful for disambiguating when a valid screen name is also a user ID.",
+      "example": "noradio",
+      "name": "screen_name",
+      "required": false,
+      "type": "String"
+    },
+    {
+      "default value": "",
+      "description": "The ID of the potentially blocked user. Helpful for disambiguating when a valid user ID is also a valid screen name.",
+      "example": "12345",
+      "name": "user_id",
+      "required": false,
+      "type": "Int"
+    },
+    {
+      "default value": "",
+      "description": "The entities node will not be included when set to false .",
+      "example": "false",
+      "name": "include_entities",
+      "required": false,
+      "type": "Boolean"
+    },
+    {
+      "default value": "",
+      "description": "When set to either true , t or 1 statuses will not be included in the returned user objects.",
+      "example": "",
+      "name": "skip_status",
+      "required": false,
+      "type": "String"
+    }
+  ],
+  "type": "User object"
+}

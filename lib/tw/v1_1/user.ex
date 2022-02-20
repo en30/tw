@@ -23,4 +23,11 @@ defmodule Tw.V1_1.User do
   map_endpoint(:get, "/statuses/retweeters/ids.json", to: retweeter_ids)
   map_endpoint(:get, "/lists/members.json", to: list_members)
   map_endpoint(:get, "/lists/subscribers.json", to: list_subscribers)
+  map_endpoint(:post, "/blocks/create.json", to: block)
+  map_endpoint(:post, "/blocks/destroy.json", to: unblock)
+  map_endpoint(:post, "/mutes/users/create.json", to: mute)
+  map_endpoint(:post, "/mutes/users/destroy.json", to: unmute)
+  map_endpoint(:post, "/users/report_spam.json", to: report_spam)
+  map_endpoint(:post, "/friendships/create.json", to: follow)
+  map_endpoint(:post, "/friendships/destroy.json", to: unfollow)
 end

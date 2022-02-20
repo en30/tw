@@ -1,0 +1,31 @@
+{
+  "description": "Report the specified user as a spam account to Twitter. Additionally, optionally performs the equivalent of POST blocks / create on behalf of the authenticated user.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/post-users-report_spam",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "The screen_name of the user to report as a spammer. Helpful for disambiguating when a valid screen name is also a user ID.",
+      "example": "noradio",
+      "name": "screen_name",
+      "required": false,
+      "type": "String"
+    },
+    {
+      "default value": "",
+      "description": "The ID of the user to report as a spammer. Helpful for disambiguating when a valid user ID is also a valid screen name.",
+      "example": "12345",
+      "name": "user_id",
+      "required": false,
+      "type": "Int"
+    },
+    {
+      "default value": "true",
+      "description": "Whether the account should be blocked by the authenticated user, as well as being reported for spam.",
+      "example": "false",
+      "name": "perform_block",
+      "required": false,
+      "type": "Boolean"
+    }
+  ],
+  "type": "User object"
+}
