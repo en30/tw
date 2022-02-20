@@ -42,8 +42,9 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET lists/statuses"),
         # fetch_endpoint(endpoints, "GET statuses/lookup"),
         # fetch_endpoint(endpoints, "GET statuses/retweets_of_me"),
-        fetch_endpoint(endpoints, "GET statuses/retweets/:id"),
-        fetch_endpoint(endpoints, "GET statuses/show/:id"),
+        # fetch_endpoint(endpoints, "GET statuses/retweets/:id"),
+        # fetch_endpoint(endpoints, "GET statuses/show/:id"),
+        fetch_oembed_endpoint(endpoints, "GET statuses/oembed"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -439,6 +440,45 @@ defmodule Tw.V1_1.Schema do
     end
   end
 
+  defp fetch_oembed_endpoint(endpoints, name) do
+    url = endpoints[name]
+    type = return_type(name)
+
+    fn ->
+      {:ok, html} =
+        Req.get!(url)
+        |> Map.fetch!(:body)
+        |> Floki.parse_document()
+
+
+      ts = tables(html, h_levels: [2])
+
+      parameters =
+        ts["Parameters"]
+        |> Enum.map(fn param ->
+          [name, type] = param["name"] |> String.split("\n")
+          required = String.ends_with?(name, "required")
+          name = String.trim_trailing(name, "required")
+
+          param
+          |> Map.put("name", name)
+          |> Map.put("type", type)
+          |> Map.put("required", required)
+        end)
+
+      schema = %{
+        "doc_url" => url,
+        "type" => type,
+        "description" => main_paragraph(html),
+        "parameters" => parameters
+      }
+
+      dest = Path.join(["priv/schema/endpoint", (url |> Path.basename() |> String.replace("-", "_")) <> ".json"])
+
+      schema |> write_schema(to: dest)
+    end
+  end
+
   def fetch_endpoint_index() do
     {:ok, html} =
       Req.get!("https://developer.twitter.com/en/docs/api-reference-index#twitter-api-standard")
@@ -516,6 +556,7 @@ defmodule Tw.V1_1.Schema do
   ] do
     "Tweet"
   end
+  defp return_type("GET statuses/oembed"), do: "oEmbed Object"
 end
 
 Tw.V1_1.Schema.fetch()

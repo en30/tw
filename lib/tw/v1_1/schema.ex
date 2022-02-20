@@ -3,6 +3,45 @@ defmodule Tw.V1_1.Schema do
   Map JSON-decoded Twitter data to Elixir data.
   """
 
+  # https://developer.twitter.com/en/docs/twitter-for-websites/supported-languages
+  @type language ::
+          :en
+          | :ar
+          | :bn
+          | :cs
+          | :da
+          | :de
+          | :el
+          | :es
+          | :fa
+          | :fi
+          | :fil
+          | :fr
+          | :he
+          | :hi
+          | :hu
+          | :id
+          | :it
+          | :ja
+          | :ko
+          | :msa
+          | :nl
+          | :no
+          | :pl
+          | :pt
+          | :ro
+          | :ru
+          | :sv
+          | :th
+          | :tr
+          | :uk
+          | :ur
+          | :vi
+          | :"zh-cn"
+          | :"zh-tw"
+          | :"pt-BR"
+          | :pt
+
   defmacro defobject(schema_file) do
     schema =
       File.read!(schema_file)
@@ -154,6 +193,30 @@ defmodule Tw.V1_1.Schema do
   def to_ex_type(_name, "Friendship Lookup Result Object"), do: quote(do: Tw.V1_1.FriendshipLookupResult.t())
   def to_ex_type(_name, "Friendship Source Object"), do: quote(do: Tw.V1_1.FriendshipSource.t())
   def to_ex_type(_name, "Friendship Target Object"), do: quote(do: Tw.V1_1.FriendshipTarget.t())
+  def to_ex_type("maxwidth", "Int [220..550]"), do: quote(do: pos_integer)
+  def to_ex_type(_name, "Boolean, String or Int"), do: quote(do: boolean)
+  def to_ex_type(_name, "Enum {left,right,center,none}"), do: quote(do: :left | :right | :center | :none)
+  def to_ex_type(_name, "Enum(Language)"), do: quote(do: Tw.V1_1.Schema.language())
+  def to_ex_type(_name, "Enum {light, dark}"), do: quote(do: :light | :dark)
+  def to_ex_type(_name, "Enum {video}"), do: quote(do: :video)
+
+  def to_ex_type(_name, "oEmbed Object"),
+    do:
+      quote(
+        do: %{
+          url: binary,
+          author_name: binary,
+          author_url: binary,
+          html: binary,
+          width: non_neg_integer,
+          height: non_neg_integer | nil,
+          type: binary,
+          cache_age: binary,
+          provider_name: binary,
+          provider_url: binary,
+          version: binary
+        }
+      )
 
   def to_ex_type(_name, "Friendship Relationship Object"),
     do: quote(do: %{relationship: %{source: Tw.V1_1.FriendshipSource.t(), target: Tw.V1_1.FriendshipTarget.t()}})
@@ -248,6 +311,17 @@ defmodule Tw.V1_1.Schema do
     quote do
       fn json ->
         %{relationship: Tw.V1_1.Friendship.decode(json["relationship"])}
+      end
+    end
+  end
+
+  defp decoder("oEmbed Object") do
+    quote do
+      fn json ->
+        ~W[url author_name author_url html width height type cache_age provider_name provider_url version]
+        |> Enum.reduce(%{}, fn key, a ->
+          Map.put(a, String.to_atom(key), json[key])
+        end)
       end
     end
   end
