@@ -1,0 +1,23 @@
+{
+  "description": "Returns an array of numeric user ids the authenticating user has muted.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-mutes-users-ids",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "Many programming environments will not consume Twitter IDs due to their size. Provide this option to have IDs returned as strings instead. Read more about Twitter IDs .",
+      "example": "true",
+      "name": "stringify_ids",
+      "required": false,
+      "type": "Boolean"
+    },
+    {
+      "default value": "-1",
+      "description": "Causes the list of IDs to be broken into pages of no more than 5000 IDs at a time. The number of IDs returned is not guaranteed to be 5000 as suspended users are filtered out. If no cursor is provided, a value of -1 will be assumed, which is the first \"page.\"The response from the API will include a previous_cursor and next_cursor to allow paging back and forth. See Using cursors to navigate collections for more information.",
+      "example": "2",
+      "name": "cursor",
+      "required": false,
+      "type": "Int"
+    }
+  ],
+  "type": "Cursored Result Object with ids Array of Int"
+}

@@ -16,4 +16,7 @@ defmodule Tw.V1_1.User do
   map_endpoint(:get, "/friends/ids.json", to: friend_ids)
   map_endpoint(:get, "/followers/list.json", to: followers)
   map_endpoint(:get, "/friends/list.json", to: friends)
+  map_endpoint(:get, "/blocks/ids.json", to: blocking_ids)
+  map_endpoint(:get, "/mutes/users/ids.json", to: muting_ids)
+  map_endpoint(:get, "/statuses/retweeters/ids.json", to: retweeter_ids)
 end
