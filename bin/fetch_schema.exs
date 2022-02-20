@@ -38,11 +38,12 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET mutes/users/list"),
         # fetch_endpoint(endpoints, "GET lists/members"),
         # fetch_endpoint(endpoints, "GET lists/subscribers"),
-        fetch_endpoint(endpoints, "GET favorites/list"),
-        fetch_endpoint(endpoints, "GET lists/statuses"),
-        fetch_endpoint(endpoints, "GET statuses/lookup"),
-        fetch_endpoint(endpoints, "GET statuses/retweets_of_me"),
-
+        # fetch_endpoint(endpoints, "GET favorites/list"),
+        # fetch_endpoint(endpoints, "GET lists/statuses"),
+        # fetch_endpoint(endpoints, "GET statuses/lookup"),
+        # fetch_endpoint(endpoints, "GET statuses/retweets_of_me"),
+        fetch_endpoint(endpoints, "GET statuses/retweets/:id"),
+        fetch_endpoint(endpoints, "GET statuses/show/:id"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -477,6 +478,7 @@ defmodule Tw.V1_1.Schema do
     "GET lists/statuses",
     "GET statuses/lookup",
     "GET statuses/retweets_of_me",
+    "GET statuses/retweets/:id",
   ] do
     "Array of Tweets"
   end
@@ -509,6 +511,11 @@ defmodule Tw.V1_1.Schema do
   defp return_type("GET friendships/lookup"), do: "Array of Friendship Lookup Result Objects"
   defp return_type("GET friendships/show"), do: "Friendship Relationship Object"
   defp return_type("GET account/verify_credentials"), do: "Me Object"
+  defp return_type(endpoint) when endpoint in [
+    "GET statuses/show/:id",
+  ] do
+    "Tweet"
+  end
 end
 
 Tw.V1_1.Schema.fetch()

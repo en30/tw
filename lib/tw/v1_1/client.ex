@@ -21,6 +21,8 @@ defmodule Tw.V1_1.Client do
 
   @spec request(t, atom, binary, keyword) :: {:ok, HTTP.Response.t()} | {:error, TwitterAPIError.t()}
   def request(client, method, path, query_params \\ []) do
+    {path, query_params} = embed_path_params(path, query_params)
+
     uri =
       @base_uri
       |> URI.merge(%URI{
@@ -62,5 +64,19 @@ defmodule Tw.V1_1.Client do
       {k, v} -> {k, v}
     end)
     |> URI.encode_query(:rfc3986)
+  end
+
+  defp embed_path_params(path, query_params) do
+    Path.split(path)
+    |> Enum.filter(&String.starts_with?(&1, ":"))
+    |> Enum.map(&Path.basename(&1, ".json"))
+    |> Enum.reduce({path, query_params}, fn ":" <> name = e, {path, params} ->
+      key = String.to_existing_atom(name)
+
+      {
+        String.replace(path, e, Keyword.fetch!(params, key) |> to_string()),
+        params |> Keyword.delete(key)
+      }
+    end)
   end
 end

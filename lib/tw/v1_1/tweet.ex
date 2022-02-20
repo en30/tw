@@ -16,4 +16,6 @@ defmodule Tw.V1_1.Tweet do
   map_endpoint(:get, "/lists/statuses.json", to: of_list)
   map_endpoint(:get, "/statuses/lookup.json", to: list)
   map_endpoint(:get, "/statuses/retweets_of_me.json", to: retweets_of_me)
+  map_endpoint(:get, "/statuses/retweets/:id.json", to: retweets)
+  map_endpoint(:get, "/statuses/show/:id.json", to: find)
 end

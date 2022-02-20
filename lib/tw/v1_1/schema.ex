@@ -68,7 +68,7 @@ defmodule Tw.V1_1.Schema do
   end
 
   defp endpoint_schema_path(method, path) do
-    path = path |> String.replace("/", "_")
+    path = path |> String.replace("/", "_") |> String.replace(":", "")
     Path.join(["priv/schema/endpoint", to_string(method) <> path])
   end
 
