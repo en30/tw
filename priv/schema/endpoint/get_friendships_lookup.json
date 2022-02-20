@@ -8,7 +8,7 @@
       "example": "twitterapi twitter",
       "name": "screen_name",
       "required": false,
-      "type": "String"
+      "type": "Array of Strings"
     },
     {
       "default value": "",
@@ -16,7 +16,7 @@
       "example": "783214 6253282",
       "name": "user_id",
       "required": false,
-      "type": "Int"
+      "type": "Array of Int"
     }
   ],
   "type": "Array of Friendship Lookup Result Objects"

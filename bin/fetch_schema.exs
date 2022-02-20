@@ -388,6 +388,8 @@ defmodule Tw.V1_1.Schema do
   defp infer_type(_name, "true"), do: "Boolean"
   defp infer_type(_name, "false"), do: "Boolean"
   defp infer_type("count", _), do: "Int"
+  defp infer_type("screen_name", "twitterapi twitter"), do: "Array of Strings"
+  defp infer_type("user_id", "783214 6253282"), do: "Array of Int"
 
   defp infer_type(_name, example) do
     case Integer.parse(example) do
