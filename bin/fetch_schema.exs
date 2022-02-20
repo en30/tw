@@ -34,10 +34,15 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET blocks/ids"),
         # fetch_endpoint(endpoints, "GET mutes/users/ids"),
         # fetch_endpoint(endpoints, "GET statuses/retweeters/ids"),
-        fetch_endpoint(endpoints, "GET blocks/list"),
-        fetch_endpoint(endpoints, "GET mutes/users/list"),
-        fetch_endpoint(endpoints, "GET lists/members"),
-        fetch_endpoint(endpoints, "GET lists/subscribers"),
+        # fetch_endpoint(endpoints, "GET blocks/list"),
+        # fetch_endpoint(endpoints, "GET mutes/users/list"),
+        # fetch_endpoint(endpoints, "GET lists/members"),
+        # fetch_endpoint(endpoints, "GET lists/subscribers"),
+        fetch_endpoint(endpoints, "GET favorites/list"),
+        fetch_endpoint(endpoints, "GET lists/statuses"),
+        fetch_endpoint(endpoints, "GET statuses/lookup"),
+        fetch_endpoint(endpoints, "GET statuses/retweets_of_me"),
+
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -455,6 +460,7 @@ defmodule Tw.V1_1.Schema do
   defp infer_type("count", _), do: "Int"
   defp infer_type("screen_name", "twitterapi twitter"), do: "Array of Strings"
   defp infer_type("user_id", "783214 6253282"), do: "Array of Int"
+  defp infer_type("id", "20 1050118621198921728"), do: "Array of Int"
 
   defp infer_type(_name, example) do
     case Integer.parse(example) do
@@ -463,9 +469,17 @@ defmodule Tw.V1_1.Schema do
     end
   end
 
-  defp return_type("GET statuses/home_timeline"), do: "Array of Tweets"
-  defp return_type("GET statuses/user_timeline"), do: "Array of Tweets"
-  defp return_type("GET statuses/mentions_timeline"), do: "Array of Tweets"
+  defp return_type(endpoint) when endpoint in [
+    "GET statuses/home_timeline",
+    "GET statuses/user_timeline",
+    "GET statuses/mentions_timeline",
+    "GET favorites/list",
+    "GET lists/statuses",
+    "GET statuses/lookup",
+    "GET statuses/retweets_of_me",
+  ] do
+    "Array of Tweets"
+  end
   defp return_type("GET users/show"), do: "User object"
   defp return_type("GET users/lookup"), do: "Array of User objects"
   defp return_type("GET users/search"), do: "Array of User objects"
