@@ -1,0 +1,39 @@
+{
+  "description": "Returns detailed information about the relationship between two arbitrary users.",
+  "doc_url": "https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-show",
+  "parameters": [
+    {
+      "default value": "",
+      "description": "The user_id of the subject user.",
+      "example": "783214",
+      "name": "source_id",
+      "required": false,
+      "type": "Int"
+    },
+    {
+      "default value": "",
+      "description": "The screen_name of the subject user.",
+      "example": "Twitter",
+      "name": "source_screen_name",
+      "required": false,
+      "type": "String"
+    },
+    {
+      "default value": "",
+      "description": "The user_id of the target user.",
+      "example": "2244994945",
+      "name": "target_id",
+      "required": false,
+      "type": "Int"
+    },
+    {
+      "default value": "",
+      "description": "The screen_name of the target user.",
+      "example": "TwitterDev",
+      "name": "target_screen_name",
+      "required": false,
+      "type": "String"
+    }
+  ],
+  "type": "Friendship Relationship Object"
+}

@@ -151,6 +151,11 @@ defmodule Tw.V1_1.Schema do
   def to_ex_type(_name, "Search Result Object"), do: quote(do: Tw.V1_1.SearchResult.t())
   def to_ex_type(_name, "Search Metadata Object"), do: quote(do: Tw.V1_1.SearchMetadata.t())
   def to_ex_type(_name, "Friendship Lookup Result Object"), do: quote(do: Tw.V1_1.FriendshipLookupResult.t())
+  def to_ex_type(_name, "Friendship Source Object"), do: quote(do: Tw.V1_1.FriendshipSource.t())
+  def to_ex_type(_name, "Friendship Target Object"), do: quote(do: Tw.V1_1.FriendshipTarget.t())
+
+  def to_ex_type(_name, "Friendship Relationship Object"),
+    do: quote(do: %{relationship: %{source: Tw.V1_1.FriendshipSource.t(), target: Tw.V1_1.FriendshipTarget.t()}})
 
   def to_ex_type(_name, "Connection Enum"),
     do: quote(do: :following | :following_requested | :followed_by | :none | :blocking | :muting)
@@ -201,6 +206,8 @@ defmodule Tw.V1_1.Schema do
   def decode_field(json_value, _name, "User Entities"), do: Tw.V1_1.UserEntities.decode(json_value)
   def decode_field(json_value, _name, "Extended Entities"), do: Tw.V1_1.ExtendedEntities.decode(json_value)
   def decode_field(json_value, _name, "Search Metadata Object"), do: Tw.V1_1.SearchMetadata.decode(json_value)
+  def decode_field(json_value, _name, "Friendship Source Object"), do: Tw.V1_1.FriendshipSource.decode(json_value)
+  def decode_field(json_value, _name, "Friendship Target Object"), do: Tw.V1_1.FriendshipTarget.decode(json_value)
 
   def decode_field(json_value, _name, "Connection Enum"),
     do: Tw.V1_1.FriendshipLookupResult.decode_connection(json_value)
@@ -231,6 +238,14 @@ defmodule Tw.V1_1.Schema do
           String.to_existing_atom(unquote(k)),
           Tw.V1_1.Schema.decode_field(json[unquote(k)], unquote(k), unquote(v))
         )
+      end
+    end
+  end
+
+  defp decoder("Friendship Relationship Object") do
+    quote do
+      fn json ->
+        %{relationship: Tw.V1_1.Friendship.decode(json["relationship"])}
       end
     end
   end

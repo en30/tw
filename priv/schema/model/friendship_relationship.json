@@ -1,0 +1,14 @@
+[
+  {
+    "attribute": "source",
+    "nullable": false,
+    "required": true,
+    "type": "Friendship Source Object"
+  },
+  {
+    "attribute": "target",
+    "nullable": false,
+    "required": true,
+    "type": "Friendship Target Object"
+  }
+]

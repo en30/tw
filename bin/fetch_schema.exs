@@ -26,7 +26,8 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET friendships/incoming"),
         # fetch_endpoint(endpoints, "GET friendships/outgoing"),
         # fetch_endpoint(endpoints, "GET friendships/no_retweets/ids"),
-        fetch_endpoint(endpoints, "GET friendships/lookup"),
+        # fetch_endpoint(endpoints, "GET friendships/lookup"),
+        fetch_endpoint(endpoints, "GET friendships/show"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -229,6 +230,46 @@ defmodule Tw.V1_1.Schema do
       ]
       |> write_schema(to: "priv/schema/model/friendship_lookup_result.json")
     )
+    |> Kernel.++(
+      [
+        %{"attribute" => "source", "type" => "Friendship Source Object", "required" => true, "nullable" => false},
+        %{"attribute" => "target", "type" => "Friendship Target Object", "required" => true, "nullable" => false},
+      ]
+      |> write_schema(to: "priv/schema/model/friendship_relationship.json")
+    )
+    |> Kernel.++(
+      [
+        %{"attribute" => "id", "type" => "Int", "required" => true, "nullable" => false},
+        %{"attribute" => "id_str", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "screen_name", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "following", "type" => "Boolean", "required" => true, "nullable" => false},
+        %{"attribute" => "followed_by", "type" => "Boolean", "required" => true, "nullable" => false},
+        %{"attribute" => "live_following", "type" => "Boolean", "required" => true, "nullable" => false},
+        %{"attribute" => "following_received", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "following_requested", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "notifications_enabled", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "can_dm", "type" => "Boolean", "required" => true, "nullable" => false},
+        %{"attribute" => "blocking", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "blocked_by", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "muting", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "want_retweets", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "all_replies", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "marked_spam", "type" => "Boolean", "required" => true, "nullable" => true},
+      ]
+      |> write_schema(to: "priv/schema/model/friendship_source.json")
+    )
+    |> Kernel.++(
+      [
+        %{"attribute" => "id", "type" => "Int", "required" => true, "nullable" => false},
+        %{"attribute" => "id_str", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "screen_name", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "following", "type" => "Boolean", "required" => true, "nullable" => false},
+        %{"attribute" => "followed_by", "type" => "Boolean", "required" => true, "nullable" => false},
+        %{"attribute" => "following_received", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "following_requested", "type" => "Boolean", "required" => true, "nullable" => true},
+      ]
+      |> write_schema(to: "priv/schema/model/friendship_target.json")
+    )
   end
 
   defp write_schema(schema, to: path) do
@@ -408,6 +449,7 @@ defmodule Tw.V1_1.Schema do
   defp return_type("GET friends/list"), do: "Cursored Result Object with users Array of User objects"
   defp return_type("GET friendships/no_retweets/ids"), do: "Array of Int"
   defp return_type("GET friendships/lookup"), do: "Array of Friendship Lookup Result Objects"
+  defp return_type("GET friendships/show"), do: "Friendship Relationship Object"
 end
 
 Tw.V1_1.Schema.fetch()

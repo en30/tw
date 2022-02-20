@@ -1,0 +1,44 @@
+[
+  {
+    "attribute": "id",
+    "nullable": false,
+    "required": true,
+    "type": "Int"
+  },
+  {
+    "attribute": "id_str",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  },
+  {
+    "attribute": "screen_name",
+    "nullable": false,
+    "required": true,
+    "type": "String"
+  },
+  {
+    "attribute": "following",
+    "nullable": false,
+    "required": true,
+    "type": "Boolean"
+  },
+  {
+    "attribute": "followed_by",
+    "nullable": false,
+    "required": true,
+    "type": "Boolean"
+  },
+  {
+    "attribute": "following_received",
+    "nullable": true,
+    "required": true,
+    "type": "Boolean"
+  },
+  {
+    "attribute": "following_requested",
+    "nullable": true,
+    "required": true,
+    "type": "Boolean"
+  }
+]
