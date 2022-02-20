@@ -31,4 +31,5 @@ tw-*.tar
 .elixir_ls
 
 .iex.exs
+bin/exec
 
