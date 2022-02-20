@@ -31,9 +31,13 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET users/lookup"),
         # fetch_endpoint(endpoints, "GET users/search"),
         # fetch_endpoint(endpoints, "GET account/verify_credentials"),
-        fetch_endpoint(endpoints, "GET blocks/ids"),
-        fetch_endpoint(endpoints, "GET mutes/users/ids"),
-        fetch_endpoint(endpoints, "GET statuses/retweeters/ids"),
+        # fetch_endpoint(endpoints, "GET blocks/ids"),
+        # fetch_endpoint(endpoints, "GET mutes/users/ids"),
+        # fetch_endpoint(endpoints, "GET statuses/retweeters/ids"),
+        fetch_endpoint(endpoints, "GET blocks/list"),
+        fetch_endpoint(endpoints, "GET mutes/users/list"),
+        fetch_endpoint(endpoints, "GET lists/members"),
+        fetch_endpoint(endpoints, "GET lists/subscribers"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -412,6 +416,7 @@ defmodule Tw.V1_1.Schema do
             "required" -> true
             "optional" -> false
             "semi-optional" -> false
+            _ -> false
           end)
         end)
 
@@ -476,8 +481,16 @@ defmodule Tw.V1_1.Schema do
   ] do
     "Cursored Result Object with ids Array of Int"
   end
-  defp return_type("GET followers/list"), do: "Cursored Result Object with users Array of User objects"
-  defp return_type("GET friends/list"), do: "Cursored Result Object with users Array of User objects"
+  defp return_type(endpoint) when endpoint in [
+    "GET followers/list",
+    "GET friends/list",
+    "GET blocks/list",
+    "GET mutes/users/list",
+    "GET lists/members",
+    "GET lists/subscribers",
+  ] do
+    "Cursored Result Object with users Array of User objects"
+  end
   defp return_type("GET friendships/no_retweets/ids"), do: "Array of Int"
   defp return_type("GET friendships/lookup"), do: "Array of Friendship Lookup Result Objects"
   defp return_type("GET friendships/show"), do: "Friendship Relationship Object"
