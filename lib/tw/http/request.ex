@@ -20,6 +20,16 @@ defmodule Tw.HTTP.Request do
     }
   end
 
+  @spec new(atom, URI.t(), list({binary, binary}), binary) :: t
+  def new(method, uri, headers, body) do
+    %__MODULE__{
+      method: method,
+      uri: uri,
+      headers: headers,
+      body: body
+    }
+  end
+
   @spec add_header(t, binary, binary) :: t
   def add_header(%__MODULE__{headers: headers} = request, key, value) do
     %{request | headers: [{key, value} | headers]}

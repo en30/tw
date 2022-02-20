@@ -45,9 +45,10 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET statuses/retweets/:id"),
         # fetch_endpoint(endpoints, "GET statuses/show/:id"),
         # fetch_oembed_endpoint(endpoints, "GET statuses/oembed"),
-        fetch_endpoint(endpoints, "GET trends/closest"),
-        fetch_endpoint(endpoints, "GET trends/available"),
-        fetch_endpoint(endpoints, "GET trends/place"),
+        # fetch_endpoint(endpoints, "GET trends/closest"),
+        # fetch_endpoint(endpoints, "GET trends/available"),
+        # fetch_endpoint(endpoints, "GET trends/place"),
+        fetch_endpoint(endpoints, "POST statuses/update"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -578,6 +579,7 @@ defmodule Tw.V1_1.Schema do
   defp return_type("GET account/verify_credentials"), do: "Me Object"
   defp return_type(endpoint) when endpoint in [
     "GET statuses/show/:id",
+    "POST statuses/update",
   ] do
     "Tweet"
   end

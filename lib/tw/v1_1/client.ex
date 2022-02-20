@@ -20,18 +20,9 @@ defmodule Tw.V1_1.Client do
   def new(opts), do: struct!(__MODULE__, opts)
 
   @spec request(t, atom, binary, keyword) :: {:ok, HTTP.Response.t()} | {:error, TwitterAPIError.t()}
-  def request(client, method, path, query_params \\ []) do
-    {path, query_params} = embed_path_params(path, query_params)
-
-    uri =
-      @base_uri
-      |> URI.merge(%URI{
-        path: Path.join(@base_uri.path, path),
-        query: encode_query_params(query_params)
-      })
-
+  def request(client, method, path, params \\ []) do
     req =
-      HTTP.Request.new(method, uri)
+      build(method, path, params)
       |> sign(client.credentials)
 
     case HTTP.Client.request(client.http_client, req, []) do
@@ -44,6 +35,36 @@ defmodule Tw.V1_1.Client do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp build(:get, path, params) do
+    {path, params} = embed_path_params(path, params)
+
+    uri =
+      @base_uri
+      |> URI.merge(%URI{
+        path: Path.join(@base_uri.path, path),
+        query: encode_query_params(params)
+      })
+
+    HTTP.Request.new(:get, uri)
+  end
+
+  defp build(method, path, params) do
+    {path, params} = embed_path_params(path, params)
+
+    uri =
+      @base_uri
+      |> URI.merge(%URI{
+        path: Path.join(@base_uri.path, path)
+      })
+
+    HTTP.Request.new(
+      method,
+      uri,
+      [{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"}],
+      URI.encode_query(params, :www_form)
+    )
   end
 
   defp sign(%HTTP.Request{} = request, credentials) do
