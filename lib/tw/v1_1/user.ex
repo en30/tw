@@ -8,6 +8,7 @@ defmodule Tw.V1_1.User do
 
   defobject("priv/schema/model/user.json")
 
+  map_endpoint(:get, "/account/verify_credentials.json", to: me)
   map_endpoint(:get, "/users/show.json", to: find)
   map_endpoint(:get, "/users/lookup.json", to: list)
   map_endpoint(:get, "/users/search.json", to: search)

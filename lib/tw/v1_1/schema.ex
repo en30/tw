@@ -131,6 +131,7 @@ defmodule Tw.V1_1.Schema do
   def to_ex_type(_name, "Boolean"), do: quote(do: boolean)
   def to_ex_type(_name, "Float"), do: quote(do: float)
   def to_ex_type(_name, "User object"), do: quote(do: Tw.V1_1.User.t())
+  def to_ex_type(_name, "Me Object"), do: quote(do: Tw.V1_1.Me.t())
   def to_ex_type(_name, "Tweet"), do: quote(do: Tw.V1_1.Tweet.t())
   def to_ex_type(_name, "Object"), do: quote(do: map)
   def to_ex_type(_name, "Array of String"), do: quote(do: list(binary))
@@ -220,6 +221,7 @@ defmodule Tw.V1_1.Schema do
 
   defp decoder("Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode/1)
   defp decoder("User object"), do: quote(do: &Tw.V1_1.User.decode/1)
+  defp decoder("Me Object"), do: quote(do: &Tw.V1_1.Me.decode/1)
   defp decoder("Search Result Object"), do: quote(do: &Tw.V1_1.SearchResult.decode/1)
   defp decoder("Friendship Lookup Result Object"), do: quote(do: &Tw.V1_1.FriendshipLookupResult.decode/1)
 

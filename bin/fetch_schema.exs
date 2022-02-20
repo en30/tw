@@ -11,7 +11,7 @@ defmodule Tw.V1_1.Schema do
       [
         &generate_endpoint_result_objects/0,
         # &fetch_tweet_object/0,
-        # &fetch_user_object/0,
+        &fetch_user_object/0,
         # &fetch_geo_objects/0,
         # &fetch_entities_objects/0,
         # fetch_endpoint(endpoints, "GET statuses/home_timeline"),
@@ -28,8 +28,9 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "GET friendships/no_retweets/ids"),
         # fetch_endpoint(endpoints, "GET friendships/lookup"),
         # fetch_endpoint(endpoints, "GET friendships/show"),
-        fetch_endpoint(endpoints, "GET users/lookup"),
-        fetch_endpoint(endpoints, "GET users/search"),
+        # fetch_endpoint(endpoints, "GET users/lookup"),
+        # fetch_endpoint(endpoints, "GET users/search"),
+        fetch_endpoint(endpoints, "GET account/verify_credentials"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
@@ -87,6 +88,19 @@ defmodule Tw.V1_1.Schema do
         %{"attribute" => "entities", "type" => "User Entities", "required" => true, "nullable" => false}
       ])
       |> write_schema(to: "priv/schema/model/user.json")
+    )
+    |> Kernel.++(
+      # https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-verify_credentials
+      ts["User Data Dictionary"]
+      |> Enum.map(&Map.put(&1, "required", true))
+      |> Enum.map(&put_nullable/1)
+      |> Kernel.++([
+        %{"attribute" => "entities", "type" => "User Entities", "required" => true, "nullable" => false},
+        %{"attribute" => "show_all_inline_media", "type" => "Boolean", "required" => true, "nullable" => false},
+        %{"attribute" => "status", "type" => "Tweet", "required" => true, "nullable" => true},
+        %{"attribute" => "email", "type" => "String", "required" => false, "nullable" => true},
+      ])
+      |> write_schema(to: "priv/schema/model/me.json")
     )
     |> Kernel.++(
       # undocumented object
@@ -454,6 +468,7 @@ defmodule Tw.V1_1.Schema do
   defp return_type("GET friendships/no_retweets/ids"), do: "Array of Int"
   defp return_type("GET friendships/lookup"), do: "Array of Friendship Lookup Result Objects"
   defp return_type("GET friendships/show"), do: "Friendship Relationship Object"
+  defp return_type("GET account/verify_credentials"), do: "Me Object"
 end
 
 Tw.V1_1.Schema.fetch()
