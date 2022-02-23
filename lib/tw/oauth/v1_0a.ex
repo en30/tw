@@ -1,16 +1,10 @@
 defmodule Tw.OAuth.V1_0a do
   @moduledoc false
 
+  alias Tw.HTTP
   alias Tw.OAuth.V1_0a.Credentials
 
   # Based on https://developer.twitter.com/en/docs/authentication/oauth-1-0a/creating-a-signature
-
-  @type request :: %{
-          optional(atom) => any,
-          optional(:body) => binary,
-          method: atom,
-          uri: URI.t()
-        }
 
   @typep params :: list({binary, binary})
 
@@ -30,7 +24,7 @@ defmodule Tw.OAuth.V1_0a do
     "OAuth " <> dst
   end
 
-  @spec signature(request, Credentials.t(), params) :: binary
+  @spec signature(HTTP.Request.t(), Credentials.t(), params) :: binary
   def signature(request, credentials, oauth_params) do
     parameter_string = parameter_string(request, oauth_params)
     signature_base_string = signature_base_string(request, parameter_string)
@@ -38,20 +32,16 @@ defmodule Tw.OAuth.V1_0a do
     :crypto.mac(:hmac, :sha, signing_key(credentials), signature_base_string)
   end
 
-  @spec parameter_string(request, params) :: binary
+  @spec parameter_string(HTTP.Request.t(), params) :: binary
   def parameter_string(request, oauth_params) do
     body_params =
-      case request.body do
-        nil ->
-          []
-
-        "" ->
-          []
-
-        body ->
-          body
-          |> URI.query_decoder(:www_form)
-          |> Enum.to_list()
+      with ["application/x-www-form-urlencoded" <> _] <- HTTP.Request.get_header(request, "content-type"),
+           body when not is_nil(body) and body != "" <- request.body do
+        body
+        |> URI.query_decoder(:www_form)
+        |> Enum.to_list()
+      else
+        _ -> []
       end
 
     query_params =
@@ -75,7 +65,7 @@ defmodule Tw.OAuth.V1_0a do
     |> Enum.map_join("&", fn {k, v} -> "#{k}=#{v}" end)
   end
 
-  @spec signature_base_string(request, binary) :: binary
+  @spec signature_base_string(HTTP.Request.t(), binary) :: binary
   def signature_base_string(request, parameter_string) do
     [
       request.method |> to_string() |> String.upcase(),

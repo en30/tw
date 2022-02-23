@@ -22,16 +22,30 @@ defmodule Tw.HTTP.Request do
 
   @spec new(atom, URI.t(), list({binary, binary}), binary) :: t
   def new(method, uri, headers, body) do
-    %__MODULE__{
+    base = %__MODULE__{
       method: method,
       uri: uri,
-      headers: headers,
+      headers: [],
       body: body
     }
+
+    headers
+    |> Enum.reduce(base, fn {k, v}, a -> add_header(a, k, v) end)
   end
 
   @spec add_header(t, binary, binary) :: t
   def add_header(%__MODULE__{headers: headers} = request, key, value) do
-    %{request | headers: [{key, value} | headers]}
+    %{request | headers: [{String.downcase(key), value} | headers]}
+  end
+
+  @spec get_header(t, binary) :: list(binary())
+  @doc false
+  def get_header(%__MODULE__{} = request, key) do
+    request.headers
+    |> Enum.reduce([], fn
+      {^key, value}, a -> [value | a]
+      _, a -> a
+    end)
+    |> Enum.reverse()
   end
 end
