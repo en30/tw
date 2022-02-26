@@ -42,6 +42,7 @@ defmodule Tw.V1_1.Schema do
           | :"pt-BR"
           | :pt
 
+  @doc false
   defmacro defobject(schema_file) do
     schema =
       File.read!(schema_file)
@@ -53,9 +54,10 @@ defmodule Tw.V1_1.Schema do
       @enforce_keys unquote(required_fields(schema))
       defstruct unquote(fields(schema))
 
+      @typedoc """
+      #{unquote(schema |> field_type_table() |> cite())}
+      """
       @type t :: %__MODULE__{unquote_splicing(struct_field_types(schema))}
-
-      unquote_splicing(field_type_defs(schema))
 
       @spec decode(map) :: t
       @doc """
@@ -67,6 +69,7 @@ defmodule Tw.V1_1.Schema do
     end
   end
 
+  @doc false
   defmacro map_endpoint(method, path, to: {fn_name, _meta, nil}) do
     schema_file = endpoint_schema_path(method, path)
 
@@ -83,8 +86,14 @@ defmodule Tw.V1_1.Schema do
     quote do
       @external_resource unquote(schema_file)
 
-      @type unquote({params_type_name, [], Elixir}) :: unquote(params_type(params_type_name, schema))
-      unquote_splicing(params_type_defs(params_type_name, schema))
+      @typedoc """
+      Parameters for `#{unquote(fn_name)}/3`.
+
+      #{unquote(cite(params_type_table(schema)))}
+
+      See [the Twitter API documentation](#{unquote(schema["doc_url"])}) for details.
+      """
+      @type unquote({params_type_name, [], Elixir}) :: unquote(params_type(schema))
 
       @spec unquote(fn_name)(Tw.V1_1.Client.t(), unquote({params_type_name, [], Elixir}), Tw.HTTP.Client.options()) ::
               {:ok, unquote(type)} | {:error, Tw.V1_1.TwitterAPIError.t() | Jason.DecodeError.t()}
@@ -129,15 +138,25 @@ defmodule Tw.V1_1.Schema do
     end)
   end
 
-  defp field_type_defs(schema) do
-    schema
-    |> Enum.map(fn e ->
-      quote do
-        @typedoc unquote(format_description(e))
-        @type unquote({String.to_atom(e["attribute"]), [], Elixir}) ::
-                unquote(to_ex_type(e["attribute"], e["type"], e["nullable"] || !e["required"]))
-      end
-    end)
+  defp field_type_table(schema) do
+    rows =
+      schema
+      |> Enum.map(fn e ->
+        [
+          "| `",
+          e["attribute"],
+          "` | ",
+          (format_description(e) || " - ") |> String.replace("\n", " "),
+          " |\n"
+        ]
+      end)
+
+    [
+      "| field | description |\n",
+      "| - | - |\n"
+      | rows
+    ]
+    |> IO.iodata_to_binary()
   end
 
   defp decode_fields(schema) do
@@ -156,53 +175,55 @@ defmodule Tw.V1_1.Schema do
     end)
   end
 
-  def to_ex_type("created_at", "String"), do: quote(do: DateTime.t())
-  def to_ex_type("bounding_box", "Object"), do: quote(do: Tw.V1_1.BoundingBox.t())
-  def to_ex_type(name, "Array of " <> t), do: quote(do: list(unquote(to_ex_type(name, t |> String.trim_trailing("s")))))
+  defp to_ex_type("created_at", "String"), do: quote(do: DateTime.t())
+  defp to_ex_type("bounding_box", "Object"), do: quote(do: Tw.V1_1.BoundingBox.t())
 
-  def to_ex_type(name, "Collection of " <> t),
+  defp to_ex_type(name, "Array of " <> t),
     do: quote(do: list(unquote(to_ex_type(name, t |> String.trim_trailing("s")))))
 
-  def to_ex_type(_name, "String"), do: quote(do: binary)
-  def to_ex_type(_name, "Int64"), do: quote(do: integer)
-  def to_ex_type(_name, "Integer"), do: quote(do: integer)
-  def to_ex_type(_name, "Int"), do: quote(do: integer)
-  def to_ex_type(_name, "Boolean"), do: quote(do: boolean)
-  def to_ex_type(_name, "Float"), do: quote(do: float)
-  def to_ex_type(_name, "User object"), do: quote(do: Tw.V1_1.User.t())
-  def to_ex_type(_name, "Me Object"), do: quote(do: Tw.V1_1.Me.t())
-  def to_ex_type(_name, "Tweet"), do: quote(do: Tw.V1_1.Tweet.t())
-  def to_ex_type(_name, "Object"), do: quote(do: map)
-  def to_ex_type(_name, "Array of String"), do: quote(do: list(binary))
-  def to_ex_type(_name, "Coordinates"), do: quote(do: Tw.V1_1.Coordinates.t())
-  def to_ex_type(_name, "Places"), do: quote(do: Tw.V1_1.Place.t())
-  def to_ex_type(_name, "Entities"), do: quote(do: Tw.V1_1.Entities.t())
-  def to_ex_type(_name, "Hashtag Object"), do: quote(do: Tw.V1_1.Hashtag.t())
-  def to_ex_type(_name, "Media Object"), do: quote(do: Tw.V1_1.Media.t())
-  def to_ex_type(_name, "URL Object"), do: quote(do: Tw.V1_1.URL.t())
-  def to_ex_type(_name, "User Mention Object"), do: quote(do: Tw.V1_1.UserMention.t())
-  def to_ex_type(_name, "Symbol Object"), do: quote(do: Tw.V1_1.Symbol.t())
-  def to_ex_type(_name, "Poll Object"), do: quote(do: Tw.V1_1.Poll.t())
-  def to_ex_type("sizes", "Size Object"), do: quote(do: Tw.V1_1.Sizes.t())
-  def to_ex_type(_name, "Size Object"), do: quote(do: Tw.V1_1.Size.t())
-  def to_ex_type(_name, "Option Object"), do: quote(do: map)
-  def to_ex_type(_name, "User Entities"), do: quote(do: Tw.V1_1.UserEntities.t())
-  def to_ex_type(_name, "Extended Entities"), do: quote(do: Tw.V1_1.ExtendedEntities.t())
-  def to_ex_type(_name, "Search Result Object"), do: quote(do: Tw.V1_1.SearchResult.t())
-  def to_ex_type(_name, "Search Metadata Object"), do: quote(do: Tw.V1_1.SearchMetadata.t())
-  def to_ex_type(_name, "Friendship Lookup Result Object"), do: quote(do: Tw.V1_1.FriendshipLookupResult.t())
-  def to_ex_type(_name, "Friendship Source Object"), do: quote(do: Tw.V1_1.FriendshipSource.t())
-  def to_ex_type(_name, "Friendship Target Object"), do: quote(do: Tw.V1_1.FriendshipTarget.t())
-  def to_ex_type("maxwidth", "Int [220..550]"), do: quote(do: pos_integer)
-  def to_ex_type(_name, "Boolean, String or Int"), do: quote(do: boolean)
-  def to_ex_type(_name, "Enum {left,right,center,none}"), do: quote(do: :left | :right | :center | :none)
-  def to_ex_type(_name, "Enum(Language)"), do: quote(do: Tw.V1_1.Schema.language())
-  def to_ex_type(_name, "Enum {light, dark}"), do: quote(do: :light | :dark)
-  def to_ex_type(_name, "Enum {video}"), do: quote(do: :video)
-  def to_ex_type(_name, "Place Type Object"), do: quote(do: %{code: non_neg_integer, name: binary})
-  def to_ex_type(_name, "Trend Location Object"), do: quote(do: Tw.V1_1.TrendLocation.t())
+  defp to_ex_type(name, "Collection of " <> t),
+    do: quote(do: list(unquote(to_ex_type(name, t |> String.trim_trailing("s")))))
 
-  def to_ex_type(_name, "Trends Object"),
+  defp to_ex_type(_name, "String"), do: quote(do: binary)
+  defp to_ex_type(_name, "Int64"), do: quote(do: integer)
+  defp to_ex_type(_name, "Integer"), do: quote(do: integer)
+  defp to_ex_type(_name, "Int"), do: quote(do: integer)
+  defp to_ex_type(_name, "Boolean"), do: quote(do: boolean)
+  defp to_ex_type(_name, "Float"), do: quote(do: float)
+  defp to_ex_type(_name, "User object"), do: quote(do: Tw.V1_1.User.t())
+  defp to_ex_type(_name, "Me Object"), do: quote(do: Tw.V1_1.Me.t())
+  defp to_ex_type(_name, "Tweet"), do: quote(do: Tw.V1_1.Tweet.t())
+  defp to_ex_type(_name, "Object"), do: quote(do: map)
+  defp to_ex_type(_name, "Array of String"), do: quote(do: list(binary))
+  defp to_ex_type(_name, "Coordinates"), do: quote(do: Tw.V1_1.Coordinates.t())
+  defp to_ex_type(_name, "Places"), do: quote(do: Tw.V1_1.Place.t())
+  defp to_ex_type(_name, "Entities"), do: quote(do: Tw.V1_1.Entities.t())
+  defp to_ex_type(_name, "Hashtag Object"), do: quote(do: Tw.V1_1.Hashtag.t())
+  defp to_ex_type(_name, "Media Object"), do: quote(do: Tw.V1_1.Media.t())
+  defp to_ex_type(_name, "URL Object"), do: quote(do: Tw.V1_1.URL.t())
+  defp to_ex_type(_name, "User Mention Object"), do: quote(do: Tw.V1_1.UserMention.t())
+  defp to_ex_type(_name, "Symbol Object"), do: quote(do: Tw.V1_1.Symbol.t())
+  defp to_ex_type(_name, "Poll Object"), do: quote(do: Tw.V1_1.Poll.t())
+  defp to_ex_type("sizes", "Size Object"), do: quote(do: Tw.V1_1.Sizes.t())
+  defp to_ex_type(_name, "Size Object"), do: quote(do: Tw.V1_1.Size.t())
+  defp to_ex_type(_name, "Option Object"), do: quote(do: map)
+  defp to_ex_type(_name, "User Entities"), do: quote(do: Tw.V1_1.UserEntities.t())
+  defp to_ex_type(_name, "Extended Entities"), do: quote(do: Tw.V1_1.ExtendedEntities.t())
+  defp to_ex_type(_name, "Search Result Object"), do: quote(do: Tw.V1_1.SearchResult.t())
+  defp to_ex_type(_name, "Search Metadata Object"), do: quote(do: Tw.V1_1.SearchMetadata.t())
+  defp to_ex_type(_name, "Friendship Lookup Result Object"), do: quote(do: Tw.V1_1.FriendshipLookupResult.t())
+  defp to_ex_type(_name, "Friendship Source Object"), do: quote(do: Tw.V1_1.FriendshipSource.t())
+  defp to_ex_type(_name, "Friendship Target Object"), do: quote(do: Tw.V1_1.FriendshipTarget.t())
+  defp to_ex_type("maxwidth", "Int [220..550]"), do: quote(do: pos_integer)
+  defp to_ex_type(_name, "Boolean, String or Int"), do: quote(do: boolean)
+  defp to_ex_type(_name, "Enum {left,right,center,none}"), do: quote(do: :left | :right | :center | :none)
+  defp to_ex_type(_name, "Enum(Language)"), do: quote(do: Tw.V1_1.Schema.language())
+  defp to_ex_type(_name, "Enum {light, dark}"), do: quote(do: :light | :dark)
+  defp to_ex_type(_name, "Enum {video}"), do: quote(do: :video)
+  defp to_ex_type(_name, "Place Type Object"), do: quote(do: %{code: non_neg_integer, name: binary})
+  defp to_ex_type(_name, "Trend Location Object"), do: quote(do: Tw.V1_1.TrendLocation.t())
+
+  defp to_ex_type(_name, "Trends Object"),
     do:
       quote(
         do: %{
@@ -213,7 +234,7 @@ defmodule Tw.V1_1.Schema do
         }
       )
 
-  def to_ex_type(_name, "oEmbed Object"),
+  defp to_ex_type(_name, "oEmbed Object"),
     do:
       quote(
         do: %{
@@ -231,13 +252,13 @@ defmodule Tw.V1_1.Schema do
         }
       )
 
-  def to_ex_type(_name, "Friendship Relationship Object"),
+  defp to_ex_type(_name, "Friendship Relationship Object"),
     do: quote(do: %{relationship: %{source: Tw.V1_1.FriendshipSource.t(), target: Tw.V1_1.FriendshipTarget.t()}})
 
-  def to_ex_type(_name, "Connection Enum"),
+  defp to_ex_type(_name, "Connection Enum"),
     do: quote(do: :following | :following_requested | :followed_by | :none | :blocking | :muting)
 
-  def to_ex_type(_name, "Cursored Result Object with " <> kv) do
+  defp to_ex_type(_name, "Cursored Result Object with " <> kv) do
     [k, v] = String.split(kv, " ", parts: 2)
 
     quote do
@@ -246,8 +267,8 @@ defmodule Tw.V1_1.Schema do
   end
 
   # TODO
-  def to_ex_type(_name, "Rule Object"), do: quote(do: map)
-  def to_ex_type(_name, "Arrays of Enrichment Objects"), do: quote(do: list(map))
+  defp to_ex_type(_name, "Rule Object"), do: quote(do: map)
+  defp to_ex_type(_name, "Arrays of Enrichment Objects"), do: quote(do: list(map))
 
   defp to_ex_type(name, type, false), do: to_ex_type(name, type)
 
@@ -257,6 +278,7 @@ defmodule Tw.V1_1.Schema do
     end
   end
 
+  @doc false
   def decode_field(json_value, name, twitter_type)
 
   def decode_field(nil, _name, _twitter_type), do: nil
@@ -359,11 +381,12 @@ defmodule Tw.V1_1.Schema do
   @spec decode_twitter_datetime!(binary) :: DateTime.t()
   @doc """
   Decode Twitter's datetime format into DateTime.
-  iex> Schema.decode_twitter_datetime!("Sun Feb 13 00:28:45 +0000 2022")
-  ~U[2022-02-13 00:28:45Z]
 
-  iex> Schema.decode_twitter_datetime!("a")
-  ** (RuntimeError) Parsing datetime failed: a
+      iex> Schema.decode_twitter_datetime!("Sun Feb 13 00:28:45 +0000 2022")
+      ~U[2022-02-13 00:28:45Z]
+
+      iex> Schema.decode_twitter_datetime!("a")
+      ** (RuntimeError) Parsing datetime failed: a
   """
   def decode_twitter_datetime!(str) do
     with <<_day_of_week::binary-size(4), rest::binary>> <- str,
@@ -419,33 +442,37 @@ defmodule Tw.V1_1.Schema do
     |> elem(1)
   end
 
-  defp params_type(params_type_name, schema) do
+  defp params_type(schema) do
     kvs =
       schema["parameters"]
       |> Enum.map(fn
-        %{"name" => name, "required" => true} ->
-          {{:required, [], [String.to_atom(name)]}, {:"#{params_type_name}_#{name}", [], Elixir}}
+        %{"name" => name, "type" => type, "required" => true} ->
+          {{:required, [], [String.to_atom(name)]}, to_ex_type(name, type, false)}
 
-        %{"name" => name} ->
-          {{:optional, [], [String.to_atom(name)]}, {:"#{params_type_name}_#{name}", [], Elixir}}
+        %{"name" => name, "type" => type} ->
+          {{:optional, [], [String.to_atom(name)]}, to_ex_type(name, type, false)}
       end)
 
     {:%{}, [], kvs}
   end
 
-  def params_type_defs(params_type_name, schema) do
-    schema["parameters"]
-    |> Enum.map(fn
-      %{"name" => name, "description" => description, "required" => _, "type" => type} ->
-        quote do
-          @typedoc unquote(description)
-          @type unquote({:"#{params_type_name}_#{name}", [], Elixir}) ::
-                  unquote(to_ex_type(name, type, false))
-        end
-    end)
+  defp params_type_table(schema) do
+    rows =
+      schema["parameters"]
+      |> Enum.map(fn
+        %{"name" => name, "description" => description} ->
+          ["|", name, " | ", description, " | \n"]
+      end)
+
+    [
+      "| name | description |\n",
+      "| - | - |\n"
+      | rows
+    ]
+    |> IO.iodata_to_binary()
   end
 
-  def cite(text) do
+  defp cite(text) do
     "> " <> String.replace(text, "\n", "\n> ")
   end
 end

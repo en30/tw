@@ -6,6 +6,8 @@ defmodule Tw.V1_1.User do
 
   import Tw.V1_1.Schema, only: :macros
 
+  @type id :: pos_integer()
+
   defobject("priv/schema/model/user.json")
 
   map_endpoint(:get, "/account/verify_credentials.json", to: me)

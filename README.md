@@ -31,7 +31,7 @@ client = Tw.V1_1.Client.new(
   http_client: Tw.HTTP.Client.Hackney, # or another module which implements Tw.HTTP.Client
   credentials: credentials,
 )
-Tw.V1_1.Tweet.home_timeline(client, count: 10)
+Tw.V1_1.Tweet.home_timeline(client, %{count: 10})
 ```
 
 If you want to use an endpoint which is not implemented by this client, you can use low-level API.

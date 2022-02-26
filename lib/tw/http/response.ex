@@ -1,5 +1,7 @@
 defmodule Tw.HTTP.Response do
-  @moduledoc false
+  @moduledoc """
+  HTTP response data structure.
+  """
 
   defstruct [:status, :headers, :body]
 
