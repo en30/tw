@@ -40,10 +40,6 @@ defmodule Tw.V1_1.Client do
 
   defp build(method, path, params)
 
-  defp build(:post, "/media/metadata/" <> _ = path, params), do: post_json_request(@media_base_uri, path, params)
-  defp build(:post, "/media/subtitles/" <> _ = path, params), do: post_json_request(@media_base_uri, path, params)
-  defp build(:post, "/media/upload" <> _ = path, params), do: post_multi_part_request(@media_base_uri, path, params)
-
   defp build(:get, path, params) do
     {path, params} = embed_path_params(path, params)
     base_uri = base_uri(path)
@@ -60,55 +56,42 @@ defmodule Tw.V1_1.Client do
 
   defp build(method, path, params) do
     {path, params} = embed_path_params(path, params)
+    base_uri = base_uri(path)
 
     uri =
-      @base_uri
+      base_uri
       |> URI.merge(%URI{
-        path: Path.join(@base_uri.path, path)
+        path: Path.join(base_uri.path, path)
       })
+
+    {content_type, body} = encode_body(method, path, params)
 
     HTTP.Request.new(
       method,
       uri,
-      [{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"}],
-      params |> Enum.map(&to_binary_value/1) |> URI.encode_query(:www_form)
+      [{"content-type", content_type}],
+      body
     )
   end
 
-  defp post_multi_part_request(base_uri, path, params) do
-    {path, params} = embed_path_params(path, params)
+  defp encode_body(method, path, params)
+  defp encode_body(:post, "/media/metadata/" <> _, params), do: encode_json_params(params)
+  defp encode_body(:post, "/media/subtitles/" <> _, params), do: encode_json_params(params)
 
-    uri =
-      base_uri
-      |> URI.merge(%URI{
-        path: Path.join(base_uri.path, path)
-      })
-
+  defp encode_body(:post, "/media/upload" <> _, params) do
     mp = HTTP.MultipartFormData.new(parts: params |> Enum.map(fn {k, v} -> to_binary_value({to_string(k), v}) end))
-
-    HTTP.Request.new(
-      :post,
-      uri,
-      [{"content-type", HTTP.MultipartFormData.content_type(mp)}],
-      HTTP.MultipartFormData.encode(mp)
-    )
+    {HTTP.MultipartFormData.content_type(mp), HTTP.MultipartFormData.encode(mp)}
   end
 
-  defp post_json_request(base_uri, path, params) do
-    {path, params} = embed_path_params(path, params)
+  defp encode_body(_method, _path, params) do
+    {
+      "application/x-www-form-urlencoded; charset=UTF-8",
+      params |> Enum.map(&to_binary_value/1) |> URI.encode_query(:www_form)
+    }
+  end
 
-    uri =
-      base_uri
-      |> URI.merge(%URI{
-        path: Path.join(base_uri.path, path)
-      })
-
-    HTTP.Request.new(
-      :post,
-      uri,
-      [{"content-type", "application/json; charset=UTF-8"}],
-      params |> Map.new() |> Jason.encode!()
-    )
+  defp encode_json_params(params) do
+    {"application/json; charset=UTF-8", params |> Map.new() |> Jason.encode!()}
   end
 
   defp sign(%HTTP.Request{} = request, credentials) do
