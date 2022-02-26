@@ -8,12 +8,12 @@ defmodule Tw.V1_1.SearchResult do
 
   defobject("priv/schema/model/search_result.json")
 
-  @spec next_params(t) :: list(Tw.V1_1.Tweet.search_param())
+  @spec next_params(t) :: Tw.V1_1.Tweet.search_params()
   @doc """
   Returns the next search params from a search result.
 
   ```
-  {:ok, res} = Tw.V1_1.Tweet.search(client, q: "twitter")
+  {:ok, res} = Tw.V1_1.Tweet.search(client, %{q: "twitter"})
   next_params = Tw.V1_1.SearchResult.next_params(res)
   {:ok, next_res} = Tw.V1_1.Tweet.search(client, next_params)
   ```
@@ -23,5 +23,6 @@ defmodule Tw.V1_1.SearchResult do
     |> String.trim_leading("?")
     |> URI.decode_query()
     |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
+    |> Map.new()
   end
 end

@@ -20,13 +20,15 @@ defmodule Tw.HTTP.Client do
 
   @type result :: {:ok, response()} | {:error, Exception.t()}
 
+  @type options :: keyword()
+
   @doc """
   Callback to make an HTTP request.
   """
-  @callback request(method(), url(), [header()], body(), opts :: keyword()) :: result
+  @callback request(method(), url(), [header()], body(), options()) :: result
 
   @doc false
-  @spec request(atom, Request.t(), keyword) :: {:ok, Response.t()} | {:error, Exception.t()}
+  @spec request(atom, Request.t(), options()) :: {:ok, Response.t()} | {:error, Exception.t()}
   def request(module, request, opts) do
     case module.request(
            request.method,

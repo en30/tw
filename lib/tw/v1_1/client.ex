@@ -20,13 +20,14 @@ defmodule Tw.V1_1.Client do
   @spec new(keyword) :: t
   def new(opts), do: struct!(__MODULE__, opts)
 
-  @spec request(t, atom, binary, keyword) :: {:ok, HTTP.Response.t()} | {:error, TwitterAPIError.t()}
-  def request(client, method, path, params \\ []) do
+  @spec request(t, atom, binary, %{atom => term}, HTTP.Client.options()) ::
+          {:ok, HTTP.Response.t()} | {:error, TwitterAPIError.t()}
+  def request(client, method, path, params \\ %{}, http_client_opts \\ []) do
     req =
       build(method, path, params)
       |> sign(client.credentials)
 
-    case HTTP.Client.request(client.http_client, req, []) do
+    case HTTP.Client.request(client.http_client, req, http_client_opts) do
       {:ok, %{status: status} = resp} when status < 400 ->
         {:ok, resp}
 
@@ -91,7 +92,7 @@ defmodule Tw.V1_1.Client do
   end
 
   defp encode_json_params(params) do
-    {"application/json; charset=UTF-8", params |> Map.new() |> Jason.encode!()}
+    {"application/json; charset=UTF-8", params |> Jason.encode!()}
   end
 
   defp sign(%HTTP.Request{} = request, credentials) do
@@ -123,8 +124,8 @@ defmodule Tw.V1_1.Client do
       key = String.to_existing_atom(name)
 
       {
-        String.replace(path, e, Keyword.fetch!(params, key) |> to_string()),
-        params |> Keyword.delete(key)
+        String.replace(path, e, Map.fetch!(params, key) |> to_string()),
+        params |> Map.delete(key)
       }
     end)
   end

@@ -75,7 +75,7 @@ defmodule Tw.V1_1.Schema do
       |> File.read!()
       |> Jason.decode!()
 
-    params_type_name = :"#{fn_name}_param"
+    params_type_name = :"#{fn_name}_params"
 
     type = to_ex_type("", schema["type"])
     decode = decoder(schema["type"])
@@ -86,7 +86,7 @@ defmodule Tw.V1_1.Schema do
       @type unquote({params_type_name, [], Elixir}) :: unquote(params_type(params_type_name, schema))
       unquote_splicing(params_type_defs(params_type_name, schema))
 
-      @spec unquote(fn_name)(Tw.V1_1.Client.t(), list(unquote({params_type_name, [], Elixir}))) ::
+      @spec unquote(fn_name)(Tw.V1_1.Client.t(), unquote({params_type_name, [], Elixir}), Tw.HTTP.Client.options()) ::
               {:ok, unquote(type)} | {:error, Tw.V1_1.TwitterAPIError.t() | Jason.DecodeError.t()}
       @doc """
       Request `#{unquote(method |> to_string() |> String.upcase())} #{unquote(path)}` and return decoded result.
@@ -94,8 +94,8 @@ defmodule Tw.V1_1.Schema do
 
       See [the Twitter API documentation](#{unquote(schema["doc_url"])}) for details.
       """
-      def unquote(fn_name)(client, opts \\ []) do
-        with {:ok, resp} <- Tw.V1_1.Client.request(client, unquote(method), unquote(path), opts),
+      def unquote(fn_name)(client, params, http_client_opts \\ []) do
+        with {:ok, resp} <- Tw.V1_1.Client.request(client, unquote(method), unquote(path), params, http_client_opts),
              {:ok, json} <- Jason.decode(resp.body) do
           {:ok, apply(unquote(decode), [json])}
         else
@@ -420,16 +420,17 @@ defmodule Tw.V1_1.Schema do
   end
 
   defp params_type(params_type_name, schema) do
-    schema["parameters"]
-    |> Enum.map(fn
-      %{"name" => name, "required" => _} ->
-        quote do
-          {unquote(String.to_atom(name)), unquote({:"#{params_type_name}_#{name}", [], Elixir})}
-        end
-    end)
-    |> Enum.reduce([], fn e, acc ->
-      quote(do: unquote(acc) | unquote(e))
-    end)
+    kvs =
+      schema["parameters"]
+      |> Enum.map(fn
+        %{"name" => name, "required" => true} ->
+          {{:required, [], [String.to_atom(name)]}, {:"#{params_type_name}_#{name}", [], Elixir}}
+
+        %{"name" => name} ->
+          {{:optional, [], [String.to_atom(name)]}, {:"#{params_type_name}_#{name}", [], Elixir}}
+      end)
+
+    {:%{}, [], kvs}
   end
 
   def params_type_defs(params_type_name, schema) do
