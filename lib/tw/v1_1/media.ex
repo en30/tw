@@ -11,6 +11,11 @@ defmodule Tw.V1_1.Media do
 
   defobject("priv/schema/model/media.json")
 
+  @type upload_source ::
+          Path.t()
+          | %{device: IO.device(), media_type: binary(), total_bytes: pos_integer()}
+          | %{data: iodata(), media_type: binary()}
+
   @type upload_param ::
           {:media_category, binary()}
           | {:additional_owners, list(pos_integer())}
@@ -51,13 +56,7 @@ defmodule Tw.V1_1.Media do
 
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/media/upload-media/overview) for details.
   """
-  @spec upload(
-          Client.t(),
-          Path.t()
-          | %{device: IO.device(), media_type: binary(), total_bytes: pos_integer()}
-          | %{data: iodata(), media_type: binary()},
-          [upload_param()]
-        ) ::
+  @spec upload(Client.t(), upload_source(), [upload_param()]) ::
           {:ok, upload_ok_result()}
           | {:error, Tw.V1_1.TwitterAPIError.t() | Jason.DecodeError.t() | upload_error_result()}
   def upload(client, path_or_device_or_binary, opts \\ [])
@@ -187,6 +186,9 @@ defmodule Tw.V1_1.Media do
       ext when ext in [".jpg", ".jpeg", ".jfif", ".pjpeg", "pjp"] ->
         {:ok, "image/jpeg"}
 
+      ".srt" ->
+        {:ok, "application/x-subrip"}
+
       name ->
         {:error, "Could not infer media type from the extension `#{name}`"}
     end
@@ -195,4 +197,103 @@ defmodule Tw.V1_1.Media do
   defp category_from_type("image/gif"), do: "tweet_gif"
   defp category_from_type("image/" <> _), do: "tweet_image"
   defp category_from_type("video/" <> _), do: "tweet_video"
+  defp category_from_type("application/x-subrip"), do: "subtitles"
+
+  @type create_metadata_param :: {:media_id, binary() | pos_integer()} | {:alt_text, %{text: binary()}}
+
+  @doc """
+  Add metadata to an uploaded medium by `POST media/metadata/create`
+
+  > This endpoint can be used to provide additional information about the uploaded media_id. This feature is currently only supported for images and GIFs.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/media/upload-media/api-reference/post-media-metadata-create) for details.
+
+  ## Examples
+      iex> {:ok, res} = Tw.V1_1.Media.upload(client, "/tmp/abc.png")
+      iex> Tw.V1_1.Media.create_metadata(client, media_id: res.media_id, alt_text: %{text: "dancing cat"})
+      {:ok, nil}
+
+  """
+  @spec create_metadata(Client.t(), [create_metadata_param()]) :: {:ok, nil} | {:error, Tw.V1_1.TwitterAPIError.t()}
+  def create_metadata(client, opts) do
+    opts = opts |> Keyword.update!(:media_id, &to_string/1)
+
+    with {:ok, _resp} <- Client.request(client, :post, "/media/metadata/create.json", opts) do
+      {:ok, nil}
+    else
+      {:error, message} ->
+        {:error, message}
+    end
+  end
+
+  @type bind_subtitles_param ::
+          {:media_id, binary() | pos_integer()}
+          | {:subtitles, [%{media_id: binary() | pos_integer(), language_code: binary(), display_name: binary()}]}
+
+  @doc """
+  Bind subtitles to an uploaded video by requesting `POST media/subtitles/create`.
+
+  > You can associate subtitles to video before or after Tweeting.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/media/upload-media/api-reference/post-media-subtitles-create) for details.
+
+  ## Examples
+      iex> {:ok, video} = Tw.V1_1.Media.upload(client, "/tmp/abc.mp4")
+      iex> {:ok, en_sub} = Tw.V1_1.Media.upload(client, "/tmp/en.srt")
+      iex> subtitles = [%{media_id: en_sub.media_id, language_code: "EN", display_name: "English"}]
+      iex> {:ok, en_sub} = Tw.V1_1.Media.bind_subtitles(client, media_id: video.media_id, subtitles: subtitles)
+      {:ok, nil}
+  """
+  @spec bind_subtitles(Client.t(), [bind_subtitles_param]) ::
+          {:ok, nil} | {:error, Tw.V1_1.TwitterAPIError.t()}
+  def bind_subtitles(client, opts) do
+    params = [
+      media_id: Keyword.fetch!(opts, :media_id),
+      media_category: "TweetVideo",
+      subtitle_info: %{
+        subtitles: Keyword.fetch!(opts, :subtitles)
+      }
+    ]
+
+    with {:ok, _resp} <- Client.request(client, :post, "/media/subtitles/create.json", params) do
+      {:ok, nil}
+    else
+      {:error, message} ->
+        {:error, message}
+    end
+  end
+
+  @type unbind_subtitles_param ::
+          {:media_id, binary() | pos_integer()}
+          | {:subtitles, [%{language_code: binary()}]}
+
+  @doc """
+  Unbind subtitles to an uploaded video by requesting `POST media/subtitles/delete`.
+
+  > You can dissociate subtitles from a video before or after Tweeting.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/media/upload-media/api-reference/post-media-subtitles-delete) for details.
+
+  ## Examples
+      iex> {:ok, en_sub} = Tw.V1_1.Media.unbind_subtitles(client, media_id: video.media_id, subtitles: [%{language_code: "EN"}])
+      {:ok, nil}
+  """
+  @spec unbind_subtitles(Client.t(), [unbind_subtitles_param]) ::
+          {:ok, nil} | {:error, Tw.V1_1.TwitterAPIError.t()}
+  def unbind_subtitles(client, opts) do
+    params = [
+      media_id: Keyword.fetch!(opts, :media_id),
+      media_category: "TweetVideo",
+      subtitle_info: %{
+        subtitles: Keyword.fetch!(opts, :subtitles)
+      }
+    ]
+
+    with {:ok, _resp} <- Client.request(client, :post, "/media/subtitles/delete.json", params) do
+      {:ok, nil}
+    else
+      {:error, message} ->
+        {:error, message}
+    end
+  end
 end
