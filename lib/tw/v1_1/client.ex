@@ -28,7 +28,8 @@ defmodule Tw.V1_1.Client do
     opts =
       opts
       |> Keyword.put_new_lazy(:http_client, fn -> HTTP.Client.Hackney end)
-      |> Keyword.put_new_lazy(:json, fn -> {JSON.Serializer.Jason, [], []} end)
+      # I trust Twitter API.
+      |> Keyword.put_new_lazy(:json, fn -> {JSON.Serializer.Jason, [], [keys: :atoms]} end)
 
     struct!(__MODULE__, opts)
   end

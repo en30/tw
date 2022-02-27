@@ -32,7 +32,7 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
                       )
 
     test "decodes valid error json and returns TwitterAPIError" do
-      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body))
+      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body, keys: :atoms))
       assert %TwitterAPIError{} = error
 
       assert error.message == "Sorry, that page does not exist"
@@ -52,7 +52,7 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
 
   describe "rate_limit_exceeded?/1" do
     test "returns false if an irrelevant error is given" do
-      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body))
+      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body, keys: :atoms))
       refute TwitterAPIError.rate_limit_exceeded?(error)
     end
 
@@ -60,7 +60,7 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
       error =
         TwitterAPIError.from_response(
           @rate_limite_exceeded_response,
-          Jason.decode!(@rate_limite_exceeded_response.body)
+          Jason.decode!(@rate_limite_exceeded_response.body, keys: :atoms)
         )
 
       assert TwitterAPIError.rate_limit_exceeded?(error)
@@ -69,7 +69,7 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
 
   describe "rate_limit_reset_at/1" do
     test "returns nil if an irrelevant error is given" do
-      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body))
+      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body, keys: :atoms))
       assert TwitterAPIError.rate_limit_reset_at(error) == nil
     end
 
@@ -77,7 +77,7 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
       error =
         TwitterAPIError.from_response(
           @rate_limite_exceeded_response,
-          Jason.decode!(@rate_limite_exceeded_response.body)
+          Jason.decode!(@rate_limite_exceeded_response.body, keys: :atoms)
         )
 
       assert ~U[2022-02-17 10:53:15Z] = TwitterAPIError.rate_limit_reset_at(error)

@@ -101,14 +101,14 @@
     "attribute": "quoted_status_id",
     "description": "This field only surfaces when the Tweet is a quote Tweet. This field contains the integer value Tweet ID of the quoted Tweet. Example:\"quoted_status_id\":1050119905717055488\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "Int64"
   },
   {
     "attribute": "quoted_status_id_str",
     "description": "This field only surfaces when the Tweet is a quote Tweet. This is the string representation Tweet ID of the quoted Tweet. Example:\"quoted_status_id_str\":\"1050119905717055488\"\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "String"
   },
   {
@@ -122,28 +122,28 @@
     "attribute": "quoted_status",
     "description": "This field only surfaces when the Tweet is a quote Tweet. This attribute contains the Tweet object of the original Tweet that was quoted.",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "Tweet"
   },
   {
     "attribute": "retweeted_status",
     "description": "Users can amplify the broadcast of Tweets authored by other users by retweeting . Retweets can be distinguished from typical Tweets by the existence of a retweeted_status attribute. This attribute contains a representation of the original Tweet that was retweeted. Note that retweets of retweets do not show representations of the intermediary retweet, but only the original Tweet. (Users can also unretweet a retweet they created by deleting their retweet.)",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "Tweet"
   },
   {
     "attribute": "quote_count",
     "description": "Nullable. Indicates approximately how many times this Tweet has been quoted by Twitter users. Example:\n\"quote_count\":33\nNote: This object is only available with the Premium and Enterprise tier products.",
     "nullable": true,
-    "required": true,
+    "required": false,
     "type": "Integer"
   },
   {
     "attribute": "reply_count",
     "description": "Number of times this Tweet has been replied to. Example:\n\"reply_count\":30\nNote: This object is only available with the Premium and Enterprise tier products.",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "Int"
   },
   {
@@ -171,7 +171,7 @@
     "attribute": "extended_entities",
     "description": "When between one and four native photos or one video or one animated GIF are in Tweet, contains an array 'media' metadata. This is also available in Quote Tweets. Additionally see Entities in Twitter Objects . Example:\"entities\":\n{\n    \"media\":[]\n}\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "Extended Entities"
   },
   {
@@ -199,7 +199,7 @@
     "attribute": "filter_level",
     "description": "Indicates the maximum value of the filter_level parameter which may be used and still stream this Tweet. So a value of medium will be streamed on none, low, and medium streams.Example:\"filter_level\": \"low\"\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "String"
   },
   {
@@ -213,7 +213,7 @@
     "attribute": "matching_rules",
     "description": "Present in filtered products such as Twitter Search and PowerTrack. Provides the id and tag associated with the rule that matched the Tweet. With PowerTrack, more than one rule can match a Tweet. See more documentation HERE. Example:\n\"matching_rules\": \" [{\n        \"tag\": \"twitterapi emojis\",\n        \"id\": 1050118621198921728,\n        \"id_str\": \"1050118621198921728\"\n    }]\"\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "Array of Rule Objects"
   },
   {

@@ -20,8 +20,8 @@ defmodule Tw.V1_1.TwitterAPIError do
   @doc false
   def from_response(response, decoded_body)
 
-  def from_response(response, %{"errors" => errors}) when errors != [] do
-    errors = [%{message: message} | _] = Enum.map(errors, fn e -> %{message: e["message"], code: e["code"]} end)
+  def from_response(response, %{errors: errors}) when errors != [] do
+    [%{message: message} | _] = errors
     exception(message: message, errors: errors, response: response)
   end
 

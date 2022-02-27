@@ -38,7 +38,7 @@
     "attribute": "derived",
     "description": "Enterprise APIs only Collection of Enrichment metadata derived for user. Provides the Profile Geo Enrichment metadata. See referenced documentation for more information, including JSON data dictionaries. Example:\"derived\":{\"locations\": [{\"country\":\"United States\",\"country_code\":\"US\",\"locality\":\"Denver\"}]}\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "Arrays of Enrichment Objects"
   },
   {
@@ -115,7 +115,7 @@
     "attribute": "profile_banner_url",
     "description": "The HTTPS-based URL pointing to the standard web representation of the user’s uploaded profile banner. By adding a final path element of the URL, it is possible to obtain different image sizes optimized for specific displays. For size variants, please see User Profile Images and Banners .Example:\"profile_banner_url\": \"https://si0.twimg.com/profile_banners/819797/1348102824\"\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "String"
   },
   {
@@ -143,14 +143,14 @@
     "attribute": "withheld_in_countries",
     "description": "When present, indicates a list of uppercase two-letter country codes this content is withheld from. Twitter supports the following non-country values for this field:“XX” - Content is withheld in all countries “XY” - Content is withheld due to a DMCA request.Example:\n\"withheld_in_countries\": [\"GR\", \"HK\", \"MY\"]\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "Array of String"
   },
   {
     "attribute": "withheld_scope",
     "description": "When present, indicates that the content being withheld is a “user.”Example:\n\"withheld_scope\": \"user\"\n",
     "nullable": false,
-    "required": true,
+    "required": false,
     "type": "String"
   },
   {

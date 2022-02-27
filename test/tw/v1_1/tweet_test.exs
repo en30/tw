@@ -6,7 +6,7 @@ defmodule Tw.V1_1.TweetTest do
 
   @deprecated_keys ~W[
     geo
-  ]
+  ]a
 
   # from https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/example-payloads
   @files ~W[
@@ -24,10 +24,10 @@ defmodule Tw.V1_1.TweetTest do
   ] |> Enum.map(&{Path.basename(&1), &1})
 
   for {name, path} <- @files do
-    describe "decode(#{name})" do
+    describe "decode!(#{name})" do
       setup do
-        json = File.read!(unquote(path)) |> Jason.decode!()
-        tweet = json |> Tweet.decode()
+        json = File.read!(unquote(path)) |> Jason.decode!(keys: :atoms)
+        tweet = json |> Tweet.decode!()
         %{tweet: tweet, json: json}
       end
 
@@ -45,7 +45,7 @@ defmodule Tw.V1_1.TweetTest do
 
       test "uses all keys of the json", %{tweet: tweet, json: json} do
         for {key, _value} <- json, !Enum.member?(@deprecated_keys, key) do
-          assert Map.has_key?(tweet, String.to_atom(key))
+          assert Map.has_key?(tweet, key)
         end
       end
     end

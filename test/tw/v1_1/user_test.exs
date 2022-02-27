@@ -28,15 +28,15 @@ defmodule Tw.V1_1.UserTest do
     is_translator
     is_translation_enabled
     translator_type
-  ]
+  ]a
 
   # https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/user#:~:text=Example%20user%20object%3A
   @json_path "test/support/fixtures/v1_1/user.json"
 
-  describe "decode/1" do
+  describe "decode!/1" do
     setup do
-      json = @json_path |> File.read!() |> Jason.decode!()
-      user = User.decode(json)
+      json = @json_path |> File.read!() |> Jason.decode!(keys: :atoms)
+      user = User.decode!(json)
       %{user: user, json: json}
     end
 
@@ -54,7 +54,7 @@ defmodule Tw.V1_1.UserTest do
 
     test "uses all keys of the json", %{user: user, json: json} do
       for {key, _value} <- json, !Enum.member?(@deprecated_keys, key) do
-        assert Map.has_key?(user, String.to_atom(key))
+        assert Map.has_key?(user, key)
       end
     end
   end

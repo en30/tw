@@ -7,7 +7,7 @@ defmodule Tw.V1_1.FriendshipLookupResult do
   import Tw.V1_1.Schema, only: :macros
 
   @connections ~W[following following_requested followed_by none blocking muting]
-  def decode_connection(str) do
+  def decode_connection!(str) do
     if Enum.member?(@connections, str) do
       String.to_atom(str)
     else

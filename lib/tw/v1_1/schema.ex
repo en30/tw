@@ -54,17 +54,17 @@ defmodule Tw.V1_1.Schema do
       @enforce_keys unquote(required_fields(schema))
       defstruct unquote(fields(schema))
 
-      @typedoc """
-      #{unquote(schema |> field_type_table() |> cite())}
-      """
+      @typedoc unquote(schema |> field_type_table() |> cite())
       @type t :: %__MODULE__{unquote_splicing(struct_field_types(schema))}
 
-      @spec decode(map) :: t
+      @spec decode!(map) :: t
       @doc """
       Decode JSON-decoded map into `t:t/0`
       """
-      def decode(json) do
-        %__MODULE__{unquote_splicing(decode_fields(schema))}
+      def decode!(json) do
+        json = unquote(decode_fields(schema))
+
+        struct(__MODULE__, json)
       end
     end
   end
@@ -162,16 +162,14 @@ defmodule Tw.V1_1.Schema do
   defp decode_fields(schema) do
     schema
     |> Enum.map(fn e ->
-      dec =
-        quote do
-          Tw.V1_1.Schema.decode_field(
-            json[unquote(e["attribute"])],
-            unquote(e["attribute"]),
-            unquote(e["type"])
-          )
-        end
-
-      {String.to_atom(e["attribute"]), dec}
+      field_decoder(e["attribute"], e["type"], e["required"], e["nullable"])
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.reduce(quote(do: json), fn q, a ->
+      quote do
+        unquote(a)
+        |> unquote(q)
+      end
     end)
   end
 
@@ -279,67 +277,112 @@ defmodule Tw.V1_1.Schema do
   end
 
   @doc false
-  def decode_field(json_value, name, twitter_type)
+  def field_decoder(name, twitter_type, required, nilable)
 
-  def decode_field(nil, _name, _twitter_type), do: nil
+  def field_decoder(name, twitter_type, false, false) do
+    decoder = field_decoder(name, twitter_type)
 
-  def decode_field(json_value, name, "Array of " <> twitter_type) do
-    Enum.map(json_value, &decode_field(&1, name, twitter_type |> String.trim_trailing("s")))
+    if decoder == quote(do: &Function.identity/1) do
+      nil
+    else
+      quote do
+        Map.update(unquote(String.to_atom(name)), nil, Tw.V1_1.Schema.nilable(unquote(decoder)))
+      end
+    end
   end
 
-  def decode_field(json_value, "created_at", "String"), do: decode_twitter_datetime!(json_value)
-  def decode_field(json_value, "bounding_box", "Object"), do: Tw.V1_1.BoundingBox.decode(json_value)
-  def decode_field(json_value, _name, "User object"), do: Tw.V1_1.User.decode(json_value)
-  def decode_field(json_value, _name, "Tweet"), do: Tw.V1_1.Tweet.decode(json_value)
-  def decode_field(json_value, _name, "Coordinates"), do: Tw.V1_1.Coordinates.decode(json_value)
-  def decode_field(json_value, _name, "Places"), do: Tw.V1_1.Place.decode(json_value)
-  def decode_field(json_value, _name, "Entities"), do: Tw.V1_1.Entities.decode(json_value)
-  def decode_field(json_value, _name, "Hashtag Object"), do: Tw.V1_1.Hashtag.decode(json_value)
-  def decode_field(json_value, _name, "Media Object"), do: Tw.V1_1.Media.decode(json_value)
-  def decode_field(json_value, _name, "URL Object"), do: Tw.V1_1.URL.decode(json_value)
-  def decode_field(json_value, _name, "User Mention Object"), do: Tw.V1_1.UserMention.decode(json_value)
-  def decode_field(json_value, _name, "Symbol Object"), do: Tw.V1_1.Symbol.decode(json_value)
-  def decode_field(json_value, _name, "Poll Object"), do: Tw.V1_1.Poll.decode(json_value)
-  def decode_field(json_value, "sizes", "Size Object"), do: Tw.V1_1.Sizes.decode(json_value)
-  def decode_field(json_value, _name, "Size Object"), do: Tw.V1_1.Size.decode(json_value)
-  def decode_field(json_value, _name, "User Entities"), do: Tw.V1_1.UserEntities.decode(json_value)
-  def decode_field(json_value, _name, "Extended Entities"), do: Tw.V1_1.ExtendedEntities.decode(json_value)
-  def decode_field(json_value, _name, "Search Metadata Object"), do: Tw.V1_1.SearchMetadata.decode(json_value)
-  def decode_field(json_value, _name, "Friendship Source Object"), do: Tw.V1_1.FriendshipSource.decode(json_value)
-  def decode_field(json_value, _name, "Friendship Target Object"), do: Tw.V1_1.FriendshipTarget.decode(json_value)
-  def decode_field(json_value, _name, "Place Type Object"), do: %{code: json_value["code"], name: json_value["name"]}
+  def field_decoder(name, twitter_type, false, true) do
+    decoder = field_decoder(name, twitter_type)
 
-  def decode_field(json_value, _name, "Connection Enum"),
-    do: Tw.V1_1.FriendshipLookupResult.decode_connection(json_value)
+    if decoder == quote(do: &Function.identity/1) do
+      nil
+    else
+      quote do
+        Map.update(unquote(String.to_atom(name)), nil, Tw.V1_1.Schema.nilable(unquote(decoder)))
+      end
+    end
+  end
 
-  def decode_field(json_value, _field, _type), do: json_value
+  def field_decoder(name, twitter_type, true, false) do
+    decoder = field_decoder(name, twitter_type)
+
+    if decoder == quote(do: &Function.identity/1) do
+      nil
+    else
+      quote do
+        Map.update!(unquote(String.to_atom(name)), unquote(decoder))
+      end
+    end
+  end
+
+  def field_decoder(name, twitter_type, true, true) do
+    decoder = field_decoder(name, twitter_type)
+
+    if decoder == quote(do: &Function.identity/1) do
+      nil
+    else
+      quote do
+        Map.update!(unquote(String.to_atom(name)), Tw.V1_1.Schema.nilable(unquote(decoder)))
+      end
+    end
+  end
+
+  def field_decoder(name, twitter_type)
+
+  def field_decoder(name, "Array of " <> twitter_type) do
+    quote do
+      fn v ->
+        Enum.map(v, unquote(field_decoder(name, twitter_type |> String.trim_trailing("s"))))
+      end
+    end
+  end
+
+  def nilable(decoder_fn), do: fn v -> v && decoder_fn.(v) end
+
+  def field_decoder("created_at", "String"), do: quote(do: &Tw.V1_1.Schema.decode_twitter_datetime!/1)
+  def field_decoder("bounding_box", "Object"), do: quote(do: &Tw.V1_1.BoundingBox.decode!/1)
+  def field_decoder(_name, "User object"), do: quote(do: &Tw.V1_1.User.decode!/1)
+  def field_decoder(_name, "Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode!/1)
+  def field_decoder(_name, "Coordinates"), do: quote(do: &Tw.V1_1.Coordinates.decode!/1)
+  def field_decoder(_name, "Places"), do: quote(do: &Tw.V1_1.Place.decode!/1)
+  def field_decoder(_name, "Entities"), do: quote(do: &Tw.V1_1.Entities.decode!/1)
+  def field_decoder(_name, "Hashtag Object"), do: quote(do: &Tw.V1_1.Hashtag.decode!/1)
+  def field_decoder(_name, "Media Object"), do: quote(do: &Tw.V1_1.Media.decode!/1)
+  def field_decoder(_name, "URL Object"), do: quote(do: &Tw.V1_1.URL.decode!/1)
+  def field_decoder(_name, "User Mention Object"), do: quote(do: &Tw.V1_1.UserMention.decode!/1)
+  def field_decoder(_name, "Symbol Object"), do: quote(do: &Tw.V1_1.Symbol.decode!/1)
+  def field_decoder(_name, "Poll Object"), do: quote(do: &Tw.V1_1.Poll.decode!/1)
+  def field_decoder("sizes", "Size Object"), do: quote(do: &Tw.V1_1.Sizes.decode!/1)
+  def field_decoder(_name, "Size Object"), do: quote(do: &Tw.V1_1.Size.decode!/1)
+  def field_decoder(_name, "User Entities"), do: quote(do: &Tw.V1_1.UserEntities.decode!/1)
+  def field_decoder(_name, "Extended Entities"), do: quote(do: &Tw.V1_1.ExtendedEntities.decode!/1)
+  def field_decoder(_name, "Search Metadata Object"), do: quote(do: &Tw.V1_1.SearchMetadata.decode!/1)
+  def field_decoder(_name, "Friendship Source Object"), do: quote(do: &Tw.V1_1.FriendshipSource.decode!/1)
+  def field_decoder(_name, "Friendship Target Object"), do: quote(do: &Tw.V1_1.FriendshipTarget.decode!/1)
+
+  def field_decoder(_name, "Connection Enum"),
+    do: quote(do: &Tw.V1_1.FriendshipLookupResult.decode_connection!/1)
+
+  def field_decoder(_name, _type), do: quote(do: &Function.identity/1)
 
   defp decoder("Array of " <> twitter_type) do
     quote(do: fn x -> Enum.map(x, unquote(decoder(twitter_type |> String.trim_trailing("s")))) end)
   end
 
-  defp decoder("Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode/1)
-  defp decoder("User object"), do: quote(do: &Tw.V1_1.User.decode/1)
-  defp decoder("Me Object"), do: quote(do: &Tw.V1_1.Me.decode/1)
-  defp decoder("Search Result Object"), do: quote(do: &Tw.V1_1.SearchResult.decode/1)
-  defp decoder("Friendship Lookup Result Object"), do: quote(do: &Tw.V1_1.FriendshipLookupResult.decode/1)
-  defp decoder("Trend Location Object"), do: quote(do: &Tw.V1_1.TrendLocation.decode/1)
+  defp decoder("Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode!/1)
+  defp decoder("User object"), do: quote(do: &Tw.V1_1.User.decode!/1)
+  defp decoder("Me Object"), do: quote(do: &Tw.V1_1.Me.decode!/1)
+  defp decoder("Search Result Object"), do: quote(do: &Tw.V1_1.SearchResult.decode!/1)
+  defp decoder("Friendship Lookup Result Object"), do: quote(do: &Tw.V1_1.FriendshipLookupResult.decode!/1)
+  defp decoder("Trend Location Object"), do: quote(do: &Tw.V1_1.TrendLocation.decode!/1)
 
   defp decoder("Cursored Result Object with " <> kv) do
     [k, v] = String.split(kv, " ", parts: 2)
 
     quote do
       fn json ->
-        %{
-          next_cursor: json["next_cursor"],
-          next_cursor_str: json["next_cursor_str"],
-          previous_cursor: json["previous_cursor"],
-          previous_cursor_str: json["previous_cursor_str"]
-        }
-        |> Map.put(
-          String.to_existing_atom(unquote(k)),
-          Tw.V1_1.Schema.decode_field(json[unquote(k)], unquote(k), unquote(v))
-        )
+        json
+        |> unquote(field_decoder(k, v, true, false))
       end
     end
   end
@@ -347,31 +390,25 @@ defmodule Tw.V1_1.Schema do
   defp decoder("Friendship Relationship Object") do
     quote do
       fn json ->
-        %{relationship: Tw.V1_1.Friendship.decode(json["relationship"])}
+        json
+        |> Map.update!(:relationship, &Tw.V1_1.Friendship.decode!/1)
       end
     end
   end
 
   defp decoder("oEmbed Object") do
     quote do
-      fn json ->
-        ~W[url author_name author_url html width height type cache_age provider_name provider_url version]
-        |> Enum.reduce(%{}, fn key, a ->
-          Map.put(a, String.to_atom(key), json[key])
-        end)
-      end
+      fn json -> json end
     end
   end
 
   defp decoder("Trends Object") do
     quote do
       fn json ->
-        %{
-          trends: Enum.map(json["trends"], &Tw.V1_1.Trend.decode/1),
-          as_of: json["as_of"] |> DateTime.from_iso8601(),
-          created_at: json["created_at"] |> DateTime.from_iso8601(),
-          locations: Enum.map(json["locations"], &%{name: &1["name"], woeid: &1["woeid"]})
-        }
+        json
+        |> Map.update!(:trends, &Tw.V1_1.Trend.decode!/1)
+        |> Map.update!(:as_of, &DateTime.from_iso8601/1)
+        |> Map.update!(:created_at, &DateTime.from_iso8601/1)
       end
     end
   end
