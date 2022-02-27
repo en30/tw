@@ -61,7 +61,7 @@ defmodule Tw.V1_1.Media do
   """
   @spec upload(Client.t(), upload_params(), Tw.HTTP.Client.options()) ::
           {:ok, upload_ok_result()}
-          | {:error, Tw.V1_1.TwitterAPIError.t() | Jason.DecodeError.t() | upload_error_result()}
+          | {:error, Tw.V1_1.TwitterAPIError.t() | upload_error_result()}
   def upload(client, params, http_client_opts \\ [])
 
   def upload(client, %{path: path} = params, http_client_opts) do
@@ -206,7 +206,7 @@ defmodule Tw.V1_1.Media do
           {:ok, %{atom => term}} | {:error, term}
   def upload_command(client, method, params, http_client_opts) do
     with {:ok, resp} <- Client.request(client, method, "/media/upload.json", params, http_client_opts),
-         {:ok, res} <- Jason.decode(resp.body, keys: :atoms) do
+         {:ok, res} <- Client.decode_json(client, resp.body) do
       {:ok, res}
     else
       {:error, message} ->

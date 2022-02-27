@@ -16,18 +16,16 @@ defmodule Tw.V1_1.TwitterAPIError do
           response: Response.t()
         }
 
-  @spec from_response(Response.t()) :: t
+  @spec from_response(Response.t(), iodata() | nil) :: t
   @doc false
-  def from_response(response) do
-    case Jason.decode(response.body) do
-      {:ok, %{"errors" => errors}} when errors != [] > 0 ->
-        errors = [%{message: message} | _] = Enum.map(errors, fn e -> %{message: e["message"], code: e["code"]} end)
-        exception(message: message, errors: errors, response: response)
+  def from_response(response, decoded_body)
 
-      _ ->
-        exception(message: "Unknown Twitter API Error", errors: [], response: response)
-    end
+  def from_response(response, %{"errors" => errors}) when errors != [] do
+    errors = [%{message: message} | _] = Enum.map(errors, fn e -> %{message: e["message"], code: e["code"]} end)
+    exception(message: message, errors: errors, response: response)
   end
+
+  def from_response(response, _), do: exception(message: "Unknown Twitter API Error", errors: [], response: response)
 
   def rate_limit_exceeded?(%__MODULE__{} = error) do
     error.response.status == 429 && Enum.any?(error.errors, &(&1.code == 88))

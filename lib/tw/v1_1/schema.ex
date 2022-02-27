@@ -96,7 +96,7 @@ defmodule Tw.V1_1.Schema do
       @type unquote({params_type_name, [], Elixir}) :: unquote(params_type(schema))
 
       @spec unquote(fn_name)(Tw.V1_1.Client.t(), unquote({params_type_name, [], Elixir}), Tw.HTTP.Client.options()) ::
-              {:ok, unquote(type)} | {:error, Tw.V1_1.TwitterAPIError.t() | Jason.DecodeError.t()}
+              {:ok, unquote(type)} | {:error, Tw.V1_1.TwitterAPIError.t()}
       @doc """
       Request `#{unquote(method |> to_string() |> String.upcase())} #{unquote(path)}` and return decoded result.
       #{unquote(cite(schema["description"]))}
@@ -105,7 +105,7 @@ defmodule Tw.V1_1.Schema do
       """
       def unquote(fn_name)(client, params, http_client_opts \\ []) do
         with {:ok, resp} <- Tw.V1_1.Client.request(client, unquote(method), unquote(path), params, http_client_opts),
-             {:ok, json} <- Jason.decode(resp.body) do
+             {:ok, json} <- Tw.V1_1.Client.decode_json(client, resp.body) do
           {:ok, apply(unquote(decode), [json])}
         else
           {:error, error} ->

@@ -24,7 +24,7 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
                                    """
                                  )
 
-  describe "from_response/1" do
+  describe "from_response/2" do
     @invalid_response Response.new(
                         status: 500,
                         headers: [],
@@ -32,7 +32,7 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
                       )
 
     test "decodes valid error json and returns TwitterAPIError" do
-      error = TwitterAPIError.from_response(@not_found_response)
+      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body))
       assert %TwitterAPIError{} = error
 
       assert error.message == "Sorry, that page does not exist"
@@ -41,7 +41,7 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
     end
 
     test "returns TwitterAPIError even if an invalid response is given" do
-      error = TwitterAPIError.from_response(@invalid_response)
+      error = TwitterAPIError.from_response(@invalid_response, nil)
       assert %TwitterAPIError{} = error
 
       assert error.message == "Unknown Twitter API Error"
@@ -52,24 +52,34 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
 
   describe "rate_limit_exceeded?/1" do
     test "returns false if an irrelevant error is given" do
-      error = TwitterAPIError.from_response(@not_found_response)
+      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body))
       refute TwitterAPIError.rate_limit_exceeded?(error)
     end
 
     test "returns true if a rate limit exceeded error is given" do
-      error = TwitterAPIError.from_response(@rate_limite_exceeded_response)
+      error =
+        TwitterAPIError.from_response(
+          @rate_limite_exceeded_response,
+          Jason.decode!(@rate_limite_exceeded_response.body)
+        )
+
       assert TwitterAPIError.rate_limit_exceeded?(error)
     end
   end
 
   describe "rate_limit_reset_at/1" do
     test "returns nil if an irrelevant error is given" do
-      error = TwitterAPIError.from_response(@not_found_response)
+      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body))
       assert TwitterAPIError.rate_limit_reset_at(error) == nil
     end
 
     test "returns DateTime if a rate limit exceeded error is given" do
-      error = TwitterAPIError.from_response(@rate_limite_exceeded_response)
+      error =
+        TwitterAPIError.from_response(
+          @rate_limite_exceeded_response,
+          Jason.decode!(@rate_limite_exceeded_response.body)
+        )
+
       assert ~U[2022-02-17 10:53:15Z] = TwitterAPIError.rate_limit_reset_at(error)
     end
   end

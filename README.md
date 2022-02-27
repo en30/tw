@@ -38,7 +38,7 @@ If you want to use an endpoint which is not implemented by this client, you can 
 
 ```elixir
 with {:ok, resp} <- Tw.V1_1.Client.request(client, :get, "/statuses/home_timeline.json", params, http_client_opts),
-      {:ok, res} <- Jason.decode(resp.body) do
+      {:ok, res} <- Tw.V1_1.Client.decode_json(resp.body) do
   {:ok, res}
 else
   {:error, message} ->
