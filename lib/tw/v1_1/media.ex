@@ -5,12 +5,81 @@ defmodule Tw.V1_1.Media do
   https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/entities
   """
 
-  import Tw.V1_1.Schema, only: :macros
-
   alias Tw.V1_1.Client
+  alias Tw.V1_1.Sizes
   alias Tw.V1_1.User
 
-  defobject("priv/schema/model/media.json")
+  @enforce_keys [
+    :display_url,
+    :expanded_url,
+    :id,
+    :id_str,
+    :indices,
+    :media_url,
+    :media_url_https,
+    :sizes,
+    :source_status_id,
+    :source_status_id_str,
+    :type,
+    :url
+  ]
+  defstruct([
+    :display_url,
+    :expanded_url,
+    :id,
+    :id_str,
+    :indices,
+    :media_url,
+    :media_url_https,
+    :sizes,
+    :source_status_id,
+    :source_status_id_str,
+    :type,
+    :url
+  ])
+
+  @typedoc """
+  > | field | description |
+  > | - | - |
+  > | `display_url` | URL of the media to display to clients. Example: `\"pic.twitter.com/rJC5Pxsu\" `.  |
+  > | `expanded_url` | An expanded version of display_url. Links to the media display page. Example: `\"http://twitter.com/yunorno/status/114080493036773378/photo/1\" `.  |
+  > | `id` | ID of the media expressed as a 64-bit integer. Example: `114080493040967680 `.  |
+  > | `id_str` | ID of the media expressed as a string. Example: `\"114080493040967680\" `.  |
+  > | `indices` | An array of integers indicating the offsets within the Tweet text where the URL begins and ends. The first integer represents the location of the first character of the URL in the Tweet text. The second integer represents the location of the first non-URL character occurring after the URL (or the end of the string if the URL is the last part of the Tweet text). Example: `[15,35] `.  |
+  > | `media_url` | An http:// URL pointing directly to the uploaded media file. Example: `\"http://pbs.twimg.com/media/DOhM30VVwAEpIHq.jpg\" For media in direct messages, media_url is the same https URL as media_url_https and must be accessed by signing a request with the user’s access token using OAuth 1.0A.It is not possible to access images via an authenticated twitter.com session. Please visit this page to learn how to account for these recent change. You cannot directly embed these images in a web page.See Photo Media URL formatting for how to format a photo's URL, such as media_url_https, based on the available sizes.`.  |
+  > | `media_url_https` | An https:// URL pointing directly to the uploaded media file, for embedding on https pages. Example: `\"https://p.twimg.com/AZVLmp-CIAAbkyy.jpg\" For media in direct messages, media_url_https must be accessed by signing a request with the user’s access token using OAuth 1.0A.It is not possible to access images via an authenticated twitter.com session. Please visit this page to learn how to account for these recent change. You cannot directly embed these images in a web page.See Photo Media URL formatting for how to format a photo's URL, such as media_url_https, based on the available sizes.`.  |
+  > | `sizes` | An object showing available sizes for the media file.  |
+  > | `source_status_id` | Nullable. For Tweets containing media that was originally associated with a different tweet, this ID points to the original Tweet. Example: `205282515685081088 `.  |
+  > | `source_status_id_str` | Nullable. For Tweets containing media that was originally associated with a different tweet, this string-based ID points to the original Tweet. Example: `\"205282515685081088\" `.  |
+  > | `type` | Type of uploaded media. Possible types include photo, video, and animated_gif. Example: `\"photo\" `.  |
+  > | `url` | Wrapped URL for the media link. This corresponds with the URL embedded directly into the raw Tweet text, and the values for the indices parameter. Example: `\"http://t.co/rJC5Pxsu\" `.  |
+  >
+  """
+  @type t :: %__MODULE__{
+          display_url: binary,
+          expanded_url: binary,
+          id: integer,
+          id_str: binary,
+          indices: list(integer),
+          media_url: binary,
+          media_url_https: binary,
+          sizes: Sizes.t(),
+          source_status_id: integer | nil,
+          source_status_id_str: integer | nil,
+          type: binary,
+          url: binary
+        }
+  @spec decode!(map) :: t
+  @doc """
+  Decode JSON-decoded map into `t:t/0`
+  """
+  def decode!(json) do
+    json =
+      json
+      |> Map.update!(:sizes, &Sizes.decode!/1)
+
+    struct(__MODULE__, json)
+  end
 
   @type upload_params ::
           %{path: Path.t(), media_category: binary(), additional_owners: list(pos_integer())}

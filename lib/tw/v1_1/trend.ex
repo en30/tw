@@ -7,7 +7,21 @@ defmodule Tw.V1_1.Trend do
 
   import Tw.V1_1.Schema, only: :macros
 
-  defobject("priv/schema/model/trend.json")
+  @enforce_keys [:name, :url, :promoted_content, :query, :tweet_volume]
+  defstruct([:name, :url, :promoted_content, :query, :tweet_volume])
+
+  @type t :: %__MODULE__{
+          name: binary,
+          url: binary,
+          promoted_content: boolean | nil,
+          query: binary,
+          tweet_volume: integer | nil
+        }
+  @spec decode!(map) :: t
+  @doc """
+  Decode JSON-decoded map into `t:t/0`
+  """
+  def decode!(json), do: struct(__MODULE__, json)
 
   map_endpoint(:get, "/trends/place.json", to: at)
   map_endpoint(:get, "/trends/available.json", to: available_locations)

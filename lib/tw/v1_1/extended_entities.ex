@@ -4,7 +4,22 @@ defmodule Tw.V1_1.ExtendedEntities do
   https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/extended-entities
   """
 
-  import Tw.V1_1.Schema, only: :macros
+  alias Tw.V1_1.Media
+  alias Tw.V1_1.Schema
 
-  defobject("priv/schema/model/extended_entities.json")
+  @enforce_keys [:media]
+  defstruct([:media])
+
+  @type t :: %__MODULE__{media: list(Media.t()) | nil}
+  @spec decode!(map) :: t
+  @doc """
+  Decode JSON-decoded map into `t:t/0`
+  """
+  def decode!(json) do
+    json =
+      json
+      |> Map.update!(:media, Schema.nilable(fn v -> Enum.map(v, &Media.decode!/1) end))
+
+    struct(__MODULE__, json)
+  end
 end

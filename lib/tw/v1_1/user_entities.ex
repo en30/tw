@@ -4,7 +4,23 @@ defmodule Tw.V1_1.UserEntities do
   https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/user
   """
 
-  import Tw.V1_1.Schema, only: :macros
+  alias Tw.V1_1.Entities
+  alias Tw.V1_1.Schema
 
-  defobject("priv/schema/model/user_entities.json")
+  @enforce_keys [:description]
+  defstruct([:description, :url])
+
+  @type t :: %__MODULE__{description: Entities.t(), url: Entities.t() | nil}
+  @spec decode!(map) :: t
+  @doc """
+  Decode JSON-decoded map into `t:t/0`
+  """
+  def decode!(json) do
+    json =
+      json
+      |> Map.update!(:description, &Entities.decode!/1)
+      |> Map.update(:url, nil, Schema.nilable(&Entities.decode!/1))
+
+    struct(__MODULE__, json)
+  end
 end

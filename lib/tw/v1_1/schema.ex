@@ -43,33 +43,6 @@ defmodule Tw.V1_1.Schema do
           | :pt
 
   @doc false
-  defmacro defobject(schema_file) do
-    schema =
-      File.read!(schema_file)
-      |> Jason.decode!()
-
-    quote do
-      @external_resource unquote(schema_file)
-
-      @enforce_keys unquote(required_fields(schema))
-      defstruct unquote(fields(schema))
-
-      @typedoc unquote(schema |> field_type_table() |> cite())
-      @type t :: %__MODULE__{unquote_splicing(struct_field_types(schema))}
-
-      @spec decode!(map) :: t
-      @doc """
-      Decode JSON-decoded map into `t:t/0`
-      """
-      def decode!(json) do
-        json = unquote(decode_fields(schema))
-
-        struct(__MODULE__, json)
-      end
-    end
-  end
-
-  @doc false
   defmacro map_endpoint(method, path, to: {fn_name, _meta, nil}) do
     schema_file = endpoint_schema_path(method, path)
 
@@ -118,45 +91,6 @@ defmodule Tw.V1_1.Schema do
   defp endpoint_schema_path(method, path) do
     path = path |> String.replace("/", "_") |> String.replace(":", "")
     Path.join(["priv/schema/endpoint", to_string(method) <> path])
-  end
-
-  defp fields(schema) do
-    schema
-    |> Enum.map(&String.to_atom(&1["attribute"]))
-  end
-
-  defp required_fields(schema) do
-    schema
-    |> Enum.filter(& &1["required"])
-    |> Enum.map(&String.to_atom(&1["attribute"]))
-  end
-
-  defp struct_field_types(schema) do
-    schema
-    |> Enum.map(fn e ->
-      {String.to_atom(e["attribute"]), to_ex_type(e["attribute"], e["type"], e["nullable"] || !e["required"])}
-    end)
-  end
-
-  defp field_type_table(schema) do
-    rows =
-      schema
-      |> Enum.map(fn e ->
-        [
-          "| `",
-          e["attribute"],
-          "` | ",
-          (format_description(e) || " - ") |> String.replace("\n", " "),
-          " |\n"
-        ]
-      end)
-
-    [
-      "| field | description |\n",
-      "| - | - |\n"
-      | rows
-    ]
-    |> IO.iodata_to_binary()
   end
 
   defp decode_fields(schema) do
@@ -267,14 +201,6 @@ defmodule Tw.V1_1.Schema do
   # TODO
   defp to_ex_type(_name, "Rule Object"), do: quote(do: map)
   defp to_ex_type(_name, "Arrays of Enrichment Objects"), do: quote(do: list(map))
-
-  defp to_ex_type(name, type, false), do: to_ex_type(name, type)
-
-  defp to_ex_type(name, type, true) do
-    quote do
-      unquote(to_ex_type(name, type)) | nil
-    end
-  end
 
   @doc false
   def field_decoder(name, twitter_type, required, nilable)
@@ -448,46 +374,15 @@ defmodule Tw.V1_1.Schema do
     defp parse_month(unquote(pat) <> rest), do: {unquote(idx), rest}
   end
 
-  defp format_description(%{"description" => nil}), do: nil
-
-  defp format_description(%{"attribute" => attribute, "description" => description, "type" => type}) do
-    if to_ex_type(attribute, type) |> twitter_type?() do
-      Regex.replace(~r/Example:?\s*(?:.|\n)*?(?=Note:|\z)/m, description, "")
-    else
-      Regex.replace(~r/Example:\s*((?:.|\n)*?)(?=Note:|\z)/m, description, fn _, x ->
-        x = String.replace(x, ~r/\s*"#{attribute}"\s*:\s*/, "")
-        "Example: `#{x}`. "
-      end)
-    end
-  end
-
-  defp format_description(_), do: nil
-
-  defp twitter_type?(ast) do
-    ast
-    |> Macro.traverse(
-      false,
-      fn
-        {_, _, [:Tw | _]} = ast, _acc -> {ast, true}
-        ast, acc -> {ast, acc}
-      end,
-      fn
-        {_, _, [:Tw | _]} = ast, _acc -> {ast, true}
-        ast, acc -> {ast, acc}
-      end
-    )
-    |> elem(1)
-  end
-
   defp params_type(schema) do
     kvs =
       schema["parameters"]
       |> Enum.map(fn
         %{"name" => name, "type" => type, "required" => true} ->
-          {{:required, [], [String.to_atom(name)]}, to_ex_type(name, type, false)}
+          {{:required, [], [String.to_atom(name)]}, to_ex_type(name, type)}
 
         %{"name" => name, "type" => type} ->
-          {{:optional, [], [String.to_atom(name)]}, to_ex_type(name, type, false)}
+          {{:optional, [], [String.to_atom(name)]}, to_ex_type(name, type)}
       end)
 
     {:%{}, [], kvs}

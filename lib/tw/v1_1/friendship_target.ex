@@ -5,7 +5,21 @@ defmodule Tw.V1_1.FriendshipTarget do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-show) for details.
   """
 
-  import Tw.V1_1.Schema, only: :macros
+  @enforce_keys [:id, :id_str, :screen_name, :following, :followed_by, :following_received, :following_requested]
+  defstruct([:id, :id_str, :screen_name, :following, :followed_by, :following_received, :following_requested])
 
-  defobject("priv/schema/model/friendship_target.json")
+  @type t :: %__MODULE__{
+          id: integer,
+          id_str: binary,
+          screen_name: binary,
+          following: boolean,
+          followed_by: boolean,
+          following_received: boolean | nil,
+          following_requested: boolean | nil
+        }
+  @spec decode!(map) :: t
+  @doc """
+  Decode JSON-decoded map into `t:t/0`
+  """
+  def decode!(json), do: struct(__MODULE__, json)
 end

@@ -4,7 +4,20 @@ defmodule Tw.V1_1.BoundingBox do
   https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/geo
   """
 
-  import Tw.V1_1.Schema, only: :macros
+  @enforce_keys [:coordinates, :type]
+  defstruct([:coordinates, :type])
 
-  defobject("priv/schema/model/bounding_box.json")
+  @typedoc """
+  > | field | description |
+  > | - | - |
+  > | `coordinates` | A series of longitude and latitude points, defining a box which will contain the Place entity this bounding box is related to. Each point is an array in the form of [longitude, latitude]. Points are grouped into an array per bounding box. Bounding box arrays are wrapped in one additional array to be compatible with the polygon notation. Example: `{[     [       [         -74.026675,         40.683935       ],       [         -74.026675,         40.877483       ],       [         -73.910408,         40.877483       ],       [         -73.910408,         40.3935       ]     ]   ] } `.  |
+  > | `type` | The type of data encoded in the coordinates property. This will be “Polygon” for bounding boxes and “Point” for Tweets with exact coordinates. Example: `\"Polygon\" `.  |
+  >
+  """
+  @type t :: %__MODULE__{coordinates: list(list(list(float))), type: binary}
+  @spec decode!(map) :: t
+  @doc """
+  Decode JSON-decoded map into `t:t/0`
+  """
+  def decode!(json), do: struct(__MODULE__, json)
 end

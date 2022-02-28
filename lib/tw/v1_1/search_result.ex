@@ -4,9 +4,25 @@ defmodule Tw.V1_1.SearchResult do
   https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets
   """
 
-  import Tw.V1_1.Schema, only: :macros
+  alias Tw.V1_1.SearchMetadata
+  alias Tw.V1_1.Tweet
 
-  defobject("priv/schema/model/search_result.json")
+  @enforce_keys [:statuses, :search_metadata]
+  defstruct([:statuses, :search_metadata])
+
+  @type t :: %__MODULE__{statuses: list(Tweet.t()), search_metadata: SearchMetadata.t()}
+  @spec decode!(map) :: t
+  @doc """
+  Decode JSON-decoded map into `t:t/0`
+  """
+  def decode!(json) do
+    json =
+      json
+      |> Map.update!(:statuses, fn v -> Enum.map(v, &Tweet.decode!/1) end)
+      |> Map.update!(:search_metadata, &SearchMetadata.decode!/1)
+
+    struct(__MODULE__, json)
+  end
 
   @spec next_params(t) :: Tw.V1_1.Tweet.search_params()
   @doc """

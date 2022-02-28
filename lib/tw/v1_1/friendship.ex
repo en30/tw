@@ -7,7 +7,25 @@ defmodule Tw.V1_1.Friendship do
 
   import Tw.V1_1.Schema, only: :macros
 
-  defobject("priv/schema/model/friendship_relationship.json")
+  alias Tw.V1_1.FriendshipSource
+  alias Tw.V1_1.FriendshipTarget
+
+  @enforce_keys [:source, :target]
+  defstruct([:source, :target])
+
+  @type t :: %__MODULE__{source: FriendshipSource.t(), target: FriendshipTarget.t()}
+  @spec decode!(map) :: t
+  @doc """
+  Decode JSON-decoded map into `t:t/0`
+  """
+  def decode!(json) do
+    json =
+      json
+      |> Map.update!(:source, &FriendshipSource.decode!/1)
+      |> Map.update!(:target, &FriendshipTarget.decode!/1)
+
+    struct(__MODULE__, json)
+  end
 
   map_endpoint(:get, "/friendships/incoming.json", to: pending_incoming_requests)
   map_endpoint(:get, "/friendships/outgoing.json", to: pending_outgoing_requests)
