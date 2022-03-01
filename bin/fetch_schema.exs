@@ -5,16 +5,16 @@ Mix.install([
 
 defmodule Tw.V1_1.Schema do
   def fetch do
-    endpoints = File.read!("priv/schema/endpoint/index.json") |> Jason.decode!()
+    endpoints = fetch_endpoint_index()
 
     files =
       [
         # &generate_endpoint_result_objects/0,
         # &fetch_tweet_object/0,
-        &fetch_user_object/0,
+        # &fetch_user_object/0
         # &fetch_geo_objects/0,
         # &fetch_entities_objects/0,
-        # fetch_endpoint(endpoints, "GET statuses/home_timeline"),
+        fetch_endpoint(endpoints, "GET statuses/home_timeline")
         # fetch_endpoint(endpoints, "GET statuses/user_timeline"),
         # fetch_endpoint(endpoints, "GET statuses/mentions_timeline"),
         # fetch_endpoint(endpoints, "Standard search API"),
@@ -54,22 +54,17 @@ defmodule Tw.V1_1.Schema do
         # fetch_endpoint(endpoints, "POST statuses/unretweet/:id"),
         # fetch_endpoint(endpoints, "POST favorites/create"),
         # fetch_endpoint(endpoints, "POST favorites/destroy"),
-        #fetch_endpoint(endpoints, "POST blocks/create"),
-        #fetch_endpoint(endpoints, "POST blocks/destroy"),
-        #fetch_endpoint(endpoints, "POST mutes/users/create"),
-        #fetch_endpoint(endpoints, "POST mutes/users/destroy"),
-        #fetch_endpoint(endpoints, "POST users/report_spam"),
-        #fetch_endpoint(endpoints, "POST friendships/create"),
-        #fetch_endpoint(endpoints, "POST friendships/destroy"),
-        #fetch_endpoint(endpoints, "POST friendships/update"),
+        # fetch_endpoint(endpoints, "POST blocks/create"),
+        # fetch_endpoint(endpoints, "POST blocks/destroy"),
+        # fetch_endpoint(endpoints, "POST mutes/users/create"),
+        # fetch_endpoint(endpoints, "POST mutes/users/destroy"),
+        # fetch_endpoint(endpoints, "POST users/report_spam"),
+        # fetch_endpoint(endpoints, "POST friendships/create"),
+        # fetch_endpoint(endpoints, "POST friendships/destroy"),
+        # fetch_endpoint(endpoints, "POST friendships/update"),
       ]
       |> Enum.map(&Task.async(&1))
       |> Task.await_many(10_000)
-
-    IO.puts("Gnerated files below.")
-
-    files
-    |> Enum.each(&IO.puts/1)
   end
 
   defp fetch_tweet_object() do
@@ -129,7 +124,7 @@ defmodule Tw.V1_1.Schema do
         %{"attribute" => "entities", "type" => "User Entities", "required" => true, "nullable" => false},
         %{"attribute" => "show_all_inline_media", "type" => "Boolean", "required" => true, "nullable" => false},
         %{"attribute" => "status", "type" => "Tweet", "required" => true, "nullable" => true},
-        %{"attribute" => "email", "type" => "String", "required" => false, "nullable" => true},
+        %{"attribute" => "email", "type" => "String", "required" => false, "nullable" => true}
       ])
       |> model_code_gen("me")
     )
@@ -250,7 +245,7 @@ defmodule Tw.V1_1.Schema do
     |> Kernel.++(
       [
         %{"attribute" => "statuses", "type" => "Array of Tweets", "required" => true, "nullable" => false},
-        %{"attribute" => "search_metadata", "type" => "Search Metadata Object", "required" => true, "nullable" => false},
+        %{"attribute" => "search_metadata", "type" => "Search Metadata Object", "required" => true, "nullable" => false}
       ]
       |> model_code_gen("search_result")
     )
@@ -263,7 +258,7 @@ defmodule Tw.V1_1.Schema do
         %{"attribute" => "query", "type" => "String", "required" => true, "nullable" => false},
         %{"attribute" => "count", "type" => "Int", "required" => true, "nullable" => false},
         %{"attribute" => "since_id", "type" => "Int", "required" => true, "nullable" => false},
-        %{"attribute" => "since_id_str", "type" => "String", "required" => true, "nullable" => false},
+        %{"attribute" => "since_id_str", "type" => "String", "required" => true, "nullable" => false}
       ]
       |> model_code_gen("search_metadata")
     )
@@ -273,14 +268,14 @@ defmodule Tw.V1_1.Schema do
         %{"attribute" => "screen_name", "type" => "String", "required" => true, "nullable" => false},
         %{"attribute" => "id", "type" => "Int", "required" => true, "nullable" => false},
         %{"attribute" => "id_str", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "connections", "type" => "Array of Connection Enum", "required" => true, "nullable" => false},
+        %{"attribute" => "connections", "type" => "Array of Connection Enum", "required" => true, "nullable" => false}
       ]
       |> model_code_gen("friendship_lookup_result")
     )
     |> Kernel.++(
       [
         %{"attribute" => "source", "type" => "Friendship Source Object", "required" => true, "nullable" => false},
-        %{"attribute" => "target", "type" => "Friendship Target Object", "required" => true, "nullable" => false},
+        %{"attribute" => "target", "type" => "Friendship Target Object", "required" => true, "nullable" => false}
       ]
       |> model_code_gen("friendship_relationship")
     )
@@ -301,7 +296,7 @@ defmodule Tw.V1_1.Schema do
         %{"attribute" => "muting", "type" => "Boolean", "required" => true, "nullable" => true},
         %{"attribute" => "want_retweets", "type" => "Boolean", "required" => true, "nullable" => true},
         %{"attribute" => "all_replies", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "marked_spam", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "marked_spam", "type" => "Boolean", "required" => true, "nullable" => true}
       ]
       |> model_code_gen("friendship_source")
     )
@@ -313,7 +308,7 @@ defmodule Tw.V1_1.Schema do
         %{"attribute" => "following", "type" => "Boolean", "required" => true, "nullable" => false},
         %{"attribute" => "followed_by", "type" => "Boolean", "required" => true, "nullable" => false},
         %{"attribute" => "following_received", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "following_requested", "type" => "Boolean", "required" => true, "nullable" => true},
+        %{"attribute" => "following_requested", "type" => "Boolean", "required" => true, "nullable" => true}
       ]
       |> model_code_gen("friendship_target")
     )
@@ -325,7 +320,7 @@ defmodule Tw.V1_1.Schema do
         %{"attribute" => "parentid", "type" => "Int", "required" => true, "nullable" => false},
         %{"attribute" => "placeType", "type" => "Place Type Object", "required" => true, "nullable" => false},
         %{"attribute" => "url", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "woeid", "type" => "Int", "required" => true, "nullable" => false},
+        %{"attribute" => "woeid", "type" => "Int", "required" => true, "nullable" => false}
       ]
       |> model_code_gen("trend_location")
     )
@@ -335,17 +330,10 @@ defmodule Tw.V1_1.Schema do
         %{"attribute" => "url", "type" => "String", "required" => true, "nullable" => false},
         %{"attribute" => "promoted_content", "type" => "Boolean", "required" => true, "nullable" => true},
         %{"attribute" => "query", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "tweet_volume", "type" => "Int", "required" => true, "nullable" => true},
+        %{"attribute" => "tweet_volume", "type" => "Int", "required" => true, "nullable" => true}
       ]
       |> model_code_gen("trend")
     )
-  end
-
-  defp write_schema(schema, to: path) do
-    json = schema |> Jason.encode!(pretty: true)
-
-    :ok = File.write(path, json)
-    [path]
   end
 
   def put_nullable(e) do
@@ -450,7 +438,6 @@ defmodule Tw.V1_1.Schema do
         |> Map.fetch!(:body)
         |> Floki.parse_document()
 
-
       ts = tables(html, h_levels: [2])
 
       parameters =
@@ -473,9 +460,9 @@ defmodule Tw.V1_1.Schema do
         "parameters" => parameters
       }
 
-      dest = Path.join(["priv/schema/endpoint", (url |> Path.basename() |> String.replace("-", "_")) <> ".json"])
-
-      schema |> write_schema(to: dest)
+      schema
+      |> endpoint_code_gen()
+      |> IO.puts()
     end
   end
 
@@ -488,7 +475,6 @@ defmodule Tw.V1_1.Schema do
         Req.get!(url)
         |> Map.fetch!(:body)
         |> Floki.parse_document()
-
 
       ts = tables(html, h_levels: [2])
 
@@ -512,9 +498,9 @@ defmodule Tw.V1_1.Schema do
         "parameters" => parameters
       }
 
-      dest = Path.join(["priv/schema/endpoint", (url |> Path.basename() |> String.replace("-", "_")) <> ".json"])
-
-      schema |> write_schema(to: dest)
+      schema
+      |> endpoint_code_gen()
+      |> IO.puts()
     end
   end
 
@@ -525,13 +511,12 @@ defmodule Tw.V1_1.Schema do
       |> Floki.parse_document()
 
     Floki.find(html, "a")
-    |> Enum.filter(&match?(["https://developer.twitter.com/en/docs/twitter-api/v1/"<>_], Floki.attribute(&1, "href")))
+    |> Enum.filter(&match?(["https://developer.twitter.com/en/docs/twitter-api/v1/" <> _], Floki.attribute(&1, "href")))
     |> Enum.map(fn e ->
       [url] = Floki.attribute(e, "href")
       {Floki.text(e), url}
     end)
     |> Map.new()
-    |> write_schema(to: "priv/schema/endpoint/index.json")
   end
 
   defp infer_type(name, example)
@@ -549,85 +534,102 @@ defmodule Tw.V1_1.Schema do
     end
   end
 
-  defp return_type(endpoint) when endpoint in [
-    "GET statuses/home_timeline",
-    "GET statuses/user_timeline",
-    "GET statuses/mentions_timeline",
-    "GET favorites/list",
-    "GET lists/statuses",
-    "GET statuses/lookup",
-    "GET statuses/retweets_of_me",
-    "GET statuses/retweets/:id",
-  ] do
+  defp return_type(endpoint)
+       when endpoint in [
+              "GET statuses/home_timeline",
+              "GET statuses/user_timeline",
+              "GET statuses/mentions_timeline",
+              "GET favorites/list",
+              "GET lists/statuses",
+              "GET statuses/lookup",
+              "GET statuses/retweets_of_me",
+              "GET statuses/retweets/:id"
+            ] do
     "Array of Tweets"
   end
-  defp return_type(endpoint) when endpoint in [
-    "GET users/show",
-    "POST blocks/create",
-    "POST blocks/destroy",
-    "POST mutes/users/create",
-    "POST mutes/users/destroy",
-    "POST users/report_spam",
-    "POST friendships/create",
-    "POST friendships/destroy",
-  ] do
+
+  defp return_type(endpoint)
+       when endpoint in [
+              "GET users/show",
+              "POST blocks/create",
+              "POST blocks/destroy",
+              "POST mutes/users/create",
+              "POST mutes/users/destroy",
+              "POST users/report_spam",
+              "POST friendships/create",
+              "POST friendships/destroy"
+            ] do
     "User object"
   end
+
   defp return_type("GET users/lookup"), do: "Array of User objects"
   defp return_type("GET users/search"), do: "Array of User objects"
   defp return_type("Standard search API"), do: "Search Result Object"
-  defp return_type(endpoint) when endpoint in [
-    "GET followers/ids",
-    "GET friends/ids",
-    "GET friendships/incoming",
-    "GET friendships/outgoing",
-    "GET blocks/ids",
-    "GET mutes/users/ids",
-    "GET statuses/retweeters/ids",
-  ] do
+
+  defp return_type(endpoint)
+       when endpoint in [
+              "GET followers/ids",
+              "GET friends/ids",
+              "GET friendships/incoming",
+              "GET friendships/outgoing",
+              "GET blocks/ids",
+              "GET mutes/users/ids",
+              "GET statuses/retweeters/ids"
+            ] do
     "Cursored Result Object with ids Array of Int"
   end
-  defp return_type(endpoint) when endpoint in [
-    "GET followers/list",
-    "GET friends/list",
-    "GET blocks/list",
-    "GET mutes/users/list",
-    "GET lists/members",
-    "GET lists/subscribers",
-  ] do
+
+  defp return_type(endpoint)
+       when endpoint in [
+              "GET followers/list",
+              "GET friends/list",
+              "GET blocks/list",
+              "GET mutes/users/list",
+              "GET lists/members",
+              "GET lists/subscribers"
+            ] do
     "Cursored Result Object with users Array of User objects"
   end
+
   defp return_type("GET friendships/no_retweets/ids"), do: "Array of Int"
   defp return_type("GET friendships/lookup"), do: "Array of Friendship Lookup Result Objects"
-  defp return_type(endpoint) when endpoint in [
-    "GET friendships/show",
-    "POST friendships/update",
-  ] do
+
+  defp return_type(endpoint)
+       when endpoint in [
+              "GET friendships/show",
+              "POST friendships/update"
+            ] do
     "Friendship Relationship Object"
   end
+
   defp return_type("GET account/verify_credentials"), do: "Me Object"
-  defp return_type(endpoint) when endpoint in [
-    "GET statuses/show/:id",
-    "POST statuses/update",
-    "POST statuses/destroy/:id",
-    "POST statuses/retweet/:id",
-    "POST statuses/unretweet/:id",
-    "POST favorites/create",
-    "POST favorites/destroy",
-  ] do
+
+  defp return_type(endpoint)
+       when endpoint in [
+              "GET statuses/show/:id",
+              "POST statuses/update",
+              "POST statuses/destroy/:id",
+              "POST statuses/retweet/:id",
+              "POST statuses/unretweet/:id",
+              "POST favorites/create",
+              "POST favorites/destroy"
+            ] do
     "Tweet"
   end
+
   defp return_type("GET statuses/oembed"), do: "oEmbed Object"
-  defp return_type(endpoint) when endpoint in [
-    "GET trends/closest",
-    "GET trends/available"
-  ] do
+
+  defp return_type(endpoint)
+       when endpoint in [
+              "GET trends/closest",
+              "GET trends/available"
+            ] do
     "Array of Trend Location Objects"
   end
+
   defp return_type("GET trends/place"), do: "Array of Trends Objects"
 
   defp model_code_gen(schema, name) do
-    module_code =
     model_code_ast(schema, name)
     |> Macro.to_string(fn
       str, original_string when is_binary(str) ->
@@ -653,14 +655,14 @@ defmodule Tw.V1_1.Schema do
     end)
     |> String.trim_leading("(")
     |> String.trim_trailing(")")
-
-    IO.puts("\n\n" <> module_code)
-
-    [name]
+    |> then(fn module_code ->
+      IO.puts("\n\n" <> module_code)
+    end)
   end
 
   defp model_code_ast(schema, name) do
     module_name = {:__aliases__, [alias: false], [:Tw, :V1_1, name |> Macro.camelize() |> String.to_atom()]}
+
     quote do
       defmodule unquote(module_name) do
         @enforce_keys unquote(required_fields(schema))
@@ -679,6 +681,104 @@ defmodule Tw.V1_1.Schema do
           struct(__MODULE__, json)
         end
       end
+    end
+  end
+
+  defp endpoint_code_gen(schema) do
+    [method, suff] = schema["doc_url"]
+    |> Path.basename()
+    |> String.split("-", parts: 2)
+    method = String.to_atom(method)
+    func_name = suff |> String.split("-") |> Enum.reverse() |> Enum.at(0)
+    path = "/" <> String.replace(suff, "-", "/") <> ".json"
+
+    endpoint_code_ast(schema, method, path, func_name)
+    |> Macro.to_string(fn
+      str, original_string when is_binary(str) ->
+        if String.contains?(str, "\n") do
+          res =
+            original_string
+            |> String.trim(~S["])
+            |> String.replace("\\n", "\n")
+
+          ~s["""
+        #{res}
+        """]
+        else
+          original_string
+        end
+
+      {:def, _, _}, string ->
+        string
+        |> String.replace(~r/def\((.*?)\) do/, "def \\g{1} do")
+        |> String.replace(~r/with\((.*?)\) do/, "with \\g{1} do")
+
+      _ast, string ->
+        string
+    end)
+    |> String.replace(~r/@endpoint\("(.*?)"\)/, """
+    ##################################
+    # \\g{1}
+    ##################################
+    """)
+    |> String.trim_leading("(")
+    |> String.trim_trailing(")")
+  end
+
+  defp endpoint_code_ast(schema, method, path, fn_name) do
+    raw_fn_name = {String.to_atom(fn_name), [], Elixir}
+    params_type_name = :"#{fn_name}_params"
+
+    type = to_ex_type("", schema["type"])
+    endpoint = "#{method |> to_string() |> String.upcase()} #{path}"
+
+    typedoc = """
+    Parameters for `#{fn_name}/3`.
+
+    #{cite(params_type_table(schema))}
+
+    See [the Twitter API documentation](#{schema["doc_url"]}) for details.
+    """
+
+    doc = """
+    Request `#{endpoint}` and return decoded result.
+    #{cite(schema["description"])}
+
+    See [the Twitter API documentation](#{schema["doc_url"]}) for details.
+    """
+
+    func =
+      case decoder(schema["type"]) do
+        nil ->
+          quote do
+            def unquote(raw_fn_name)(client, params) do
+              Tw.V1_1.Client.request(client, unquote(method), unquote(path), params)
+            end
+          end
+
+        decode ->
+          quote do
+            def unquote(raw_fn_name)(client, params) do
+              with {:ok, json} <- Client.request(client, unquote(method), unquote(path), params) do
+                res =
+                  json
+                  |> unquote(decode)
+
+                {:ok, res}
+              end
+            end
+          end
+      end
+
+    quote do
+      @endpoint unquote(endpoint)
+      @typedoc unquote(typedoc)
+      @type unquote({params_type_name, [], Elixir}) :: unquote(params_type(schema))
+
+      @spec unquote(raw_fn_name)(Client.t(), unquote({params_type_name, [], Elixir})) ::
+              {:ok, unquote(type)} | {:error, Client.error()}
+      @doc unquote(doc)
+      unquote(func)
     end
   end
 
@@ -928,87 +1028,49 @@ defmodule Tw.V1_1.Schema do
   def field_decoder(_name, _type), do: quote(do: &Function.identity/1)
 
   defp decoder("Array of " <> twitter_type) do
-    quote(do: fn x -> Enum.map(x, unquote(decoder(twitter_type |> String.trim_trailing("s")))) end)
+    case decoder(twitter_type |> String.trim_trailing("s")) do
+      nil ->
+        nil
+
+      element_decoder ->
+        quote do
+          Enum.map(fn e ->
+            e |> unquote(element_decoder)
+          end)
+        end
+    end
   end
 
-  defp decoder("Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode!/1)
-  defp decoder("User object"), do: quote(do: &Tw.V1_1.User.decode!/1)
-  defp decoder("Me Object"), do: quote(do: &Tw.V1_1.Me.decode!/1)
-  defp decoder("Search Result Object"), do: quote(do: &Tw.V1_1.SearchResult.decode!/1)
-  defp decoder("Friendship Lookup Result Object"), do: quote(do: &Tw.V1_1.FriendshipLookupResult.decode!/1)
-  defp decoder("Trend Location Object"), do: quote(do: &Tw.V1_1.TrendLocation.decode!/1)
+  defp decoder("Tweet"), do: quote(do: Tw.V1_1.Tweet.decode!())
+  defp decoder("User object"), do: quote(do: Tw.V1_1.User.decode!())
+  defp decoder("Me Object"), do: quote(do: Tw.V1_1.Me.decode!())
+  defp decoder("Search Result Object"), do: quote(do: Tw.V1_1.SearchResult.decode!())
+  defp decoder("Friendship Lookup Result Object"), do: quote(do: Tw.V1_1.FriendshipLookupResult.decode!())
+  defp decoder("Trend Location Object"), do: quote(do: Tw.V1_1.TrendLocation.decode!())
 
   defp decoder("Cursored Result Object with " <> kv) do
     [k, v] = String.split(kv, " ", parts: 2)
 
     quote do
-      fn json ->
-        json
-        |> unquote(field_decoder(k, v, true, false))
-      end
+      unquote(field_decoder(k, v, true, false))
     end
   end
 
   defp decoder("Friendship Relationship Object") do
     quote do
-      fn json ->
-        json
-        |> Map.update!(:relationship, &Tw.V1_1.Friendship.decode!/1)
-      end
-    end
-  end
-
-  defp decoder("oEmbed Object") do
-    quote do
-      fn json -> json end
+      Map.update!(:relationship, &Tw.V1_1.Friendship.decode!/1)
     end
   end
 
   defp decoder("Trends Object") do
     quote do
-      fn json ->
-        json
-        |> Map.update!(:trends, &Tw.V1_1.Trend.decode!/1)
-        |> Map.update!(:as_of, &DateTime.from_iso8601/1)
-        |> Map.update!(:created_at, &DateTime.from_iso8601/1)
-      end
+      Map.update!(:trends, &Tw.V1_1.Trend.decode!/1)
+      |> Map.update!(:as_of, &DateTime.from_iso8601/1)
+      |> Map.update!(:created_at, &DateTime.from_iso8601/1)
     end
   end
 
-  defp decoder(_), do: quote(do: &Function.identity/1)
-
-  @spec decode_twitter_datetime!(binary) :: DateTime.t()
-  @doc """
-  Decode Twitter's datetime format into DateTime.
-
-      iex> Schema.decode_twitter_datetime!("Sun Feb 13 00:28:45 +0000 2022")
-      ~U[2022-02-13 00:28:45Z]
-
-      iex> Schema.decode_twitter_datetime!("a")
-      ** (RuntimeError) Parsing datetime failed: a
-  """
-  def decode_twitter_datetime!(str) do
-    with <<_day_of_week::binary-size(4), rest::binary>> <- str,
-         {month, rest} <- parse_month(rest),
-         " " <> rest <- rest,
-         {day, rest} <- Integer.parse(rest),
-         " " <> rest <- rest,
-         {hour, rest} <- Integer.parse(rest),
-         ":" <> rest <- rest,
-         {minute, rest} <- Integer.parse(rest),
-         ":" <> rest <- rest,
-         {second, rest} <- Integer.parse(rest),
-         " +0000 " <> rest <- rest,
-         {year, ""} <- Integer.parse(rest) do
-      DateTime.new!(Date.new!(year, month + 1, day), Time.new!(hour, minute, second), "Etc/UTC")
-    else
-      _ -> raise "Parsing datetime failed: #{str}"
-    end
-  end
-
-  for {pat, idx} <- Enum.with_index(~W[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec]) do
-    defp parse_month(unquote(pat) <> rest), do: {unquote(idx), rest}
-  end
+  defp decoder(_), do: nil
 
   defp format_description(%{"description" => nil}), do: nil
 

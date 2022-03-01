@@ -28,7 +28,6 @@ credentials = Tw.OAuth.V1_0a.Credentials.new(
   access_token_secret: "xxx",
 )
 client = Tw.V1_1.Client.new(
-  http_client: Tw.HTTP.Client.Hackney, # or another module which implements Tw.HTTP.Client
   credentials: credentials,
 )
 Tw.V1_1.Tweet.home_timeline(client, %{count: 10})
@@ -37,13 +36,7 @@ Tw.V1_1.Tweet.home_timeline(client, %{count: 10})
 If you want to use an endpoint which is not implemented by this client, you can use low-level API.
 
 ```elixir
-with {:ok, resp} <- Tw.V1_1.Client.request(client, :get, "/statuses/home_timeline.json", params, http_client_opts),
-      {:ok, res} <- Tw.V1_1.Client.decode_json(resp.body) do
-  {:ok, res}
-else
-  {:error, message} ->
-    {:error, message}
-end
+Tw.V1_1.Client.request(client, :get, "/foo/bar.json", %{})
 ```
 
 <!-- MDOC !-->

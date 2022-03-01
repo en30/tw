@@ -128,12 +128,12 @@ defmodule Tw.V1_1.Media do
 
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/media/upload-media/overview) for details.
   """
-  @spec upload(Client.t(), upload_params(), Tw.HTTP.Client.options()) ::
+  @spec upload(Client.t(), upload_params()) ::
           {:ok, upload_ok_result()}
-          | {:error, Tw.V1_1.TwitterAPIError.t() | upload_error_result()}
-  def upload(client, params, http_client_opts \\ [])
+          | {:error, Client.error() | upload_error_result()}
+  def upload(client, params)
 
-  def upload(client, %{path: path} = params, http_client_opts) do
+  def upload(client, %{path: path} = params) do
     with {:ok, stat} <- File.stat(path),
          {:ok, media_type} <- infer_media_type(path),
          {:ok, device} <- File.open(path, [:binary, :read]) do
@@ -143,7 +143,7 @@ defmodule Tw.V1_1.Media do
           |> Map.delete(:path)
           |> Map.merge(%{device: device, media_type: media_type, total_bytes: stat.size})
 
-        upload(client, params, http_client_opts)
+        upload(client, params)
       after
         File.close(device)
       end
@@ -152,29 +152,29 @@ defmodule Tw.V1_1.Media do
     end
   end
 
-  def upload(client, %{device: device, media_type: media_type, total_bytes: _total_bytes} = params, http_client_opts) do
+  def upload(client, %{device: device, media_type: media_type, total_bytes: _total_bytes} = params) do
     params =
       params
       |> Map.delete(:device)
       |> Map.put_new_lazy(:media_category, fn -> category_from_type(media_type) end)
 
-    upload_sequence(client, IO.binstream(device, @chunk_size), params, http_client_opts)
+    upload_sequence(client, IO.binstream(device, @chunk_size), params)
   end
 
-  def upload(client, %{data: data, media_type: media_type} = params, http_client_opts) do
+  def upload(client, %{data: data, media_type: media_type} = params) do
     params =
       params
       |> Map.delete(:data)
       |> Map.put_new_lazy(:media_category, fn -> category_from_type(media_type) end)
 
-    upload_sequence(client, data |> IO.iodata_to_binary() |> chunks(), params, http_client_opts)
+    upload_sequence(client, data |> IO.iodata_to_binary() |> chunks(), params)
   end
 
-  defp upload_sequence(client, chunks, params, http_client_opts) do
-    with {:ok, init_result} <- initialize_upload(client, params, http_client_opts),
-         :ok <- upload_chunks(client, init_result.media_id, chunks, http_client_opts),
-         {:ok, finalize_result} <- finalize_upload(client, init_result.media_id, http_client_opts),
-         {:ok, res} <- wait_for_processing(client, finalize_result, http_client_opts) do
+  defp upload_sequence(client, chunks, params) do
+    with {:ok, init_result} <- initialize_upload(client, params),
+         :ok <- upload_chunks(client, init_result.media_id, chunks),
+         {:ok, finalize_result} <- finalize_upload(client, init_result.media_id),
+         {:ok, res} <- wait_for_processing(client, finalize_result) do
       {:ok, res}
     else
       error -> error
@@ -184,15 +184,15 @@ defmodule Tw.V1_1.Media do
   defp chunks(<<chunk::binary-size(@chunk_size), rest::binary>>), do: [chunk | chunks(rest)]
   defp chunks(rest), do: [rest]
 
-  defp initialize_upload(client, params, http_client_opts) do
-    upload_command(client, :post, params |> Map.put(:command, :INIT), http_client_opts)
+  defp initialize_upload(client, params) do
+    upload_command(client, :post, params |> Map.put(:command, :INIT))
   end
 
-  defp upload_chunks(client, media_id, chunks, http_client_opts) do
+  defp upload_chunks(client, media_id, chunks) do
     chunks
     |> Stream.with_index()
     |> Task.async_stream(fn {bin, i} ->
-      upload_append(client, %{media_id: media_id, media: bin, segment_index: i}, http_client_opts)
+      upload_append(client, %{media_id: media_id, media: bin, segment_index: i})
     end)
     |> Enum.filter(&match?({:error, _}, &1))
     |> case do
@@ -201,35 +201,35 @@ defmodule Tw.V1_1.Media do
     end
   end
 
-  defp upload_append(client, params, http_client_opts) do
-    upload_command(client, :post, params |> Map.put(:command, :APPEND), http_client_opts)
+  defp upload_append(client, params) do
+    upload_command(client, :post, params |> Map.put(:command, :APPEND))
   end
 
-  defp finalize_upload(client, params, http_client_opts) do
-    upload_command(client, :post, params |> Map.put(:command, :FINALIZE), http_client_opts)
+  defp finalize_upload(client, media_id) do
+    upload_command(client, :post, %{command: :FINALIZE, media_id: media_id})
   end
 
-  defp wait_for_processing(client, finalize_result, http_client_opts)
+  defp wait_for_processing(client, finalize_result)
 
-  defp wait_for_processing(_client, %{processing_info: %{state: "failed"}} = res, _) do
+  defp wait_for_processing(_client, %{processing_info: %{state: "failed"}} = res) do
     {:error, res}
   end
 
-  defp wait_for_processing(_client, %{processing_info: %{state: "succeeded"}} = res, _) do
+  defp wait_for_processing(_client, %{processing_info: %{state: "succeeded"}} = res) do
     {:ok, res}
   end
 
-  defp wait_for_processing(client, %{processing_info: %{state: state} = processing_info} = res, http_client_opts)
+  defp wait_for_processing(client, %{processing_info: %{state: state} = processing_info} = res)
        when state in ["pending", "in_progress"] do
     Process.sleep(:timer.seconds(processing_info.check_after_secs))
 
-    case upload_command(client, :get, %{command: :STATUS, media_id: res.media_id}, http_client_opts) do
-      {:ok, res} -> wait_for_processing(client, res, http_client_opts)
+    case upload_command(client, :get, %{command: :STATUS, media_id: res.media_id}) do
+      {:ok, res} -> wait_for_processing(client, res)
       error -> error
     end
   end
 
-  defp wait_for_processing(_client, res, _), do: {:ok, res}
+  defp wait_for_processing(_client, res), do: {:ok, res}
 
   @type upload_init_command_params :: %{
           required(:command) => :INIT,
@@ -271,16 +271,10 @@ defmodule Tw.V1_1.Media do
           | upload_finalize_command_params()
           | upload_status_command_params()
 
-  @spec upload_command(Client.t(), :get | :post, upload_command_params(), Tw.HTTP.Client.options()) ::
+  @spec upload_command(Client.t(), :get | :post, upload_command_params()) ::
           {:ok, %{atom => term}} | {:error, term}
-  def upload_command(client, method, params, http_client_opts) do
-    with {:ok, resp} <- Client.request(client, method, "/media/upload.json", params, http_client_opts),
-         {:ok, res} <- Client.decode_json(client, resp.body) do
-      {:ok, res}
-    else
-      {:error, message} ->
-        {:error, message}
-    end
+  def upload_command(client, method, params) do
+    Client.request(client, method, "/media/upload.json", params)
   end
 
   # https://developer.twitter.com/en/docs/twitter-api/v1/media/upload-media/uploading-media/media-best-practices
@@ -337,17 +331,12 @@ defmodule Tw.V1_1.Media do
       {:ok, nil}
 
   """
-  @spec create_metadata(Client.t(), create_metadata_params(), Tw.HTTP.Client.options()) ::
-          {:ok, nil} | {:error, Tw.V1_1.TwitterAPIError.t()}
-  def create_metadata(client, params, http_client_opts) do
+  @spec create_metadata(Client.t(), create_metadata_params()) ::
+          {:ok, nil} | {:error, Client.error()}
+  def create_metadata(client, params) do
     params = params |> Map.update!(:media_id, &to_string/1)
 
-    with {:ok, _resp} <- Client.request(client, :post, "/media/metadata/create.json", params, http_client_opts) do
-      {:ok, nil}
-    else
-      {:error, message} ->
-        {:error, message}
-    end
+    Client.request(client, :post, "/media/metadata/create.json", params)
   end
 
   @type bind_subtitles_params ::
@@ -370,9 +359,9 @@ defmodule Tw.V1_1.Media do
       iex> {:ok, en_sub} = Tw.V1_1.Media.bind_subtitles(client, %{media_id: video.media_id, subtitles: subtitles})
       {:ok, nil}
   """
-  @spec bind_subtitles(Client.t(), bind_subtitles_params, Tw.HTTP.Client.options()) ::
-          {:ok, nil} | {:error, Tw.V1_1.TwitterAPIError.t()}
-  def bind_subtitles(client, %{media_id: media_id, subtitles: subtitles}, http_client_opts) do
+  @spec bind_subtitles(Client.t(), bind_subtitles_params) ::
+          {:ok, nil} | {:error, Client.error()}
+  def bind_subtitles(client, %{media_id: media_id, subtitles: subtitles}) do
     params = %{
       media_id: media_id,
       media_category: "TweetVideo",
@@ -381,12 +370,7 @@ defmodule Tw.V1_1.Media do
       }
     }
 
-    with {:ok, _resp} <- Client.request(client, :post, "/media/subtitles/create.json", params, http_client_opts) do
-      {:ok, nil}
-    else
-      {:error, message} ->
-        {:error, message}
-    end
+    Client.request(client, :post, "/media/subtitles/create.json", params)
   end
 
   @type unbind_subtitles_params :: %{
@@ -405,9 +389,9 @@ defmodule Tw.V1_1.Media do
       {:ok, nil}
   """
 
-  @spec unbind_subtitles(Client.t(), unbind_subtitles_params(), Tw.HTTP.Client.options()) ::
-          {:ok, nil} | {:error, Tw.V1_1.TwitterAPIError.t()}
-  def unbind_subtitles(client, %{media_id: media_id, subtitles: subtitles}, http_client_opts) do
+  @spec unbind_subtitles(Client.t(), unbind_subtitles_params()) ::
+          {:ok, nil} | {:error, Client.error()}
+  def unbind_subtitles(client, %{media_id: media_id, subtitles: subtitles}) do
     params = %{
       media_id: media_id,
       media_category: "TweetVideo",
@@ -416,11 +400,6 @@ defmodule Tw.V1_1.Media do
       }
     }
 
-    with {:ok, _resp} <- Client.request(client, :post, "/media/subtitles/delete.json", params, http_client_opts) do
-      {:ok, nil}
-    else
-      {:error, message} ->
-        {:error, message}
-    end
+    Client.request(client, :post, "/media/subtitles/delete.json", params)
   end
 end

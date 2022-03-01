@@ -14,20 +14,22 @@ defmodule Tw.V1_1.Client do
   defstruct [:http_client, :credentials, :json]
 
   @type t :: %__MODULE__{
-          http_client: HTTP.Client,
+          http_client: {HTTP.Client, HTTP.Client.options()},
           json: {JSON.Serializer, JSON.Serializer.encode_options(), JSON.Serializer.decode_options()},
           credentials: OAuth.V1_0a.Credentials.t()
         }
 
+  @type error :: TwitterAPIError.t() | Exception.t()
+
   @type new_opt ::
-          {:http_client, HTTP.Client}
+          {:http_client, {HTTP.Client, HTTP.Client.options()}}
           | {:json, {JSON.Serializer, JSON.Serializer.encode_options(), JSON.Serializer.decode_options()}}
           | {:credentials, OAuth.V1_0a.Credentials.t()}
   @spec new([new_opt()]) :: t
   def new(opts) do
     opts =
       opts
-      |> Keyword.put_new_lazy(:http_client, fn -> HTTP.Client.Hackney end)
+      |> Keyword.put_new_lazy(:http_client, fn -> {HTTP.Client.Hackney, []} end)
       # I trust Twitter API.
       |> Keyword.put_new_lazy(:json, fn -> {JSON.Serializer.Jason, [], [keys: :atoms]} end)
 
@@ -41,16 +43,24 @@ defmodule Tw.V1_1.Client do
     serializer.decode(body, opts)
   end
 
-  @spec request(t, atom, binary, %{atom => term}, HTTP.Client.options()) ::
-          {:ok, HTTP.Response.t()} | {:error, TwitterAPIError.t()}
-  def request(client, method, path, params \\ %{}, http_client_opts \\ []) do
+  @spec request(t, atom, binary, %{atom => term}) ::
+          {:ok, term()} | {:error, error()}
+  def request(client, method, path, params \\ %{}) do
     req =
       build(client, method, path, params)
       |> sign(client.credentials)
 
-    case HTTP.Client.request(client.http_client, req, http_client_opts) do
+    {mod, http_client_opts} = client.http_client
+
+    case HTTP.Client.request(mod, req, http_client_opts) do
       {:ok, %{status: status} = resp} when status < 400 ->
-        {:ok, resp}
+        case HTTP.Response.get_header(resp, "content-type") do
+          ["application/json" <> _] ->
+            decode_json(client, resp.body)
+
+          _ ->
+            {:ok, resp.body}
+        end
 
       {:ok, error_resp} ->
         error =
