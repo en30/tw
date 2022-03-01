@@ -1001,7 +1001,7 @@ defmodule Tw.V1_1.Schema do
 
   def nilable(decoder_fn), do: fn v -> v && decoder_fn.(v) end
 
-  def field_decoder("created_at", "String"), do: quote(do: &Tw.V1_1.Schema.decode_twitter_datetime!/1)
+  def field_decoder("created_at", "String"), do: quote(do: &Tw.V1_1.TwitterDateTime.decode!/1)
   def field_decoder("bounding_box", "Object"), do: quote(do: &Tw.V1_1.BoundingBox.decode!/1)
   def field_decoder(_name, "User object"), do: quote(do: &Tw.V1_1.User.decode!/1)
   def field_decoder(_name, "Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode!/1)

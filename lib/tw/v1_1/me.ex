@@ -7,6 +7,7 @@ defmodule Tw.V1_1.Me do
 
   alias Tw.V1_1.Schema
   alias Tw.V1_1.Tweet
+  alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.UserEntities
 
   @enforce_keys [
@@ -131,7 +132,7 @@ defmodule Tw.V1_1.Me do
   def decode!(json) do
     json =
       json
-      |> Map.update!(:created_at, &Schema.decode_twitter_datetime!/1)
+      |> Map.update!(:created_at, &TwitterDateTime.decode!/1)
       |> Map.update!(:entities, &UserEntities.decode!/1)
       |> Map.update!(:status, Schema.nilable(&Tweet.decode!/1))
 

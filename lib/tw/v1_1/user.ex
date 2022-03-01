@@ -7,7 +7,7 @@ defmodule Tw.V1_1.User do
   alias Tw.V1_1.Client
   alias Tw.V1_1.CursoredResult
   alias Tw.V1_1.Me
-  alias Tw.V1_1.Schema
+  alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.UserEntities
 
   @type id :: pos_integer()
@@ -119,7 +119,7 @@ defmodule Tw.V1_1.User do
   def decode!(json) do
     json =
       json
-      |> Map.update!(:created_at, &Schema.decode_twitter_datetime!/1)
+      |> Map.update!(:created_at, &TwitterDateTime.decode!/1)
       |> Map.update!(:entities, &UserEntities.decode!/1)
 
     struct(__MODULE__, json)

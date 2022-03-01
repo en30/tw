@@ -11,6 +11,7 @@ defmodule Tw.V1_1.Tweet do
   alias Tw.V1_1.Place
   alias Tw.V1_1.Schema
   alias Tw.V1_1.SearchResult
+  alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.User
 
   @enforce_keys [
@@ -177,7 +178,7 @@ defmodule Tw.V1_1.Tweet do
   def decode!(json) do
     json =
       json
-      |> Map.update!(:created_at, &Schema.decode_twitter_datetime!/1)
+      |> Map.update!(:created_at, &TwitterDateTime.decode!/1)
       |> Map.update!(:user, &User.decode!/1)
       |> Map.update!(:coordinates, Schema.nilable(&Coordinates.decode!/1))
       |> Map.update!(:place, Schema.nilable(&Place.decode!/1))
