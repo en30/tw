@@ -14,7 +14,7 @@ defmodule Tw.MixProject do
       deps: deps(),
       dialyzer: [
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
-        plt_add_apps: [:hackney]
+        plt_add_apps: [:jason, :hackney]
       ],
       name: "Tw",
       source_url: @source_url,
@@ -33,7 +33,7 @@ defmodule Tw.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:jason, "~> 1.2"},
+      {:jason, "~> 1.2", optional: true},
       {:hackney, "~> 1.0", optional: true},
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
