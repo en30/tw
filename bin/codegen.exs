@@ -4,67 +4,94 @@ Mix.install([
 ])
 
 defmodule Tw.V1_1.Schema do
-  def fetch do
+  def fetch(["model", "tweet"]), do: fetch_tweet_object()
+  def fetch(["model", "user"]), do: fetch_user_object()
+  def fetch(["model", "geo"]), do: fetch_geo_objects()
+  def fetch(["model", "entities"]), do: fetch_entities_objects()
+  def fetch(["model", "endpoint_results"]), do: generate_endpoint_result_objects()
+
+  def fetch(["endpoint", "GET statuses/oembed" = name, func_name]) do
+    endpoints = fetch_endpoint_index()
+    url = endpoints[name]
+    type = return_type(name)
+
+    {:ok, html} =
+      Req.get!(url)
+      |> Map.fetch!(:body)
+      |> Floki.parse_document()
+
+    ts = tables(html, h_levels: [2])
+
+    parameters =
+      ts["Parameters"]
+      |> Enum.map(fn param ->
+        [name, type] = param["name"] |> String.split("\n")
+        required = String.ends_with?(name, "required")
+        name = String.trim_trailing(name, "required")
+
+        param
+        |> Map.put("name", name)
+        |> Map.put("type", type)
+        |> Map.put("required", required)
+      end)
+
+    schema = %{
+      "doc_url" => url,
+      "type" => type,
+      "description" => main_paragraph(html),
+      "parameters" => parameters
+    }
+
+    schema
+    |> endpoint_code_gen(func_name)
+    |> IO.puts()
+  end
+
+  def fetch(["endpoint", endpoint, func_name]) do
     endpoints = fetch_endpoint_index()
 
-    files =
-      [
-        # &generate_endpoint_result_objects/0,
-        # &fetch_tweet_object/0,
-        # &fetch_user_object/0
-        # &fetch_geo_objects/0,
-        # &fetch_entities_objects/0,
-        fetch_endpoint(endpoints, "GET statuses/home_timeline")
-        # fetch_endpoint(endpoints, "GET statuses/user_timeline"),
-        # fetch_endpoint(endpoints, "GET statuses/mentions_timeline"),
-        # fetch_endpoint(endpoints, "Standard search API"),
-        # fetch_endpoint(endpoints, "GET users/show"),
-        # fetch_endpoint(endpoints, "GET followers/ids"),
-        # fetch_endpoint(endpoints, "GET friends/ids"),
-        # fetch_endpoint(endpoints, "GET followers/list"),
-        # fetch_endpoint(endpoints, "GET friends/list"),
-        # fetch_endpoint(endpoints, "GET friendships/incoming"),
-        # fetch_endpoint(endpoints, "GET friendships/outgoing"),
-        # fetch_endpoint(endpoints, "GET friendships/no_retweets/ids"),
-        # fetch_endpoint(endpoints, "GET friendships/lookup"),
-        # fetch_endpoint(endpoints, "GET friendships/show"),
-        # fetch_endpoint(endpoints, "GET users/lookup"),
-        # fetch_endpoint(endpoints, "GET users/search"),
-        # fetch_endpoint(endpoints, "GET account/verify_credentials"),
-        # fetch_endpoint(endpoints, "GET blocks/ids"),
-        # fetch_endpoint(endpoints, "GET mutes/users/ids"),
-        # fetch_endpoint(endpoints, "GET statuses/retweeters/ids"),
-        # fetch_endpoint(endpoints, "GET blocks/list"),
-        # fetch_endpoint(endpoints, "GET mutes/users/list"),
-        # fetch_endpoint(endpoints, "GET lists/members"),
-        # fetch_endpoint(endpoints, "GET lists/subscribers"),
-        # fetch_endpoint(endpoints, "GET favorites/list"),
-        # fetch_endpoint(endpoints, "GET lists/statuses"),
-        # fetch_endpoint(endpoints, "GET statuses/lookup"),
-        # fetch_endpoint(endpoints, "GET statuses/retweets_of_me"),
-        # fetch_endpoint(endpoints, "GET statuses/retweets/:id"),
-        # fetch_endpoint(endpoints, "GET statuses/show/:id"),
-        # fetch_oembed_endpoint(endpoints, "GET statuses/oembed"),
-        # fetch_endpoint(endpoints, "GET trends/closest"),
-        # fetch_endpoint(endpoints, "GET trends/available"),
-        # fetch_endpoint(endpoints, "GET trends/place"),
-        # fetch_endpoint(endpoints, "POST statuses/update"),
-        # fetch_endpoint(endpoints, "POST statuses/destroy/:id"),
-        # fetch_endpoint(endpoints, "POST statuses/retweet/:id"),
-        # fetch_endpoint(endpoints, "POST statuses/unretweet/:id"),
-        # fetch_endpoint(endpoints, "POST favorites/create"),
-        # fetch_endpoint(endpoints, "POST favorites/destroy"),
-        # fetch_endpoint(endpoints, "POST blocks/create"),
-        # fetch_endpoint(endpoints, "POST blocks/destroy"),
-        # fetch_endpoint(endpoints, "POST mutes/users/create"),
-        # fetch_endpoint(endpoints, "POST mutes/users/destroy"),
-        # fetch_endpoint(endpoints, "POST users/report_spam"),
-        # fetch_endpoint(endpoints, "POST friendships/create"),
-        # fetch_endpoint(endpoints, "POST friendships/destroy"),
-        # fetch_endpoint(endpoints, "POST friendships/update"),
-      ]
-      |> Enum.map(&Task.async(&1))
-      |> Task.await_many(10_000)
+    case endpoints[endpoint] do
+      nil ->
+        IO.puts(:stderr, """
+        "#{endpoint}" not found.
+        Supported endpoints:
+        #{endpoints |> Map.keys() |> Enum.join("\n")}
+        """)
+
+      url ->
+        type = return_type(endpoint)
+
+        {:ok, html} =
+          Req.get!(url)
+          |> Map.fetch!(:body)
+          |> Floki.parse_document()
+
+        ts = tables(html, h_levels: [2])
+
+        parameters =
+          (ts["Parameters"] || [])
+          |> Enum.map(fn param ->
+            param
+            |> Map.put("type", infer_type(param["name"], param["example"]))
+            |> Map.update!("required", fn
+              "required" -> true
+              "optional" -> false
+              "semi-optional" -> false
+              _ -> false
+            end)
+          end)
+
+        schema = %{
+          "doc_url" => url,
+          "type" => type,
+          "description" => main_paragraph(html),
+          "parameters" => parameters
+        }
+
+        schema
+        |> endpoint_code_gen(func_name)
+        |> IO.puts()
+    end
   end
 
   defp fetch_tweet_object() do
@@ -428,82 +455,6 @@ defmodule Tw.V1_1.Schema do
     html
   end
 
-  defp fetch_endpoint(endpoints, name) do
-    url = endpoints[name]
-    type = return_type(name)
-
-    fn ->
-      {:ok, html} =
-        Req.get!(url)
-        |> Map.fetch!(:body)
-        |> Floki.parse_document()
-
-      ts = tables(html, h_levels: [2])
-
-      parameters =
-        (ts["Parameters"] || [])
-        |> Enum.map(fn param ->
-          param
-          |> Map.put("type", infer_type(param["name"], param["example"]))
-          |> Map.update!("required", fn
-            "required" -> true
-            "optional" -> false
-            "semi-optional" -> false
-            _ -> false
-          end)
-        end)
-
-      schema = %{
-        "doc_url" => url,
-        "type" => type,
-        "description" => main_paragraph(html),
-        "parameters" => parameters
-      }
-
-      schema
-      |> endpoint_code_gen()
-      |> IO.puts()
-    end
-  end
-
-  defp fetch_oembed_endpoint(endpoints, name) do
-    url = endpoints[name]
-    type = return_type(name)
-
-    fn ->
-      {:ok, html} =
-        Req.get!(url)
-        |> Map.fetch!(:body)
-        |> Floki.parse_document()
-
-      ts = tables(html, h_levels: [2])
-
-      parameters =
-        ts["Parameters"]
-        |> Enum.map(fn param ->
-          [name, type] = param["name"] |> String.split("\n")
-          required = String.ends_with?(name, "required")
-          name = String.trim_trailing(name, "required")
-
-          param
-          |> Map.put("name", name)
-          |> Map.put("type", type)
-          |> Map.put("required", required)
-        end)
-
-      schema = %{
-        "doc_url" => url,
-        "type" => type,
-        "description" => main_paragraph(html),
-        "parameters" => parameters
-      }
-
-      schema
-      |> endpoint_code_gen()
-      |> IO.puts()
-    end
-  end
-
   def fetch_endpoint_index() do
     {:ok, html} =
       Req.get!("https://developer.twitter.com/en/docs/api-reference-index#twitter-api-standard")
@@ -684,15 +635,16 @@ defmodule Tw.V1_1.Schema do
     end
   end
 
-  defp endpoint_code_gen(schema) do
-    [method, suff] = schema["doc_url"]
-    |> Path.basename()
-    |> String.split("-", parts: 2)
+  defp endpoint_code_gen(schema, fn_name) do
+    [method, suff] =
+      schema["doc_url"]
+      |> Path.basename()
+      |> String.split("-", parts: 2)
+
     method = String.to_atom(method)
-    func_name = suff |> String.split("-") |> Enum.reverse() |> Enum.at(0)
     path = "/" <> String.replace(suff, "-", "/") <> ".json"
 
-    endpoint_code_ast(schema, method, path, func_name)
+    endpoint_code_ast(schema, method, path, fn_name)
     |> Macro.to_string(fn
       str, original_string when is_binary(str) ->
         if String.contains?(str, "\n") do
@@ -1138,4 +1090,4 @@ defmodule Tw.V1_1.Schema do
   end
 end
 
-Tw.V1_1.Schema.fetch()
+Tw.V1_1.Schema.fetch(System.argv())
