@@ -3,7 +3,379 @@ Mix.install([
   {:req, "~> 0.2.0"}
 ])
 
+defmodule Tw.V1_1.Schema.Type do
+  @type t :: {quoted_type :: term(), decoder :: (map -> term())}
+
+  @identity quote(do: Function.identity())
+
+  def from_twitter(:created_at, "String"), do: quote(do: DateTime.t())
+  def from_twitter(:bounding_box, "Object"), do: quote(do: BoundingBox.t())
+
+  def from_twitter(name, "Array of " <> t) do
+    quote(do: list(unquote(from_twitter(name, t |> String.trim_trailing("s")))))
+  end
+
+  def from_twitter(name, "Collection of " <> t),
+    do: from_twitter(name, "Array of " <> t)
+
+  def from_twitter(_name, "String"), do: quote(do: binary)
+  def from_twitter(_name, "Int64"), do: quote(do: integer)
+  def from_twitter(_name, "Integer"), do: quote(do: integer)
+  def from_twitter(_name, "Int"), do: quote(do: integer)
+  def from_twitter(_name, "Boolean"), do: quote(do: boolean)
+  def from_twitter(_name, "Float"), do: quote(do: float)
+  def from_twitter(_name, "Object"), do: quote(do: map)
+  def from_twitter(_name, "Array of String"), do: quote(do: list(binary))
+  def from_twitter(_name, "Option Object"), do: quote(do: map)
+  def from_twitter(:maxwidth, "Int [220..550]"), do: quote(do: pos_integer)
+  def from_twitter(_name, "Boolean, String or Int"), do: quote(do: boolean)
+
+  def from_twitter(_name, "Enum {left,right,center,none}"),
+    do: quote(do: :left | :right | :center | :none)
+
+  def from_twitter(_name, "Enum(Language)"), do: quote(do: Schema.language())
+  def from_twitter(_name, "Enum {light, dark}"), do: quote(do: :light | :dark)
+  def from_twitter(_name, "Enum {video}"), do: quote(do: :video)
+  def from_twitter(_name, "Place Type Object"), do: quote(do: %{code: non_neg_integer, name: binary})
+  def from_twitter(_name, "Rule Object"), do: quote(do: map)
+  def from_twitter(_name, "Arrays of Enrichment Objects"), do: quote(do: list(map))
+
+  def from_twitter(_name, "User object"), do: quote(do: User.t())
+  def from_twitter(_name, "Me Object"), do: quote(do: Me.t())
+  def from_twitter(_name, "Tweet"), do: quote(do: Tweet.t())
+  def from_twitter(_name, "Coordinates"), do: quote(do: Coordinates.t())
+  def from_twitter(_name, "Places"), do: quote(do: Place.t())
+  def from_twitter(_name, "Entities"), do: quote(do: Entities.t())
+  def from_twitter(_name, "Hashtag Object"), do: quote(do: Hashtag.t())
+  def from_twitter(_name, "Media Object"), do: quote(do: Media.t())
+  def from_twitter(_name, "URL Object"), do: quote(do: URL.t())
+  def from_twitter(_name, "User Mention Object"), do: quote(do: UserMention.t())
+  def from_twitter(_name, "Symbol Object"), do: quote(do: Symbol.t())
+  def from_twitter(_name, "Poll Object"), do: quote(do: Poll.t())
+  def from_twitter(:sizes, "Size Object"), do: quote(do: Sizes.t())
+  def from_twitter(_name, "Size Object"), do: quote(do: Size.t())
+  def from_twitter(_name, "User Entities"), do: quote(do: UserEntities.t())
+  def from_twitter(_name, "Extended Entities"), do: quote(do: ExtendedEntities.t())
+  def from_twitter(_name, "Search Result Object"), do: quote(do: SearchResult.t())
+  def from_twitter(_name, "Search Metadata Object"), do: quote(do: SearchMetadata.t())
+  def from_twitter(_name, "Friendship Lookup Result Object"), do: quote(do: FriendshipLookupResult.t())
+  def from_twitter(_name, "Friendship Source Object"), do: quote(do: FriendshipSource.t())
+  def from_twitter(_name, "Friendship Target Object"), do: quote(do: FriendshipTarget.t())
+  def from_twitter(_name, "Trend Location Object"), do: quote(do: TrendLocation.t())
+
+  def from_twitter(_name, "Trends Object"),
+    do:
+      {quote(
+         do: %{
+           trends: list(Trend.t()),
+           as_of: DateTime.t(),
+           created_at: DateTime.t(),
+           locations: list(%{name: binary, woeid: non_neg_integer()})
+         }
+       ),
+       quote do
+         Map.update!(:trends, &Trend.decode!/1)
+         |> Map.update!(:as_of, &DateTime.from_iso8601/1)
+         |> Map.update!(:created_at, &DateTime.from_iso8601/1)
+       end}
+
+  def from_twitter(_name, "Connection Enum"), do: quote(do: FriendshipLookupResult.connections())
+
+  def from_twitter(name, type, false), do: from_twitter(name, type)
+
+  def from_twitter(name, type, true) do
+    quote do
+      unquote(from_twitter(name, type)) | nil
+    end
+  end
+
+  def decoder({{:., [], [{:__aliases__, _, [:CursoredResult]}, :t]}, [], [k, v]}) do
+    quote do
+      Map.update!(unquote(k), fn v -> v |> unquote(decoder(v)) end)
+    end
+  end
+
+  def decoder(:created_at, {:binary, _, _}), do: quote(do: &TwitterDateTime.decode!/1)
+  def decoder(:bounding_box, _), do: quote(do: &BoundingBox.decode!/1)
+
+  def decoder({:list, _, [type]}) do
+    case decoder(type) do
+      @identity ->
+        @identity
+
+      dec ->
+        quote do
+          Enum.map(fn v -> v |> unquote(dec) end)
+        end
+    end
+  end
+
+  def decoder({:%{}, _, fields}) do
+    fields
+    |> Enum.map(fn {k, v} ->
+      case decoder(v) do
+        @identity ->
+          @identity
+
+        decs when is_list(decs) ->
+          res =
+            Enum.reduce(decs, quote(do: v), fn e, a ->
+              quote(do: unquote(a) |> unquote(e))
+            end)
+
+          quote(do: Map.update!(unquote(k), fn v -> unquote(res) end))
+
+        dec ->
+          quote(do: Map.update!(unquote(k), fn v -> v |> unquote(dec) end))
+      end
+    end)
+    |> Enum.reject(&identity?/1)
+  end
+
+  def decoder({{:., _, [{:__aliases__, _, _} = mod, :t]}, _, []}) do
+    quote(do: unquote(mod).decode!())
+  end
+
+  def decoder(_), do: @identity
+
+  defp identity?(type), do: type == @identity
+
+  def infer(name, example)
+  def infer(_name, "true"), do: quote(do: boolean())
+  def infer(_name, "false"), do: quote(do: boolean())
+  def infer("count", _), do: quote(do: integer())
+  def infer("screen_name", "twitterapi twitter"), do: quote(do: list(binary()))
+  def infer("user_id", "783214 6253282"), do: quote(do: list(integer()))
+  def infer("id", "20 1050118621198921728"), do: quote(do: list(integer()))
+
+  def infer(_name, example) do
+    case Integer.parse(example) do
+      {_, ""} -> quote(do: integer())
+      _ -> quote(do: binary())
+    end
+  end
+end
+
+defmodule Tw.V1_1.Schema.Endpoint do
+  alias Tw.V1_1.Schema.Type
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET statuses/home_timeline",
+             "GET statuses/user_timeline",
+             "GET statuses/mentions_timeline",
+             "GET favorites/list",
+             "GET lists/statuses",
+             "GET statuses/lookup",
+             "GET statuses/retweets_of_me",
+             "GET statuses/retweets/:id"
+           ] do
+    quote(do: list(Tweet.t()))
+  end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET users/show",
+             "POST blocks/create",
+             "POST blocks/destroy",
+             "POST mutes/users/create",
+             "POST mutes/users/destroy",
+             "POST users/report_spam",
+             "POST friendships/create",
+             "POST friendships/destroy"
+           ] do
+    quote(do: User.t())
+  end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET users/lookup",
+             "GET users/search"
+           ],
+      do: quote(do: list(User.t()))
+
+  def return_type("Standard search API"), do: quote(do: SearchResult.t())
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET followers/ids",
+             "GET friends/ids",
+             "GET friendships/incoming",
+             "GET friendships/outgoing",
+             "GET blocks/ids",
+             "GET mutes/users/ids",
+             "GET statuses/retweeters/ids"
+           ] do
+    quote(do: CursoredResult.t(:id, list(integer())))
+  end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET followers/list",
+             "GET friends/list",
+             "GET blocks/list",
+             "GET mutes/users/list",
+             "GET lists/members",
+             "GET lists/subscribers"
+           ] do
+    quote(do: CursoredResult.t(:users, list(User.t())))
+  end
+
+  def return_type("GET friendships/no_retweets/ids"), do: quote(do: list(integer()))
+  def return_type("GET friendships/lookup"), do: quote(do: list(FriendshipLookupResult.t()))
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET friendships/show",
+             "POST friendships/update"
+           ] do
+    quote(do: %{relationship: %{source: FriendshipSource.t(), target: FriendshipTarget.t()}})
+  end
+
+  def return_type("GET account/verify_credentials"), do: quote(do: Me.t())
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET statuses/show/:id",
+             "POST statuses/update",
+             "POST statuses/destroy/:id",
+             "POST statuses/retweet/:id",
+             "POST statuses/unretweet/:id",
+             "POST favorites/create",
+             "POST favorites/destroy"
+           ] do
+    quote(do: Tweet.t())
+  end
+
+  def return_type("GET statuses/oembed") do
+    quote(
+      do: %{
+        url: binary,
+        author_name: binary,
+        author_url: binary,
+        html: binary,
+        width: non_neg_integer,
+        height: non_neg_integer | nil,
+        type: binary,
+        cache_age: binary,
+        provider_name: binary,
+        provider_url: binary,
+        version: binary
+      }
+    )
+  end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET trends/closest",
+             "GET trends/available"
+           ] do
+    quote(do: list(TrendLocation.t()))
+  end
+
+  def return_type("GET trends/place"), do: quote(do: list(Trend.t()))
+end
+
+defmodule Tw.V1_1.Schema.ModelField do
+  defstruct [:name, :type, :required, :nilable, description: nil]
+
+  @type t :: %__MODULE__{
+          name: atom(),
+          type: term(),
+          description: binary() | nil,
+          required: boolean(),
+          nilable: boolean()
+        }
+
+  defmacro model_field(name, type, opts) do
+    quote do
+      Tw.V1_1.Schema.ModelField.new(unquote(name), unquote(Macro.escape(type)), unquote(opts))
+    end
+  end
+
+  def new(name, type, opts) do
+    Keyword.merge(opts, name: name, type: type)
+    |> then(&struct!(__MODULE__, &1))
+  end
+
+  def decoder(model_field)
+
+  def decoder(%{name: name, type: type, required: false, nilable: false}) do
+    decoder = decoder(name, type)
+
+    if decoder == quote(do: &Function.identity/1) do
+      nil
+    else
+      quote do
+        Map.update(unquote(name), nil, Schema.nilable(unquote(decoder)))
+      end
+    end
+  end
+
+  def decoder(%{name: name, type: type, required: false, nilable: true}) do
+    decoder = decoder(name, type)
+
+    if decoder == quote(do: &Function.identity/1) do
+      nil
+    else
+      quote do
+        Map.update(unquote(name), nil, Schema.nilable(unquote(decoder)))
+      end
+    end
+  end
+
+  def decoder(%{name: name, type: type, required: true, nilable: false}) do
+    decoder = decoder(name, type)
+
+    if decoder == quote(do: &Function.identity/1) do
+      nil
+    else
+      quote do
+        Map.update!(unquote(name), unquote(decoder))
+      end
+    end
+  end
+
+  def decoder(%{name: name, type: type, required: true, nilable: true}) do
+    decoder = decoder(name, type)
+
+    if decoder == quote(do: &Function.identity/1) do
+      nil
+    else
+      quote do
+        Map.update!(unquote(name), Schema.nilable(unquote(decoder)))
+      end
+    end
+  end
+
+  def decoder(name, type_ast)
+
+  def decoder(:created_at, {:binary, _, _}), do: quote(do: &TwitterDateTime.decode!/1)
+  def decoder(:bounding_box, _), do: quote(do: &BoundingBox.decode!/1)
+
+  def decoder(name, {:list, _, [type]}) do
+    quote do
+      fn v ->
+        Enum.map(v, unquote(decoder(name, type)))
+      end
+    end
+  end
+
+  def decoder(name, {{:., _, [{:__aliases__, _, _} = mod, :t]}, _, []}) do
+    quote(do: &unquote(mod).decode!/1)
+  end
+
+  def decoder(name, type) do
+    quote(do: &Function.identity/1)
+  end
+end
+
 defmodule Tw.V1_1.Schema do
+  import Tw.V1_1.Schema.ModelField, only: :macros
+  alias Tw.V1_1.Schema.ModelField
+  alias Tw.V1_1.Schema.Type
+  alias Tw.V1_1.Schema.Endpoint
+
   def fetch(["model", "tweet"]), do: fetch_tweet_object()
   def fetch(["model", "user"]), do: fetch_user_object()
   def fetch(["model", "geo"]), do: fetch_geo_objects()
@@ -13,7 +385,7 @@ defmodule Tw.V1_1.Schema do
   def fetch(["endpoint", "GET statuses/oembed" = name, func_name]) do
     endpoints = fetch_endpoint_index()
     url = endpoints[name]
-    type = return_type(name)
+    type = Endpoint.return_type(name)
 
     {:ok, html} =
       Req.get!(url)
@@ -27,19 +399,22 @@ defmodule Tw.V1_1.Schema do
       |> Enum.map(fn param ->
         [name, type] = param["name"] |> String.split("\n")
         required = String.ends_with?(name, "required")
-        name = String.trim_trailing(name, "required")
+        name = String.trim_trailing(name, "required") |> String.to_atom()
 
-        param
-        |> Map.put("name", name)
-        |> Map.put("type", type)
-        |> Map.put("required", required)
+        %{
+          name: name,
+          type: Type.from_twitter(name, type),
+          required: required,
+          description: param["description"],
+          example: param["example"]
+        }
       end)
 
     schema = %{
-      "doc_url" => url,
-      "type" => type,
-      "description" => main_paragraph(html),
-      "parameters" => parameters
+      doc_url: url,
+      type: type,
+      description: main_paragraph(html),
+      parameters: parameters
     }
 
     schema
@@ -55,11 +430,11 @@ defmodule Tw.V1_1.Schema do
         IO.puts(:stderr, """
         "#{endpoint}" not found.
         Supported endpoints:
-        #{endpoints |> Map.keys() |> Enum.join("\n")}
+        #{endpoints |> Map.keys() |> Enum.sort() |> Enum.join("\n")}
         """)
 
       url ->
-        type = return_type(endpoint)
+        type = Endpoint.return_type(endpoint)
 
         {:ok, html} =
           Req.get!(url)
@@ -71,21 +446,28 @@ defmodule Tw.V1_1.Schema do
         parameters =
           (ts["Parameters"] || [])
           |> Enum.map(fn param ->
-            param
-            |> Map.put("type", infer_type(param["name"], param["example"]))
-            |> Map.update!("required", fn
-              "required" -> true
-              "optional" -> false
-              "semi-optional" -> false
-              _ -> false
-            end)
+            %{
+              name: String.to_atom(param["name"]),
+              type: Type.infer(param["name"], param["example"]),
+              description: param["description"],
+              example: param["example"]
+            }
+            |> Map.put(
+              :required,
+              case param["required"] do
+                "required" -> true
+                "optional" -> false
+                "semi-optional" -> false
+                _ -> false
+              end
+            )
           end)
 
         schema = %{
-          "doc_url" => url,
-          "type" => type,
-          "description" => main_paragraph(html),
-          "parameters" => parameters
+          doc_url: url,
+          type: type,
+          description: main_paragraph(html),
+          parameters: parameters
         }
 
         schema
@@ -105,24 +487,24 @@ defmodule Tw.V1_1.Schema do
     []
     |> Kernel.++(
       ts["Tweet Data Dictionary"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
+      |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
     )
     |> Kernel.++(
       ts["Additional Tweet attributes"]
-      |> Enum.map(&Map.put(&1, "required", false))
-      |> Enum.map(&put_nullable/1)
+      |> Enum.map(&decode_model_field!(&1, required: false, nilable: true))
     )
     |> Kernel.++([
       # undocumented attributes
-      %{"attribute" => "contributors", "type" => "Array of Int", "required" => false, "nullable" => true},
-      %{"attribute" => "display_text_range", "type" => "Array of Int", "required" => false, "nullable" => true},
-      %{"attribute" => "full_text", "type" => "String", "required" => false, "nullable" => true},
-      %{"attribute" => "possibly_sensitive_appealable", "type" => "Boolean", "required" => false, "nullable" => true},
-      %{"attribute" => "quoted_status_permalink", "type" => "Object", "required" => false, "nullable" => true}
+      model_field(:contributors, list(integer()), required: false, nilable: true),
+      model_field(:display_text_range, list(integer()), required: false, nilable: true),
+      model_field(:full_text, binary(), required: false, nilable: true),
+      model_field(:possibly_sensitive_appealable, boolean(), required: false, nilable: true),
+      model_field(:quoted_status_permalink, map(), required: false, nilable: true)
     ])
     |> model_code_gen("tweet")
   end
+
+  def nilable(decoder_fn), do: fn v -> v && decoder_fn.(v) end
 
   defp fetch_user_object() do
     {:ok, html} =
@@ -132,37 +514,33 @@ defmodule Tw.V1_1.Schema do
 
     ts = tables(html, h_levels: [3])
 
-    []
-    |> Kernel.++(
-      ts["User Data Dictionary"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> Kernel.++([
-        %{"attribute" => "entities", "type" => "User Entities", "required" => true, "nullable" => false}
-      ])
-      |> model_code_gen("user")
-    )
-    |> Kernel.++(
-      # https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-verify_credentials
-      ts["User Data Dictionary"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> Kernel.++([
-        %{"attribute" => "entities", "type" => "User Entities", "required" => true, "nullable" => false},
-        %{"attribute" => "show_all_inline_media", "type" => "Boolean", "required" => true, "nullable" => false},
-        %{"attribute" => "status", "type" => "Tweet", "required" => true, "nullable" => true},
-        %{"attribute" => "email", "type" => "String", "required" => false, "nullable" => true}
-      ])
-      |> model_code_gen("me")
-    )
-    |> Kernel.++(
-      # undocumented object
-      [
-        %{"attribute" => "description", "type" => "Entities", "required" => true, "nullable" => false},
-        %{"attribute" => "url", "type" => "Entities", "required" => false, "nullable" => false}
-      ]
-      |> model_code_gen("user_entities")
-    )
+    ts["User Data Dictionary"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> Kernel.++([
+      model_field(:entities, UserEntities.t(), required: true, nilable: false)
+    ])
+    |> model_code_gen("user")
+
+    # https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-verify_credentials
+    ts["User Data Dictionary"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> Kernel.++([
+      model_field(:entities, UserEntities.t(), required: true, nilable: false),
+      model_field(:show_all_inline_media, boolean(),
+        required: true,
+        nilable: false
+      ),
+      model_field(:status, Tweet.t(), required: true, nilable: true),
+      model_field(:email, binary(), required: false, nilable: true)
+    ])
+    |> model_code_gen("me")
+
+    # undocumented object
+    [
+      model_field(:description, Entities.t(), required: true, nilable: false),
+      model_field(:url, Entities.t(), required: false, nilable: false)
+    ]
+    |> model_code_gen("user_entities")
   end
 
   defp fetch_geo_objects() do
@@ -173,25 +551,17 @@ defmodule Tw.V1_1.Schema do
 
     ts = tables(html, h_levels: [2, 3])
 
-    []
-    |> Kernel.++(
-      ts["Place data dictionary"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("place")
-    )
-    |> Kernel.++(
-      ts["Coordinates object data dictionary"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("coordinates")
-    )
-    |> Kernel.++(
-      ts["Bounding box"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("bounding_box")
-    )
+    ts["Place data dictionary"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("place")
+
+    ts["Coordinates object data dictionary"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("coordinates")
+
+    ts["Bounding box"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("bounding_box")
   end
 
   defp fetch_entities_objects() do
@@ -202,169 +572,143 @@ defmodule Tw.V1_1.Schema do
 
     ts = tables(html, h_levels: [3, 4])
 
-    []
-    |> Kernel.++(
-      ts["Entities data dictionary"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("entities")
-    )
-    |> Kernel.++(
-      # Extended Entities
-      # https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/extended-entities
-      [
-        %{"attribute" => "media", "type" => "Array of Media Objects", "required" => true, "nullable" => true}
-      ]
-      |> model_code_gen("extended_entities")
-    )
-    |> Kernel.++(
-      ts["Hashtag object"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("hashtag")
-    )
-    |> Kernel.++(
-      ts["Media object"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("media")
-    )
-    |> Kernel.++(
-      ts["Sizes object"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("sizes")
-    )
-    |> Kernel.++(
-      ts["Size object"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("size")
-    )
-    |> Kernel.++(
-      ts["URL object"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("url")
-    )
-    |> Kernel.++(
-      ts["User mention object"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("user_mention")
-    )
-    |> Kernel.++(
-      ts["Symbol object"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("symbol")
-    )
-    |> Kernel.++(
-      ts["Poll object"]
-      |> Enum.map(&Map.put(&1, "required", true))
-      |> Enum.map(&put_nullable/1)
-      |> model_code_gen("poll")
-    )
+    ts["Entities data dictionary"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("entities")
+
+    # Extended Entities
+    # https://developer.twitter.com/en/docs/twitter-api/v1/data-dictionary/object-model/extended-entities
+    [
+      model_field(:media, "Array of Media Objects", required: true, nilable: true)
+    ]
+    |> model_code_gen("extended_entities")
+
+    ts["Hashtag object"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("hashtag")
+
+    ts["Media object"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("media")
+
+    ts["Sizes object"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("sizes")
+
+    ts["Size object"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("size")
+
+    ts["URL object"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("url")
+
+    ts["User mention object"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("user_mention")
+
+    ts["Symbol object"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("symbol")
+
+    ts["Poll object"]
+    |> Enum.map(&decode_model_field!(&1, required: true, nilable: true))
+    |> model_code_gen("poll")
   end
 
   defp generate_endpoint_result_objects do
-    []
-    |> Kernel.++(
-      [
-        %{"attribute" => "statuses", "type" => "Array of Tweets", "required" => true, "nullable" => false},
-        %{"attribute" => "search_metadata", "type" => "Search Metadata Object", "required" => true, "nullable" => false}
-      ]
-      |> model_code_gen("search_result")
-    )
-    |> Kernel.++(
-      [
-        %{"attribute" => "completed_in", "type" => "Float", "required" => true, "nullable" => false},
-        %{"attribute" => "max_id", "type" => "Int", "required" => true, "nullable" => false},
-        %{"attribute" => "max_id_str", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "next_results", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "query", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "count", "type" => "Int", "required" => true, "nullable" => false},
-        %{"attribute" => "since_id", "type" => "Int", "required" => true, "nullable" => false},
-        %{"attribute" => "since_id_str", "type" => "String", "required" => true, "nullable" => false}
-      ]
-      |> model_code_gen("search_metadata")
-    )
-    |> Kernel.++(
-      [
-        %{"attribute" => "name", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "screen_name", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "id", "type" => "Int", "required" => true, "nullable" => false},
-        %{"attribute" => "id_str", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "connections", "type" => "Array of Connection Enum", "required" => true, "nullable" => false}
-      ]
-      |> model_code_gen("friendship_lookup_result")
-    )
-    |> Kernel.++(
-      [
-        %{"attribute" => "source", "type" => "Friendship Source Object", "required" => true, "nullable" => false},
-        %{"attribute" => "target", "type" => "Friendship Target Object", "required" => true, "nullable" => false}
-      ]
-      |> model_code_gen("friendship_relationship")
-    )
-    |> Kernel.++(
-      [
-        %{"attribute" => "id", "type" => "Int", "required" => true, "nullable" => false},
-        %{"attribute" => "id_str", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "screen_name", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "following", "type" => "Boolean", "required" => true, "nullable" => false},
-        %{"attribute" => "followed_by", "type" => "Boolean", "required" => true, "nullable" => false},
-        %{"attribute" => "live_following", "type" => "Boolean", "required" => true, "nullable" => false},
-        %{"attribute" => "following_received", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "following_requested", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "notifications_enabled", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "can_dm", "type" => "Boolean", "required" => true, "nullable" => false},
-        %{"attribute" => "blocking", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "blocked_by", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "muting", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "want_retweets", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "all_replies", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "marked_spam", "type" => "Boolean", "required" => true, "nullable" => true}
-      ]
-      |> model_code_gen("friendship_source")
-    )
-    |> Kernel.++(
-      [
-        %{"attribute" => "id", "type" => "Int", "required" => true, "nullable" => false},
-        %{"attribute" => "id_str", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "screen_name", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "following", "type" => "Boolean", "required" => true, "nullable" => false},
-        %{"attribute" => "followed_by", "type" => "Boolean", "required" => true, "nullable" => false},
-        %{"attribute" => "following_received", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "following_requested", "type" => "Boolean", "required" => true, "nullable" => true}
-      ]
-      |> model_code_gen("friendship_target")
-    )
-    |> Kernel.++(
-      [
-        %{"attribute" => "country", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "countryCode", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "name", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "parentid", "type" => "Int", "required" => true, "nullable" => false},
-        %{"attribute" => "placeType", "type" => "Place Type Object", "required" => true, "nullable" => false},
-        %{"attribute" => "url", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "woeid", "type" => "Int", "required" => true, "nullable" => false}
-      ]
-      |> model_code_gen("trend_location")
-    )
-    |> Kernel.++(
-      [
-        %{"attribute" => "name", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "url", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "promoted_content", "type" => "Boolean", "required" => true, "nullable" => true},
-        %{"attribute" => "query", "type" => "String", "required" => true, "nullable" => false},
-        %{"attribute" => "tweet_volume", "type" => "Int", "required" => true, "nullable" => true}
-      ]
-      |> model_code_gen("trend")
-    )
-  end
+    [
+      model_field(:statuses, list(Tweet.t()), required: true, nilable: false),
+      model_field(:search_metadata, SearchMetadata.t(),
+        required: true,
+        nilable: false
+      )
+    ]
+    |> model_code_gen("search_result")
 
-  def put_nullable(e) do
-    Map.put(e, "nullable", String.contains?(e["description"], "Nullable"))
+    [
+      model_field(:completed_in, float(), required: true, nilable: false),
+      model_field(:max_id, integer(), required: true, nilable: false),
+      model_field(:max_id_str, binary(), required: true, nilable: false),
+      model_field(:next_results, binary(), required: true, nilable: false),
+      model_field(:query, binary(), required: true, nilable: false),
+      model_field(:count, integer(), required: true, nilable: false),
+      model_field(:since_id, integer(), required: true, nilable: false),
+      model_field(:since_id_str, binary(), required: true, nilable: false)
+    ]
+    |> model_code_gen("search_metadata")
+
+    [
+      model_field(:name, binary(), required: true, nilable: false),
+      model_field(:screen_name, binary(), required: true, nilable: false),
+      model_field(:id, integer(), required: true, nilable: false),
+      model_field(:id_str, binary(), required: true, nilable: false),
+      model_field(:connections, FriendshipLookupResult.connections(),
+        required: true,
+        nilable: false
+      )
+    ]
+    |> model_code_gen("friendship_lookup_result")
+
+    [
+      model_field(:source, FriendshipSource.t(), required: true, nilable: false),
+      model_field(:target, FriendshipTarget.t(), required: true, nilable: false)
+    ]
+    |> model_code_gen("friendship_relationship")
+
+    [
+      model_field(:id, integer(), required: true, nilable: false),
+      model_field(:id_str, binary(), required: true, nilable: false),
+      model_field(:screen_name, binary(), required: true, nilable: false),
+      model_field(:following, boolean(), required: true, nilable: false),
+      model_field(:followed_by, boolean(), required: true, nilable: false),
+      model_field(:live_following, boolean(), required: true, nilable: false),
+      model_field(:following_received, boolean(), required: true, nilable: true),
+      model_field(:following_requested, boolean(), required: true, nilable: true),
+      model_field(:notifications_enabled, boolean(),
+        required: true,
+        nilable: true
+      ),
+      model_field(:can_dm, boolean(), required: true, nilable: false),
+      model_field(:blocking, boolean(), required: true, nilable: true),
+      model_field(:blocked_by, boolean(), required: true, nilable: true),
+      model_field(:muting, boolean(), required: true, nilable: true),
+      model_field(:want_retweets, boolean(), required: true, nilable: true),
+      model_field(:all_replies, boolean(), required: true, nilable: true),
+      model_field(:marked_spam, boolean(), required: true, nilable: true)
+    ]
+    |> model_code_gen("friendship_source")
+
+    [
+      model_field(:id, integer(), required: true, nilable: false),
+      model_field(:id_str, binary(), required: true, nilable: false),
+      model_field(:screen_name, binary(), required: true, nilable: false),
+      model_field(:following, boolean(), required: true, nilable: false),
+      model_field(:followed_by, boolean(), required: true, nilable: false),
+      model_field(:following_received, boolean(), required: true, nilable: true),
+      model_field(:following_requested, boolean(), required: true, nilable: true)
+    ]
+    |> model_code_gen("friendship_target")
+
+    [
+      model_field(:country, binary(), required: true, nilable: false),
+      model_field(:countryCode, binary(), required: true, nilable: false),
+      model_field(:name, binary(), required: true, nilable: false),
+      model_field(:parentid, integer(), required: true, nilable: false),
+      model_field(:placeType, %{code: non_neg_integer, name: binary}, required: true, nilable: false),
+      model_field(:url, binary(), required: true, nilable: false),
+      model_field(:woeid, integer(), required: true, nilable: false)
+    ]
+    |> model_code_gen("trend_location")
+
+    [
+      model_field(:name, binary(), required: true, nilable: false),
+      model_field(:url, binary(), required: true, nilable: false),
+      model_field(:promoted_content, boolean(), required: true, nilable: true),
+      model_field(:query, binary(), required: true, nilable: false),
+      model_field(:tweet_volume, integer(), required: true, nilable: true)
+    ]
+    |> model_code_gen("trend")
   end
 
   defp tables(html, h_levels: levels) do
@@ -470,116 +814,6 @@ defmodule Tw.V1_1.Schema do
     |> Map.new()
   end
 
-  defp infer_type(name, example)
-  defp infer_type(_name, "true"), do: "Boolean"
-  defp infer_type(_name, "false"), do: "Boolean"
-  defp infer_type("count", _), do: "Int"
-  defp infer_type("screen_name", "twitterapi twitter"), do: "Array of Strings"
-  defp infer_type("user_id", "783214 6253282"), do: "Array of Int"
-  defp infer_type("id", "20 1050118621198921728"), do: "Array of Int"
-
-  defp infer_type(_name, example) do
-    case Integer.parse(example) do
-      {_, ""} -> "Int"
-      _ -> "String"
-    end
-  end
-
-  defp return_type(endpoint)
-       when endpoint in [
-              "GET statuses/home_timeline",
-              "GET statuses/user_timeline",
-              "GET statuses/mentions_timeline",
-              "GET favorites/list",
-              "GET lists/statuses",
-              "GET statuses/lookup",
-              "GET statuses/retweets_of_me",
-              "GET statuses/retweets/:id"
-            ] do
-    "Array of Tweets"
-  end
-
-  defp return_type(endpoint)
-       when endpoint in [
-              "GET users/show",
-              "POST blocks/create",
-              "POST blocks/destroy",
-              "POST mutes/users/create",
-              "POST mutes/users/destroy",
-              "POST users/report_spam",
-              "POST friendships/create",
-              "POST friendships/destroy"
-            ] do
-    "User object"
-  end
-
-  defp return_type("GET users/lookup"), do: "Array of User objects"
-  defp return_type("GET users/search"), do: "Array of User objects"
-  defp return_type("Standard search API"), do: "Search Result Object"
-
-  defp return_type(endpoint)
-       when endpoint in [
-              "GET followers/ids",
-              "GET friends/ids",
-              "GET friendships/incoming",
-              "GET friendships/outgoing",
-              "GET blocks/ids",
-              "GET mutes/users/ids",
-              "GET statuses/retweeters/ids"
-            ] do
-    "Cursored Result Object with ids Array of Int"
-  end
-
-  defp return_type(endpoint)
-       when endpoint in [
-              "GET followers/list",
-              "GET friends/list",
-              "GET blocks/list",
-              "GET mutes/users/list",
-              "GET lists/members",
-              "GET lists/subscribers"
-            ] do
-    "Cursored Result Object with users Array of User objects"
-  end
-
-  defp return_type("GET friendships/no_retweets/ids"), do: "Array of Int"
-  defp return_type("GET friendships/lookup"), do: "Array of Friendship Lookup Result Objects"
-
-  defp return_type(endpoint)
-       when endpoint in [
-              "GET friendships/show",
-              "POST friendships/update"
-            ] do
-    "Friendship Relationship Object"
-  end
-
-  defp return_type("GET account/verify_credentials"), do: "Me Object"
-
-  defp return_type(endpoint)
-       when endpoint in [
-              "GET statuses/show/:id",
-              "POST statuses/update",
-              "POST statuses/destroy/:id",
-              "POST statuses/retweet/:id",
-              "POST statuses/unretweet/:id",
-              "POST favorites/create",
-              "POST favorites/destroy"
-            ] do
-    "Tweet"
-  end
-
-  defp return_type("GET statuses/oembed"), do: "oEmbed Object"
-
-  defp return_type(endpoint)
-       when endpoint in [
-              "GET trends/closest",
-              "GET trends/available"
-            ] do
-    "Array of Trend Location Objects"
-  end
-
-  defp return_type("GET trends/place"), do: "Array of Trends Objects"
-
   defp model_code_gen(schema, name) do
     model_code_ast(schema, name)
     |> Macro.to_string(fn
@@ -637,7 +871,7 @@ defmodule Tw.V1_1.Schema do
 
   defp endpoint_code_gen(schema, fn_name) do
     [method, suff] =
-      schema["doc_url"]
+      schema.doc_url
       |> Path.basename()
       |> String.split("-", parts: 2)
 
@@ -681,7 +915,6 @@ defmodule Tw.V1_1.Schema do
     raw_fn_name = {String.to_atom(fn_name), [], Elixir}
     params_type_name = :"#{fn_name}_params"
 
-    type = to_ex_type("", schema["type"])
     endpoint = "#{method |> to_string() |> String.upcase()} #{path}"
 
     typedoc = """
@@ -689,22 +922,39 @@ defmodule Tw.V1_1.Schema do
 
     #{cite(params_type_table(schema))}
 
-    See [the Twitter API documentation](#{schema["doc_url"]}) for details.
+    See [the Twitter API documentation](#{schema.doc_url}) for details.
     """
 
     doc = """
     Request `#{endpoint}` and return decoded result.
-    #{cite(schema["description"])}
+    #{cite(schema.description)}
 
-    See [the Twitter API documentation](#{schema["doc_url"]}) for details.
+    See [the Twitter API documentation](#{schema.doc_url}) for details.
     """
 
     func =
-      case decoder(schema["type"]) do
-        nil ->
+      case Type.decoder(schema.type) do
+        quote(do: Function.identity()) ->
           quote do
             def unquote(raw_fn_name)(client, params) do
-              Tw.V1_1.Client.request(client, unquote(method), unquote(path), params)
+              Client.request(client, unquote(method), unquote(path), params)
+            end
+          end
+
+        decs when is_list(decs) ->
+          res =
+            decs
+            |> Enum.reduce(quote(do: json), fn e, a ->
+              quote(do: unquote(a) |> unquote(e))
+            end)
+
+          quote do
+            def unquote(raw_fn_name)(client, params) do
+              with {:ok, json} <- Client.request(client, unquote(method), unquote(path), params) do
+                res = unquote(res)
+
+                {:ok, res}
+              end
             end
           end
 
@@ -728,7 +978,7 @@ defmodule Tw.V1_1.Schema do
       @type unquote({params_type_name, [], Elixir}) :: unquote(params_type(schema))
 
       @spec unquote(raw_fn_name)(Client.t(), unquote({params_type_name, [], Elixir})) ::
-              {:ok, unquote(type)} | {:error, Client.error()}
+              {:ok, unquote(schema.type)} | {:error, Client.error()}
       @doc unquote(doc)
       unquote(func)
     end
@@ -736,31 +986,35 @@ defmodule Tw.V1_1.Schema do
 
   defp fields(schema) do
     schema
-    |> Enum.map(&String.to_atom(&1["attribute"]))
+    |> Enum.map(& &1.name)
   end
 
   defp required_fields(schema) do
     schema
-    |> Enum.filter(& &1["required"])
-    |> Enum.map(&String.to_atom(&1["attribute"]))
+    |> Enum.filter(& &1.required)
+    |> fields()
   end
 
   defp struct_field_types(schema) do
     schema
-    |> Enum.map(fn e ->
-      {String.to_atom(e["attribute"]), to_ex_type(e["attribute"], e["type"], e["nullable"] || !e["required"])}
+    |> Enum.map(fn model_field ->
+      if model_field.nilable || !model_field.required do
+        {model_field.name, quote(do: unquote(model_field.type) | nil)}
+      else
+        {model_field.name, model_field.type}
+      end
     end)
   end
 
   defp field_type_table(schema) do
     rows =
       schema
-      |> Enum.map(fn e ->
+      |> Enum.map(fn field ->
         [
           "| `",
-          e["attribute"],
+          field.name |> Atom.to_string(),
           "` | ",
-          (format_description(e) || " - ") |> String.replace("\n", " "),
+          (format_description(field) || " - ") |> String.replace("\n", " "),
           " |\n"
         ]
       end)
@@ -775,9 +1029,7 @@ defmodule Tw.V1_1.Schema do
 
   defp decode_fields(schema) do
     schema
-    |> Enum.map(fn e ->
-      field_decoder(e["attribute"], e["type"], e["required"], e["nullable"])
-    end)
+    |> Enum.map(&ModelField.decoder/1)
     |> Enum.reject(&is_nil/1)
     |> Enum.reduce(quote(do: json), fn q, a ->
       quote do
@@ -787,253 +1039,20 @@ defmodule Tw.V1_1.Schema do
     end)
   end
 
-  defp to_ex_type("created_at", "String"), do: quote(do: DateTime.t())
-  defp to_ex_type("bounding_box", "Object"), do: quote(do: Tw.V1_1.BoundingBox.t())
-
-  defp to_ex_type(name, "Array of " <> t),
-    do: quote(do: list(unquote(to_ex_type(name, t |> String.trim_trailing("s")))))
-
-  defp to_ex_type(name, "Collection of " <> t),
-    do: quote(do: list(unquote(to_ex_type(name, t |> String.trim_trailing("s")))))
-
-  defp to_ex_type(_name, "String"), do: quote(do: binary)
-  defp to_ex_type(_name, "Int64"), do: quote(do: integer)
-  defp to_ex_type(_name, "Integer"), do: quote(do: integer)
-  defp to_ex_type(_name, "Int"), do: quote(do: integer)
-  defp to_ex_type(_name, "Boolean"), do: quote(do: boolean)
-  defp to_ex_type(_name, "Float"), do: quote(do: float)
-  defp to_ex_type(_name, "User object"), do: quote(do: Tw.V1_1.User.t())
-  defp to_ex_type(_name, "Me Object"), do: quote(do: Tw.V1_1.Me.t())
-  defp to_ex_type(_name, "Tweet"), do: quote(do: Tw.V1_1.Tweet.t())
-  defp to_ex_type(_name, "Object"), do: quote(do: map)
-  defp to_ex_type(_name, "Array of String"), do: quote(do: list(binary))
-  defp to_ex_type(_name, "Coordinates"), do: quote(do: Tw.V1_1.Coordinates.t())
-  defp to_ex_type(_name, "Places"), do: quote(do: Tw.V1_1.Place.t())
-  defp to_ex_type(_name, "Entities"), do: quote(do: Tw.V1_1.Entities.t())
-  defp to_ex_type(_name, "Hashtag Object"), do: quote(do: Tw.V1_1.Hashtag.t())
-  defp to_ex_type(_name, "Media Object"), do: quote(do: Tw.V1_1.Media.t())
-  defp to_ex_type(_name, "URL Object"), do: quote(do: Tw.V1_1.URL.t())
-  defp to_ex_type(_name, "User Mention Object"), do: quote(do: Tw.V1_1.UserMention.t())
-  defp to_ex_type(_name, "Symbol Object"), do: quote(do: Tw.V1_1.Symbol.t())
-  defp to_ex_type(_name, "Poll Object"), do: quote(do: Tw.V1_1.Poll.t())
-  defp to_ex_type("sizes", "Size Object"), do: quote(do: Tw.V1_1.Sizes.t())
-  defp to_ex_type(_name, "Size Object"), do: quote(do: Tw.V1_1.Size.t())
-  defp to_ex_type(_name, "Option Object"), do: quote(do: map)
-  defp to_ex_type(_name, "User Entities"), do: quote(do: Tw.V1_1.UserEntities.t())
-  defp to_ex_type(_name, "Extended Entities"), do: quote(do: Tw.V1_1.ExtendedEntities.t())
-  defp to_ex_type(_name, "Search Result Object"), do: quote(do: Tw.V1_1.SearchResult.t())
-  defp to_ex_type(_name, "Search Metadata Object"), do: quote(do: Tw.V1_1.SearchMetadata.t())
-  defp to_ex_type(_name, "Friendship Lookup Result Object"), do: quote(do: Tw.V1_1.FriendshipLookupResult.t())
-  defp to_ex_type(_name, "Friendship Source Object"), do: quote(do: Tw.V1_1.FriendshipSource.t())
-  defp to_ex_type(_name, "Friendship Target Object"), do: quote(do: Tw.V1_1.FriendshipTarget.t())
-  defp to_ex_type("maxwidth", "Int [220..550]"), do: quote(do: pos_integer)
-  defp to_ex_type(_name, "Boolean, String or Int"), do: quote(do: boolean)
-  defp to_ex_type(_name, "Enum {left,right,center,none}"), do: quote(do: :left | :right | :center | :none)
-  defp to_ex_type(_name, "Enum(Language)"), do: quote(do: Tw.V1_1.Schema.language())
-  defp to_ex_type(_name, "Enum {light, dark}"), do: quote(do: :light | :dark)
-  defp to_ex_type(_name, "Enum {video}"), do: quote(do: :video)
-  defp to_ex_type(_name, "Place Type Object"), do: quote(do: %{code: non_neg_integer, name: binary})
-  defp to_ex_type(_name, "Trend Location Object"), do: quote(do: Tw.V1_1.TrendLocation.t())
-
-  defp to_ex_type(_name, "Trends Object"),
-    do:
-      quote(
-        do: %{
-          trends: list(Tw.V1_1.Trend.t()),
-          as_of: DateTime.t(),
-          created_at: DateTime.t(),
-          locations: list(%{name: binary, woeid: non_neg_integer()})
-        }
-      )
-
-  defp to_ex_type(_name, "oEmbed Object"),
-    do:
-      quote(
-        do: %{
-          url: binary,
-          author_name: binary,
-          author_url: binary,
-          html: binary,
-          width: non_neg_integer,
-          height: non_neg_integer | nil,
-          type: binary,
-          cache_age: binary,
-          provider_name: binary,
-          provider_url: binary,
-          version: binary
-        }
-      )
-
-  defp to_ex_type(_name, "Friendship Relationship Object"),
-    do: quote(do: %{relationship: %{source: Tw.V1_1.FriendshipSource.t(), target: Tw.V1_1.FriendshipTarget.t()}})
-
-  defp to_ex_type(_name, "Connection Enum"),
-    do: quote(do: :following | :following_requested | :followed_by | :none | :blocking | :muting)
-
-  defp to_ex_type(_name, "Cursored Result Object with " <> kv) do
-    [k, v] = String.split(kv, " ", parts: 2)
-
-    quote do
-      Tw.V1_1.CursoredResult.t(unquote(String.to_atom(k)), unquote(to_ex_type("", v)))
-    end
-  end
-
-  # TODO
-  defp to_ex_type(_name, "Rule Object"), do: quote(do: map)
-  defp to_ex_type(_name, "Arrays of Enrichment Objects"), do: quote(do: list(map))
-
-  defp to_ex_type(name, type, false), do: to_ex_type(name, type)
-
-  defp to_ex_type(name, type, true) do
-    quote do
-      unquote(to_ex_type(name, type)) | nil
-    end
-  end
-
-  @doc false
-  def field_decoder(name, twitter_type, required, nilable)
-
-  def field_decoder(name, twitter_type, false, false) do
-    decoder = field_decoder(name, twitter_type)
-
-    if decoder == quote(do: &Function.identity/1) do
-      nil
-    else
-      quote do
-        Map.update(unquote(String.to_atom(name)), nil, Tw.V1_1.Schema.nilable(unquote(decoder)))
-      end
-    end
-  end
-
-  def field_decoder(name, twitter_type, false, true) do
-    decoder = field_decoder(name, twitter_type)
-
-    if decoder == quote(do: &Function.identity/1) do
-      nil
-    else
-      quote do
-        Map.update(unquote(String.to_atom(name)), nil, Tw.V1_1.Schema.nilable(unquote(decoder)))
-      end
-    end
-  end
-
-  def field_decoder(name, twitter_type, true, false) do
-    decoder = field_decoder(name, twitter_type)
-
-    if decoder == quote(do: &Function.identity/1) do
-      nil
-    else
-      quote do
-        Map.update!(unquote(String.to_atom(name)), unquote(decoder))
-      end
-    end
-  end
-
-  def field_decoder(name, twitter_type, true, true) do
-    decoder = field_decoder(name, twitter_type)
-
-    if decoder == quote(do: &Function.identity/1) do
-      nil
-    else
-      quote do
-        Map.update!(unquote(String.to_atom(name)), Tw.V1_1.Schema.nilable(unquote(decoder)))
-      end
-    end
-  end
-
-  def field_decoder(name, twitter_type)
-
-  def field_decoder(name, "Array of " <> twitter_type) do
-    quote do
-      fn v ->
-        Enum.map(v, unquote(field_decoder(name, twitter_type |> String.trim_trailing("s"))))
-      end
-    end
-  end
-
-  def nilable(decoder_fn), do: fn v -> v && decoder_fn.(v) end
-
-  def field_decoder("created_at", "String"), do: quote(do: &Tw.V1_1.TwitterDateTime.decode!/1)
-  def field_decoder("bounding_box", "Object"), do: quote(do: &Tw.V1_1.BoundingBox.decode!/1)
-  def field_decoder(_name, "User object"), do: quote(do: &Tw.V1_1.User.decode!/1)
-  def field_decoder(_name, "Tweet"), do: quote(do: &Tw.V1_1.Tweet.decode!/1)
-  def field_decoder(_name, "Coordinates"), do: quote(do: &Tw.V1_1.Coordinates.decode!/1)
-  def field_decoder(_name, "Places"), do: quote(do: &Tw.V1_1.Place.decode!/1)
-  def field_decoder(_name, "Entities"), do: quote(do: &Tw.V1_1.Entities.decode!/1)
-  def field_decoder(_name, "Hashtag Object"), do: quote(do: &Tw.V1_1.Hashtag.decode!/1)
-  def field_decoder(_name, "Media Object"), do: quote(do: &Tw.V1_1.Media.decode!/1)
-  def field_decoder(_name, "URL Object"), do: quote(do: &Tw.V1_1.URL.decode!/1)
-  def field_decoder(_name, "User Mention Object"), do: quote(do: &Tw.V1_1.UserMention.decode!/1)
-  def field_decoder(_name, "Symbol Object"), do: quote(do: &Tw.V1_1.Symbol.decode!/1)
-  def field_decoder(_name, "Poll Object"), do: quote(do: &Tw.V1_1.Poll.decode!/1)
-  def field_decoder("sizes", "Size Object"), do: quote(do: &Tw.V1_1.Sizes.decode!/1)
-  def field_decoder(_name, "Size Object"), do: quote(do: &Tw.V1_1.Size.decode!/1)
-  def field_decoder(_name, "User Entities"), do: quote(do: &Tw.V1_1.UserEntities.decode!/1)
-  def field_decoder(_name, "Extended Entities"), do: quote(do: &Tw.V1_1.ExtendedEntities.decode!/1)
-  def field_decoder(_name, "Search Metadata Object"), do: quote(do: &Tw.V1_1.SearchMetadata.decode!/1)
-  def field_decoder(_name, "Friendship Source Object"), do: quote(do: &Tw.V1_1.FriendshipSource.decode!/1)
-  def field_decoder(_name, "Friendship Target Object"), do: quote(do: &Tw.V1_1.FriendshipTarget.decode!/1)
-
-  def field_decoder(_name, "Connection Enum"),
-    do: quote(do: &Tw.V1_1.FriendshipLookupResult.decode_connection!/1)
-
-  def field_decoder(_name, _type), do: quote(do: &Function.identity/1)
-
-  defp decoder("Array of " <> twitter_type) do
-    case decoder(twitter_type |> String.trim_trailing("s")) do
+  defp format_description(model_field) do
+    case model_field.description do
       nil ->
         nil
 
-      element_decoder ->
-        quote do
-          Enum.map(fn e ->
-            e |> unquote(element_decoder)
+      description ->
+        if model_field.type |> twitter_type?() do
+          Regex.replace(~r/Example:?\s*(?:.|\n)*?(?=Note:|\z)/m, description, "")
+        else
+          Regex.replace(~r/Example:\s*((?:.|\n)*?)(?=Note:|\z)/m, description, fn _, x ->
+            x = String.replace(x, ~r/\s*"#{model_field.name}"\s*:\s*/, "")
+            "Example: `#{x}`. "
           end)
         end
-    end
-  end
-
-  defp decoder("Tweet"), do: quote(do: Tw.V1_1.Tweet.decode!())
-  defp decoder("User object"), do: quote(do: Tw.V1_1.User.decode!())
-  defp decoder("Me Object"), do: quote(do: Tw.V1_1.Me.decode!())
-  defp decoder("Search Result Object"), do: quote(do: Tw.V1_1.SearchResult.decode!())
-  defp decoder("Friendship Lookup Result Object"), do: quote(do: Tw.V1_1.FriendshipLookupResult.decode!())
-  defp decoder("Trend Location Object"), do: quote(do: Tw.V1_1.TrendLocation.decode!())
-
-  defp decoder("Cursored Result Object with " <> kv) do
-    [k, v] = String.split(kv, " ", parts: 2)
-
-    quote do
-      unquote(field_decoder(k, v, true, false))
-    end
-  end
-
-  defp decoder("Friendship Relationship Object") do
-    quote do
-      Map.update!(:relationship, &Tw.V1_1.Friendship.decode!/1)
-    end
-  end
-
-  defp decoder("Trends Object") do
-    quote do
-      Map.update!(:trends, &Tw.V1_1.Trend.decode!/1)
-      |> Map.update!(:as_of, &DateTime.from_iso8601/1)
-      |> Map.update!(:created_at, &DateTime.from_iso8601/1)
-    end
-  end
-
-  defp decoder(_), do: nil
-
-  defp format_description(%{"description" => nil}), do: nil
-
-  defp format_description(%{"attribute" => attribute, "description" => description, "type" => type}) do
-    if to_ex_type(attribute, type) |> twitter_type?() do
-      Regex.replace(~r/Example:?\s*(?:.|\n)*?(?=Note:|\z)/m, description, "")
-    else
-      Regex.replace(~r/Example:\s*((?:.|\n)*?)(?=Note:|\z)/m, description, fn _, x ->
-        x = String.replace(x, ~r/\s*"#{attribute}"\s*:\s*/, "")
-        "Example: `#{x}`. "
-      end)
     end
   end
 
@@ -1057,13 +1076,13 @@ defmodule Tw.V1_1.Schema do
 
   defp params_type(schema) do
     kvs =
-      schema["parameters"]
+      schema.parameters
       |> Enum.map(fn
-        %{"name" => name, "type" => type, "required" => true} ->
-          {{:required, [], [String.to_atom(name)]}, to_ex_type(name, type, false)}
+        %{name: name, type: type, required: true} ->
+          {{:required, [], [name]}, type}
 
-        %{"name" => name, "type" => type} ->
-          {{:optional, [], [String.to_atom(name)]}, to_ex_type(name, type, false)}
+        %{name: name, type: type} ->
+          {{:optional, [], [name]}, type}
       end)
 
     {:%{}, [], kvs}
@@ -1071,22 +1090,42 @@ defmodule Tw.V1_1.Schema do
 
   defp params_type_table(schema) do
     rows =
-      schema["parameters"]
+      schema.parameters
       |> Enum.map(fn
-        %{"name" => name, "description" => description} ->
-          ["|", name, " | ", description, " | \n"]
+        %{name: name, description: description} ->
+          ["|", Atom.to_string(name), " | ", description, " | \n"]
       end)
 
     [
       "| name | description |\n",
-      "| - | - |\n"
-      | rows
+      "| - | - |\n",
+      rows
     ]
     |> IO.iodata_to_binary()
   end
 
   defp cite(text) do
     "> " <> String.replace(text, "\n", "\n> ")
+  end
+
+  def decode_model_field!(%{"attribute" => name, "type" => type, "required" => required, "nullable" => nilable} = field) do
+    ModelField.new(
+      String.to_atom(name),
+      Type.from_twitter(name, type),
+      description: field["description"],
+      required: required,
+      nilable: nilable
+    )
+  end
+
+  def decode_model_field!(%{"attribute" => name, "type" => type} = field, required: required, nilable: nilable) do
+    ModelField.new(
+      String.to_atom(name),
+      Type.from_twitter(name, type),
+      description: field["description"],
+      required: required,
+      nilable: nilable
+    )
   end
 end
 
