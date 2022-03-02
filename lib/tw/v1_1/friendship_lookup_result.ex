@@ -9,12 +9,13 @@ defmodule Tw.V1_1.FriendshipLookupResult do
   @enforce_keys [:name, :screen_name, :id, :id_str, :connections]
   defstruct([:name, :screen_name, :id, :id_str, :connections])
 
+  @type connections :: list(:following | :following_requested | :followed_by | :none | :blocking | :muting)
   @type t :: %__MODULE__{
           name: binary,
           screen_name: binary,
           id: integer,
           id_str: binary,
-          connections: list(:following | :following_requested | :followed_by | :none | :blocking | :muting)
+          connections: connections()
         }
   @spec decode!(map) :: t
   @doc """
