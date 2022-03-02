@@ -38,7 +38,7 @@ defmodule Tw.V1_1.SearchResult do
     search_result.search_metadata.next_results
     |> String.trim_leading("?")
     |> URI.decode_query()
-    |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
+    |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
     |> Map.new()
   end
 end
