@@ -22,6 +22,11 @@ defmodule Tw.HTTP.Client do
 
   @type options :: keyword()
 
+  @typedoc """
+  Module which implements the Tw.HTTP.Client behavior.
+  """
+  @type implementation :: module()
+
   @doc """
   Callback to make an HTTP request.
   """

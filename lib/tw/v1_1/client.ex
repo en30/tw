@@ -14,16 +14,16 @@ defmodule Tw.V1_1.Client do
   defstruct [:http_client, :credentials, :json]
 
   @type t :: %__MODULE__{
-          http_client: {HTTP.Client, HTTP.Client.options()},
-          json: {JSON.Serializer, JSON.Serializer.encode_options(), JSON.Serializer.decode_options()},
+          http_client: {HTTP.Client.implementation(), HTTP.Client.options()},
+          json: {JSON.Serializer.implementation(), JSON.Serializer.encode_options(), JSON.Serializer.decode_options()},
           credentials: OAuth.V1_0a.Credentials.t()
         }
 
   @type error :: TwitterAPIError.t() | Exception.t()
 
   @type new_opt ::
-          {:http_client, {HTTP.Client, HTTP.Client.options()}}
-          | {:json, {JSON.Serializer, JSON.Serializer.encode_options(), JSON.Serializer.decode_options()}}
+          {:http_client, {http_client :: module(), HTTP.Client.options()}}
+          | {:json, {json_serializer :: module(), JSON.Serializer.encode_options(), JSON.Serializer.decode_options()}}
           | {:credentials, OAuth.V1_0a.Credentials.t()}
   @spec new([new_opt()]) :: t
   def new(opts) do
