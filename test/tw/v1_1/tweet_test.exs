@@ -4,6 +4,8 @@ defmodule Tw.V1_1.TweetTest do
 
   use ExUnit.Case, async: true
 
+  import Tw.V1_1.EndpointHelper
+
   @deprecated_keys ~W[
     geo
   ]a
@@ -48,6 +50,42 @@ defmodule Tw.V1_1.TweetTest do
           assert Map.has_key?(tweet, key)
         end
       end
+    end
+  end
+
+  describe "home_timeline/2" do
+    test "requets /statuses/home_timeline.json and returns tweets" do
+      client =
+        stub_client(%{
+          {:get, "https://api.twitter.com/1.1/statuses/home_timeline.json?count=10", ""} =>
+            json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
+        })
+
+      assert {:ok, [%Tweet{} | _]} = Tweet.home_timeline(client, %{count: 10})
+    end
+  end
+
+  describe "user_timeline/2" do
+    test "requets /statuses/user_timeline.json and returns tweets" do
+      client =
+        stub_client(%{
+          {:get, "https://api.twitter.com/1.1/statuses/user_timeline.json?count=9", ""} =>
+            json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
+        })
+
+      assert {:ok, [%Tweet{} | _]} = Tweet.user_timeline(client, %{count: 9})
+    end
+  end
+
+  describe "mentions_timeline/2" do
+    test "requets /statuses/mentions_timeline.json and returns tweets" do
+      client =
+        stub_client(%{
+          {:get, "https://api.twitter.com/1.1/statuses/mentions_timeline.json?count=8", ""} =>
+            json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
+        })
+
+      assert {:ok, [%Tweet{} | _]} = Tweet.mentions_timeline(client, %{count: 8})
     end
   end
 end
