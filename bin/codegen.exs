@@ -98,6 +98,30 @@ defmodule Tw.V1_1.Schema.Type do
       @identity ->
         @identity
 
+      decs when is_list(decs) ->
+        decs
+        |> Enum.reject(&match?(@identity, &1))
+        |> case do
+          [] ->
+            @identity
+
+          decs ->
+            res =
+              decs
+              |> Enum.reduce(quote(do: v), fn e, a ->
+                quote(do: unquote(a) |> unquote(e))
+              end)
+
+            quote do
+              Enum.map(fn v -> unquote(res) end)
+            end
+        end
+
+      {{:., [], [{:__aliases__, _, _} = mod, f]}, [], []} ->
+        quote do
+          Enum.map(&(unquote(mod).unquote(f) / 1))
+        end
+
       dec ->
         quote do
           Enum.map(fn v -> v |> unquote(dec) end)
@@ -113,12 +137,21 @@ defmodule Tw.V1_1.Schema.Type do
           @identity
 
         decs when is_list(decs) ->
-          res =
-            Enum.reduce(decs, quote(do: v), fn e, a ->
-              quote(do: unquote(a) |> unquote(e))
-            end)
+          decs
+          |> Enum.reject(&match?(@identity, &1))
+          |> case do
+            [] ->
+              @identity
 
-          quote(do: Map.update!(unquote(k), fn v -> unquote(res) end))
+            decs ->
+              res =
+                decs
+                |> Enum.reduce(quote(do: v), fn e, a ->
+                  quote(do: unquote(a) |> unquote(e))
+                end)
+
+              quote(do: Map.update!(unquote(k), fn v -> unquote(res) end))
+          end
 
         dec ->
           quote(do: Map.update!(unquote(k), fn v -> v |> unquote(dec) end))
@@ -268,7 +301,16 @@ defmodule Tw.V1_1.Schema.Endpoint do
     quote(do: list(TrendLocation.t()))
   end
 
-  def return_type("GET trends/place"), do: quote(do: list(Trend.t()))
+  def return_type("GET trends/place") do
+    quote do
+      list(%{
+        trends: list(Trend.t()),
+        as_of: DateTime.t(),
+        created_at: DateTime.t(),
+        locations: list(%{name: binary(), woeid: non_neg_integer()})
+      })
+    end
+  end
 end
 
 defmodule Tw.V1_1.Schema.ModelField do
