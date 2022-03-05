@@ -63,21 +63,16 @@ defmodule Tw.V1_1.Schema.Type do
   def from_twitter(_name, "Friendship Target Object"), do: quote(do: FriendshipTarget.t())
   def from_twitter(_name, "Trend Location Object"), do: quote(do: TrendLocation.t())
 
-  def from_twitter(_name, "Trends Object"),
-    do:
-      {quote(
-         do: %{
-           trends: list(Trend.t()),
-           as_of: DateTime.t(),
-           created_at: DateTime.t(),
-           locations: list(%{name: binary, woeid: non_neg_integer()})
-         }
-       ),
-       quote do
-         Map.update!(:trends, &Trend.decode!/1)
-         |> Map.update!(:as_of, &DateTime.from_iso8601/1)
-         |> Map.update!(:created_at, &DateTime.from_iso8601/1)
-       end}
+  def from_twitter(_name, "Trends Object") do
+    quote do
+      %{
+        trends: list(Trend.t()),
+        as_of: DateTime.t(),
+        created_at: DateTime.t(),
+        locations: list(%{name: binary, woeid: non_neg_integer()})
+      }
+    end
+  end
 
   def from_twitter(_name, "Connection Enum"), do: quote(do: FriendshipLookupResult.connections())
 

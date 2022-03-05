@@ -5,15 +5,15 @@ defmodule Tw.V1_1.TrendLocation do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/trends/locations-with-trending-topics/api-reference/get-trends-available) for details.
   """
 
-  @enforce_keys [:country, :countryCode, :name, :parentid, :placeType, :url, :woeid]
-  defstruct([:country, :countryCode, :name, :parentid, :placeType, :url, :woeid])
+  @enforce_keys [:country, :country_code, :name, :parentid, :place_type, :url, :woeid]
+  defstruct([:country, :country_code, :name, :parentid, :place_type, :url, :woeid])
 
   @type t :: %__MODULE__{
           country: binary,
-          countryCode: binary,
+          country_code: binary,
           name: binary,
           parentid: integer,
-          placeType: %{code: non_neg_integer, name: binary},
+          place_type: %{code: non_neg_integer, name: binary},
           url: binary,
           woeid: integer
         }
@@ -21,5 +21,12 @@ defmodule Tw.V1_1.TrendLocation do
   @doc """
   Decode JSON-decoded map into `t:t/0`
   """
-  def decode!(json), do: struct(__MODULE__, json)
+  def decode!(json) do
+    json =
+      json
+      |> Map.put(:country_code, json.countryCode)
+      |> Map.put(:place_type, json.placeType)
+
+    struct(__MODULE__, json)
+  end
 end

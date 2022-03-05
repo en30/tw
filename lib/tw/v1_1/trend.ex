@@ -75,31 +75,25 @@ defmodule Tw.V1_1.Trend do
         json
         |> Enum.map(fn e ->
           e
-          |> Map.update!(:trends, &decode!/1)
-          |> Map.update!(:as_of, &DateTime.from_iso8601/1)
-          |> Map.update!(:created_at, &DateTime.from_iso8601/1)
+          |> Map.update!(:trends, &Enum.map(&1, fn v -> v |> decode!() end))
+          |> Map.update!(:as_of, &decode_datetime!/1)
+          |> Map.update!(:created_at, &decode_datetime!/1)
         end)
 
       {:ok, res}
     end
   end
 
+  defp decode_datetime!(str) do
+    {:ok, dt, 0} = DateTime.from_iso8601(str)
+    dt
+  end
+
   ##################################
   # GET /trends/available.json
   ##################################
 
-  @typedoc """
-  Parameters for `available_locations/3`.
-
-  > | name | description |
-  > | - | - |
-  >
-
-  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/trends/locations-with-trending-topics/api-reference/get-trends-available) for details.
-
-  """
-  @type available_locations_params :: %{}
-  @spec available_locations(Client.t(), available_locations_params) ::
+  @spec available_locations(Client.t()) ::
           {:ok, list(TrendLocation.t())} | {:error, Client.error()}
   @doc """
   Request `GET /trends/available.json` and return decoded result.
@@ -112,9 +106,9 @@ defmodule Tw.V1_1.Trend do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/trends/locations-with-trending-topics/api-reference/get-trends-available) for details.
 
   """
-  def available_locations(client, params) do
-    with {:ok, json} <- Client.request(client, :get, "/trends/available.json", params) do
-      res = json |> Enum.map(fn e -> e |> TrendLocation.decode!() end)
+  def available_locations(client) do
+    with {:ok, json} <- Client.request(client, :get, "/trends/available.json") do
+      res = json |> Enum.map(&TrendLocation.decode!/1)
       {:ok, res}
     end
   end
@@ -151,7 +145,7 @@ defmodule Tw.V1_1.Trend do
   """
   def closest_locations(client, params) do
     with {:ok, json} <- Client.request(client, :get, "/trends/closest.json", params) do
-      res = json |> Enum.map(fn e -> e |> TrendLocation.decode!() end)
+      res = json |> Enum.map(&TrendLocation.decode!/1)
       {:ok, res}
     end
   end
