@@ -83,4 +83,21 @@ defmodule Tw.V1_1.TwitterAPIErrorTest do
       assert ~U[2022-02-17 10:53:15Z] = TwitterAPIError.rate_limit_reset_at(error)
     end
   end
+
+  describe "rate_limit_reset_in/1" do
+    test "returns nil if an irrelevant error is given" do
+      error = TwitterAPIError.from_response(@not_found_response, Jason.decode!(@not_found_response.body, keys: :atoms))
+      assert TwitterAPIError.rate_limit_reset_in(error) == nil
+    end
+
+    test "returns DateTime if a rate limit exceeded error is given" do
+      error =
+        TwitterAPIError.from_response(
+          @rate_limite_exceeded_response,
+          Jason.decode!(@rate_limite_exceeded_response.body, keys: :atoms)
+        )
+
+      assert TwitterAPIError.rate_limit_reset_in(error, fn -> 1_645_095_190 end) == 5000
+    end
+  end
 end

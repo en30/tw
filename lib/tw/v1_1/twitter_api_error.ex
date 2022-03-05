@@ -27,15 +27,39 @@ defmodule Tw.V1_1.TwitterAPIError do
 
   def from_response(response, _), do: exception(message: "Unknown Twitter API Error", errors: [], response: response)
 
+  @spec rate_limit_exceeded?(t()) :: boolean
   def rate_limit_exceeded?(%__MODULE__{} = error) do
     error.response.status == 429 && Enum.any?(error.errors, &(&1.code == 88))
   end
 
+  @doc """
+  Return `DateTime` when the rate limit is reset.
+  If the given error is not related to rate limiting, return `nil`.
+  """
+  @spec rate_limit_reset_at(t()) :: DateTime.t() | nil
   def rate_limit_reset_at(%__MODULE__{} = error) do
     with [v] <- Response.get_header(error.response, "x-rate-limit-reset"),
          {unix, ""} <- Integer.parse(v),
          {:ok, dt} <- DateTime.from_unix(unix, :second) do
       dt
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Return time until rate limit is reset in milliseconds.
+  If the given error is not related to rate limiting, return `nil`.
+
+  ## Examples
+      TwitterAPIError.rate_limit_reset_in(error)
+      |> Process.sleep()
+  """
+  @spec rate_limit_reset_in(t()) :: non_neg_integer() | nil
+  def rate_limit_reset_in(%__MODULE__{} = error, base_fn \\ fn -> DateTime.utc_now() |> DateTime.to_unix(:second) end) do
+    with [v] <- Response.get_header(error.response, "x-rate-limit-reset"),
+         {target, ""} <- Integer.parse(v) do
+      :timer.seconds(target - base_fn.())
     else
       _ -> nil
     end
