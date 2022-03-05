@@ -7,6 +7,8 @@ defmodule Tw.V1_1.EndpointHelper do
 
   @spec stub_client(HTTP.Client.Stub.stubs()) :: Client.t()
   def stub_client(stubs) do
+    {:ok, pid} = GenServer.start_link(HTTP.Client.Stub, stubs)
+
     credentials =
       Credentials.new(
         consumer_key: "xxx",
@@ -16,7 +18,7 @@ defmodule Tw.V1_1.EndpointHelper do
       )
 
     Client.new(
-      http_client: {HTTP.Client.Stub, [stubs: stubs]},
+      http_client: {HTTP.Client.Stub, [pid: pid]},
       credentials: credentials
     )
   end
@@ -25,6 +27,14 @@ defmodule Tw.V1_1.EndpointHelper do
     %{
       status: status,
       headers: [{"content-type", "application/json"}],
+      body: body
+    }
+  end
+
+  def json_response(status, headers, body) do
+    %{
+      status: status,
+      headers: [{"content-type", "application/json"} | headers],
       body: body
     }
   end
