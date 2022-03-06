@@ -7,7 +7,7 @@ defmodule Tw.V1_1.EndpointHelper do
 
   @spec stub_client(HTTP.Client.Stub.stubs()) :: Client.t()
   def stub_client(stubs) do
-    {:ok, pid} = GenServer.start_link(HTTP.Client.Stub, stubs)
+    {:ok, pid} = ExUnit.Callbacks.start_supervised({HTTP.Client.Stub, stubs})
 
     credentials =
       Credentials.new(
