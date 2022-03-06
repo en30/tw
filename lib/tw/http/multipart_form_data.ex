@@ -22,6 +22,7 @@ defmodule Tw.HTTP.MultipartFormData do
 
   def encode(%__MODULE__{boundary: boundary, parts: parts}) do
     parts
+    |> Enum.sort_by(fn {k, _v} -> k end)
     |> Enum.flat_map(fn {k, v} -> part(boundary, k, v) end)
     |> Enum.concat([@dash, boundary, @dash, @crlf, @crlf])
     |> IO.iodata_to_binary()

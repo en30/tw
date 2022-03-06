@@ -25,11 +25,11 @@ defmodule Tw.HTTP.MultipartFormDataTest do
     expected =
       [
         "--boundary\r\n",
-        "Content-Disposition: form-data; name=\"hoge_id\"\r\n\r\n",
-        "42\r\n",
-        "--boundary\r\n",
         "Content-Disposition: form-data; name=\"content\"\r\n\r\n",
         "a\nb\nc\n\r\n",
+        "--boundary\r\n",
+        "Content-Disposition: form-data; name=\"hoge_id\"\r\n\r\n",
+        "42\r\n",
         "--boundary--\r\n\r\n"
       ]
       |> IO.iodata_to_binary()
