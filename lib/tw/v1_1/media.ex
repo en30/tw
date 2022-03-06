@@ -82,15 +82,24 @@ defmodule Tw.V1_1.Media do
   end
 
   @type upload_params ::
-          %{path: Path.t(), media_category: binary(), additional_owners: list(pos_integer())}
+          %{
+            required(:path) => Path.t(),
+            optional(:media_category) => binary(),
+            optional(:additional_owners) => list(pos_integer())
+          }
           | %{
-              device: IO.device(),
-              media_type: binary(),
-              total_bytes: pos_integer(),
-              media_category: binary(),
-              additional_owners: list(pos_integer())
+              required(:device) => IO.device(),
+              required(:media_type) => binary(),
+              required(:total_bytes) => pos_integer(),
+              optional(:media_category) => binary(),
+              optional(:additional_owners) => list(pos_integer())
             }
-          | %{data: iodata(), media_type: binary(), media_category: binary(), additional_owners: list(pos_integer())}
+          | %{
+              required(:data) => iodata(),
+              required(:media_type) => binary(),
+              optional(:media_category) => binary(),
+              optional(:additional_owners) => list(pos_integer())
+            }
 
   @type upload_ok_result :: %{
           media_id: pos_integer(),
@@ -130,7 +139,7 @@ defmodule Tw.V1_1.Media do
   """
   @spec upload(Client.t(), upload_params()) ::
           {:ok, upload_ok_result()}
-          | {:error, Client.error() | upload_error_result()}
+          | {:error, :file.posix() | Client.error() | upload_error_result()}
   def upload(client, params)
 
   def upload(client, %{path: path} = params) do
@@ -147,8 +156,6 @@ defmodule Tw.V1_1.Media do
       after
         File.close(device)
       end
-    else
-      error -> error
     end
   end
 
@@ -165,6 +172,7 @@ defmodule Tw.V1_1.Media do
     params =
       params
       |> Map.delete(:data)
+      |> Map.put_new_lazy(:total_bytes, fn -> IO.iodata_length(data) end)
       |> Map.put_new_lazy(:media_category, fn -> category_from_type(media_type) end)
 
     upload_sequence(client, data |> IO.iodata_to_binary() |> chunks(), params)
@@ -173,11 +181,8 @@ defmodule Tw.V1_1.Media do
   defp upload_sequence(client, chunks, params) do
     with {:ok, init_result} <- initialize_upload(client, params),
          :ok <- upload_chunks(client, init_result.media_id, chunks),
-         {:ok, finalize_result} <- finalize_upload(client, init_result.media_id),
-         {:ok, res} <- wait_for_processing(client, finalize_result) do
-      {:ok, res}
-    else
-      error -> error
+         {:ok, finalize_result} <- finalize_upload(client, init_result.media_id) do
+      wait_for_processing(client, finalize_result)
     end
   end
 

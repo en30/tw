@@ -38,4 +38,12 @@ defmodule Tw.V1_1.EndpointHelper do
       body: body
     }
   end
+
+  def html_response(status, body) do
+    %{
+      status: status,
+      headers: [{"content-type", "text/html; charset=UTF-8"}],
+      body: body
+    }
+  end
 end
