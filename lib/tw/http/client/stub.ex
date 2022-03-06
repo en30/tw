@@ -5,7 +5,7 @@ defmodule Tw.HTTP.Client.Stub do
 
   @behaviour Tw.HTTP.Client
 
-  @type stub :: {{atom(), binary(), binary()} | {atom(), binary()}, Tw.HTTP.Client.response()}
+  @type stub :: {{atom(), binary(), binary() | Regex.t()} | {atom(), binary()}, Tw.HTTP.Client.response()}
   @type stubs :: list(stub())
 
   @impl Tw.HTTP.Client
@@ -16,6 +16,13 @@ defmodule Tw.HTTP.Client.Stub do
 
       {{^method, ^url, ^body}, resp} ->
         {:ok, resp}
+
+      {{^method, ^url, %Regex{} = body_pat}, resp} ->
+        if Regex.match?(body_pat, body) do
+          {:ok, resp}
+        else
+          raise "Stubbed body does not match with the pattern.\npattern:\n#{Regex.source(body_pat)}\n\nbody:\n#{body}"
+        end
 
       stub ->
         raise "Unstubbed request to #{method} #{url} with body:\n#{body}\n\nCurrent stub: #{inspect(stub)}"
@@ -44,5 +51,10 @@ defmodule Tw.HTTP.Client.Stub do
   @impl GenServer
   def handle_call(:pop, _from, [head | tail]) do
     {:reply, head, tail}
+  end
+
+  @impl GenServer
+  def handle_call(:pop, _from, []) do
+    {:reply, nil, []}
   end
 end
