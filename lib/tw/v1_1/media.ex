@@ -333,11 +333,11 @@ defmodule Tw.V1_1.Media do
   ## Examples
       iex> {:ok, res} = Tw.V1_1.Media.upload(client, %{path: "/tmp/abc.png"})
       iex> Tw.V1_1.Media.create_metadata(client, %{media_id: res.media_id, alt_text: %{text: "dancing cat"}})
-      {:ok, nil}
+      {:ok, ""}
 
   """
   @spec create_metadata(Client.t(), create_metadata_params()) ::
-          {:ok, nil} | {:error, Client.error()}
+          {:ok, binary()} | {:error, Client.error()}
   def create_metadata(client, params) do
     params = params |> Map.update!(:media_id, &to_string/1)
 

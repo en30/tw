@@ -349,4 +349,24 @@ defmodule Tw.V1_1.MediaTest do
       assert {:ok, %{media_id: @media_id}} = Media.upload(client, %{data: @bin, media_type: "image/png"})
     end
   end
+
+  test "create_metadata/2 requests to /media/metadata/create.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://upload.twitter.com/1.1/media/metadata/create.json",
+           %{
+             media_id: "692797692624265216",
+             alt_text: %{
+               text: "dancing cat"
+             }
+           }
+           |> Jason.encode_to_iodata!()},
+          html_response(200, "")
+        }
+      ])
+
+    assert {:ok, ""} =
+             Media.create_metadata(client, %{media_id: 692_797_692_624_265_216, alt_text: %{text: "dancing cat"}})
+  end
 end
