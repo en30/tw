@@ -369,4 +369,57 @@ defmodule Tw.V1_1.MediaTest do
     assert {:ok, ""} =
              Media.create_metadata(client, %{media_id: 692_797_692_624_265_216, alt_text: %{text: "dancing cat"}})
   end
+
+  test "bind_subtitles/2 requests to /media/subtitles/create.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://upload.twitter.com/1.1/media/subtitles/create.json",
+           %{
+             media_id: "692797692624265216",
+             media_category: "TweetVideo",
+             subtitle_info: %{
+               subtitles: [
+                 %{
+                   media_id: "105195515189863968",
+                   language_code: "EN",
+                   display_name: "English"
+                 }
+               ]
+             }
+           }
+           |> Jason.encode_to_iodata!()},
+          html_response(200, "")
+        }
+      ])
+
+    subtitles = [%{media_id: 105_195_515_189_863_968, language_code: "EN", display_name: "English"}]
+
+    assert {:ok, ""} = Media.bind_subtitles(client, %{media_id: 692_797_692_624_265_216, subtitles: subtitles})
+  end
+
+  test "unbind_subtitles/2 requests to /media/subtitles/delete.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://upload.twitter.com/1.1/media/subtitles/delete.json",
+           %{
+             media_id: "692797692624265216",
+             media_category: "TweetVideo",
+             subtitle_info: %{
+               subtitles: [
+                 %{
+                   language_code: "EN"
+                 }
+               ]
+             }
+           }
+           |> Jason.encode_to_iodata!()},
+          html_response(200, "")
+        }
+      ])
+
+    assert {:ok, ""} =
+             Media.unbind_subtitles(client, %{media_id: 692_797_692_624_265_216, subtitles: [%{language_code: "EN"}]})
+  end
 end

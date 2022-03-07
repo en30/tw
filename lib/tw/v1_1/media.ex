@@ -358,8 +358,8 @@ defmodule Tw.V1_1.Media do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/media/upload-media/api-reference/post-media-subtitles-create) for details.
 
   ## Examples
-      iex> {:ok, video} = Tw.V1_1.Media.upload(client, "/tmp/abc.mp4")
-      iex> {:ok, en_sub} = Tw.V1_1.Media.upload(client, "/tmp/en.srt")
+      iex> {:ok, video} = Tw.V1_1.Media.upload(client, %{path: "/tmp/abc.mp4"})
+      iex> {:ok, en_sub} = Tw.V1_1.Media.upload(client, %{path: "/tmp/en.srt"})
       iex> subtitles = [%{media_id: en_sub.media_id, language_code: "EN", display_name: "English"}]
       iex> {:ok, en_sub} = Tw.V1_1.Media.bind_subtitles(client, %{media_id: video.media_id, subtitles: subtitles})
       {:ok, nil}
@@ -368,10 +368,10 @@ defmodule Tw.V1_1.Media do
           {:ok, nil} | {:error, Client.error()}
   def bind_subtitles(client, %{media_id: media_id, subtitles: subtitles}) do
     params = %{
-      media_id: media_id,
+      media_id: media_id |> to_string(),
       media_category: "TweetVideo",
       subtitle_info: %{
-        subtitles: subtitles
+        subtitles: subtitles |> Enum.map(fn sub -> sub |> Map.update!(:media_id, &to_string/1) end)
       }
     }
 
@@ -398,7 +398,7 @@ defmodule Tw.V1_1.Media do
           {:ok, nil} | {:error, Client.error()}
   def unbind_subtitles(client, %{media_id: media_id, subtitles: subtitles}) do
     params = %{
-      media_id: media_id,
+      media_id: media_id |> to_string(),
       media_category: "TweetVideo",
       subtitle_info: %{
         subtitles: subtitles
