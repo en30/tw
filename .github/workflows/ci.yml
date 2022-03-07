@@ -43,7 +43,7 @@ jobs:
         name: Restore PLT cache
         uses: actions/cache@v2
         with:
-          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plt
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-v2-plt
           path: |
             priv/plts
 
