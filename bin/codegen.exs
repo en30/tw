@@ -311,6 +311,41 @@ defmodule Tw.V1_1.Schema.Endpoint do
       })
     end
   end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET account/settings",
+             "POST account/settings"
+           ] do
+    quote(
+      do: %{
+        allow_contributor_request: binary(),
+        allow_dm_groups_from: binary(),
+        allow_dms_from: binary(),
+        always_use_https: boolean(),
+        discoverable_by_email: boolean(),
+        discoverable_by_mobile_phone: boolean(),
+        display_sensitive_media: boolean(),
+        geo_enabled: boolean(),
+        language: binary(),
+        protected: boolean(),
+        screen_name: binary(),
+        sleep_time: %{
+          enabled: boolean(),
+          end_time: non_neg_integer() | nil,
+          start_time: non_neg_integer() | nil
+        },
+        time_zone: %{
+          name: binary(),
+          tzinfo_name: binary(),
+          utc_offset: integer()
+        },
+        translator_type: binary(),
+        trend_location: list(TrendLocation.t()),
+        use_cookie_personalization: boolean()
+      }
+    )
+  end
 end
 
 defmodule Tw.V1_1.Schema.ModelField do

@@ -110,7 +110,7 @@ defmodule Tw.V1_1.User do
           default_profile_image: boolean,
           withheld_in_countries: list(binary) | nil,
           withheld_scope: binary | nil,
-          entities: UserEntities.t()
+          entities: UserEntities.t() | nil
         }
   @spec decode!(map) :: t
   @doc """
@@ -120,47 +120,12 @@ defmodule Tw.V1_1.User do
     json =
       json
       |> Map.update!(:created_at, &TwitterDateTime.decode!/1)
-      |> Map.update!(:entities, &UserEntities.decode!/1)
+      |> Map.update(:entities, nil, &UserEntities.decode!/1)
 
     struct(__MODULE__, json)
   end
 
-  ##################################
-  # GET /account/verify_credentials.json
-  ##################################
-
-  @typedoc """
-  Parameters for `me/3`.
-
-  > | name | description |
-  > | - | - |
-  > |include_entities | The entities node will not be included when set to false . |
-  > |skip_status | When set to either true , t or 1 statuses will not be included in the returned user object. |
-  > |include_email | When set to true email will be returned in the user objects as a string. If the user does not have an email address on their account, or if the email address is not verified, null will be returned. |
-  >
-
-  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-verify_credentials) for details.
-
-  """
-  @type me_params :: %{
-          optional(:include_entities) => boolean,
-          optional(:skip_status) => boolean,
-          optional(:include_email) => boolean
-        }
-  @spec me(Client.t(), me_params) :: {:ok, Me.t()} | {:error, Client.error()}
-  @doc """
-  Request `GET /account/verify_credentials.json` and return decoded result.
-  > Returns an HTTP 200 OK response code and a representation of the requesting user if authentication was successful; returns a 401 status code and an error message if not. Use this method to test if supplied user credentials are valid.
-
-  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-verify_credentials) for details.
-
-  """
-  def me(client, params) do
-    with {:ok, json} <- Client.request(client, :get, "/account/verify_credentials.json", params) do
-      res = json |> Me.decode!()
-      {:ok, res}
-    end
-  end
+  defdelegate me(client, params \\ %{}), to: Me, as: :get
 
   ##################################
   # GET /users/show.json

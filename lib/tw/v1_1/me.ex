@@ -5,7 +5,9 @@ defmodule Tw.V1_1.Me do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-verify_credentials) for details.
   """
 
+  alias Tw.V1_1.Client
   alias Tw.V1_1.Schema
+  alias Tw.V1_1.TrendLocation
   alias Tw.V1_1.Tweet
   alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.UserEntities
@@ -120,7 +122,7 @@ defmodule Tw.V1_1.Me do
           default_profile_image: boolean,
           withheld_in_countries: list(binary),
           withheld_scope: binary,
-          entities: UserEntities.t(),
+          entities: UserEntities.t() | nil,
           show_all_inline_media: boolean,
           status: Tweet.t() | nil,
           email: binary | nil
@@ -133,9 +135,135 @@ defmodule Tw.V1_1.Me do
     json =
       json
       |> Map.update!(:created_at, &TwitterDateTime.decode!/1)
-      |> Map.update!(:entities, &UserEntities.decode!/1)
-      |> Map.update!(:status, Schema.nilable(&Tweet.decode!/1))
+      |> Map.update(:entities, nil, &UserEntities.decode!/1)
+      |> Map.update(:status, nil, Schema.nilable(&Tweet.decode!/1))
 
     struct(__MODULE__, json)
+  end
+
+  ##################################
+  # GET /account/verify_credentials.json
+  ##################################
+
+  @typedoc """
+  Parameters for `get/2`.
+
+  > | name | description |
+  > | - | - |
+  > |include_entities | The entities node will not be included when set to false . |
+  > |skip_status | When set to either true , t or 1 statuses will not be included in the returned user object. |
+  > |include_email | When set to true email will be returned in the user objects as a string. If the user does not have an email address on their account, or if the email address is not verified, null will be returned. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-verify_credentials) for details.
+
+  """
+  @type get_params :: %{
+          optional(:include_entities) => boolean,
+          optional(:skip_status) => boolean,
+          optional(:include_email) => boolean
+        }
+  @spec get(Client.t(), get_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `GET /account/verify_credentials.json` and return decoded result.
+  > Returns an HTTP 200 OK response code and a representation of the requesting user if authentication was successful; returns a 401 status code and an error message if not. Use this method to test if supplied user credentials are valid.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-verify_credentials) for details.
+
+  """
+  def get(client, params \\ %{}) do
+    with {:ok, json} <- Client.request(client, :get, "/account/verify_credentials.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  @type setting :: %{
+          allow_contributor_request: binary(),
+          allow_dm_groups_from: binary(),
+          allow_dms_from: binary(),
+          always_use_https: boolean(),
+          discoverable_by_email: boolean(),
+          discoverable_by_mobile_phone: boolean(),
+          display_sensitive_media: boolean(),
+          geo_enabled: boolean(),
+          language: binary(),
+          protected: boolean(),
+          screen_name: binary(),
+          sleep_time: %{enabled: boolean(), end_time: non_neg_integer() | nil, start_time: non_neg_integer() | nil},
+          time_zone: %{name: binary(), tzinfo_name: binary(), utc_offset: integer()},
+          translator_type: binary(),
+          trend_location: nil | list(TrendLocation.t()),
+          use_cookie_personalization: boolean()
+        }
+
+  ##################################
+  # GET /account/settings.json
+  ##################################
+
+  @spec get_setting(Client.t()) ::
+          {:ok, setting()}
+          | {:error, Client.error()}
+  @doc """
+  Request `GET /account/settings.json` and return decoded result.
+  > Returns settings (including current trend, geo and sleep time information) for the authenticating user.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-account-settings) for details.
+
+  """
+  def get_setting(client) do
+    with {:ok, json} <- Client.request(client, :get, "/account/settings.json") do
+      res = json |> decode_setting!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # POST /account/settings.json
+  ##################################
+
+  @typedoc """
+  Parameters for `update_setting/3`.
+
+  > | name | description |
+  > | - | - |
+  > |sleep_time_enabled | When set to true , t or 1 , will enable sleep time for the user. Sleep time is the time when push or SMS notifications should not be sent to the user. |
+  > |start_sleep_time | The hour that sleep time should begin if it is enabled. The value for this parameter should be provided in ISO 8601 format (i.e. 00-23). The time is considered to be in the same timezone as the user's time_zone setting. |
+  > |end_sleep_time | The hour that sleep time should end if it is enabled. The value for this parameter should be provided in ISO 8601 format (i.e. 00-23). The time is considered to be in the same timezone as the user's time_zone setting. |
+  > |time_zone | The timezone dates and times should be displayed in for the user. The timezone must be one of the Rails TimeZone names. |
+  > |trend_location_woeid | The Yahoo! Where On Earth ID to use as the user's default trend location. Global information is available by using 1 as the WOEID. The WOEID must be one of the locations returned by GET trends/available . |
+  > |lang | The language which Twitter should render in for this user. The language must be specified by the appropriate two letter ISO 639-1 representation. Currently supported languages are provided by this endpoint . |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-settings) for details.
+
+  """
+  @type update_setting_params :: %{
+          optional(:sleep_time_enabled) => boolean(),
+          optional(:start_sleep_time) => integer(),
+          optional(:end_sleep_time) => integer(),
+          optional(:time_zone) => binary(),
+          optional(:trend_location_woeid) => integer(),
+          optional(:lang) => binary()
+        }
+  @spec update_setting(Client.t(), update_setting_params) ::
+          {:ok, setting()}
+          | {:error, Client.error()}
+  @doc """
+  Request `POST /account/settings.json` and return decoded result.
+  > Updates the authenticating user's settings.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-settings) for details.
+
+  """
+  def update_setting(client, params) do
+    with {:ok, json} <- Client.request(client, :post, "/account/settings.json", params) do
+      res = json |> decode_setting!()
+      {:ok, res}
+    end
+  end
+
+  defp decode_setting!(json) do
+    json |> Map.update(:trend_location, nil, fn v -> v |> Enum.map(&TrendLocation.decode!/1) end)
   end
 end

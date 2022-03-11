@@ -140,7 +140,7 @@ defmodule Tw.V1_1.Tweet do
           in_reply_to_user_id: integer | nil,
           in_reply_to_user_id_str: binary | nil,
           in_reply_to_screen_name: binary | nil,
-          user: User.t(),
+          user: User.t() | nil,
           coordinates: Coordinates.t() | nil,
           place: Place.t() | nil,
           quoted_status_id: integer | nil,
@@ -152,7 +152,7 @@ defmodule Tw.V1_1.Tweet do
           reply_count: integer | nil,
           retweet_count: integer,
           favorite_count: integer | nil,
-          entities: Entities.t(),
+          entities: Entities.t() | nil,
           extended_entities: ExtendedEntities.t() | nil,
           favorited: boolean | nil,
           retweeted: boolean,
@@ -179,12 +179,12 @@ defmodule Tw.V1_1.Tweet do
     json =
       json
       |> Map.update!(:created_at, &TwitterDateTime.decode!/1)
-      |> Map.update!(:user, &User.decode!/1)
+      |> Map.update(:user, nil, &User.decode!/1)
       |> Map.update!(:coordinates, Schema.nilable(&Coordinates.decode!/1))
       |> Map.update!(:place, Schema.nilable(&Place.decode!/1))
       |> Map.update(:quoted_status, nil, Schema.nilable(&decode!/1))
       |> Map.update(:retweeted_status, nil, Schema.nilable(&decode!/1))
-      |> Map.update!(:entities, &Entities.decode!/1)
+      |> Map.update(:entities, nil, &Entities.decode!/1)
       |> Map.update(:extended_entities, nil, Schema.nilable(&ExtendedEntities.decode!/1))
 
     struct(__MODULE__, json)
