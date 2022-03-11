@@ -346,6 +346,24 @@ defmodule Tw.V1_1.Schema.Endpoint do
       }
     )
   end
+
+  def return_type("GET users/profile_banner") do
+    quote(
+      do: %{
+        sizes: %{
+          ipad: profile_banner_image(),
+          ipad_retina: profile_banner_image(),
+          web: profile_banner_image(),
+          web_retina: profile_banner_image(),
+          mobile: profile_banner_image(),
+          mobile_retina: profile_banner_image(),
+          "300x100": profile_banner_image(),
+          "600x200": profile_banner_image(),
+          "1500x500": profile_banner_image()
+        }
+      }
+    )
+  end
 end
 
 defmodule Tw.V1_1.Schema.ModelField do

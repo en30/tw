@@ -4,6 +4,8 @@ defmodule Tw.V1_1.UserTest do
 
   use ExUnit.Case, async: true
 
+  import Tw.V1_1.EndpointHelper
+
   @deprecated_keys ~W[
     utc_offset
     time_zone
@@ -57,5 +59,19 @@ defmodule Tw.V1_1.UserTest do
         assert Map.has_key?(user, key)
       end
     end
+  end
+
+  test "get_profile_banner/2 requests to /users/profile_banner.json" do
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/users/profile_banner.json?screen_name=twitterapi"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/users_profile_banner.json"))
+        }
+      ])
+
+    assert {:ok,
+            %{sizes: %{ipad: %{h: 313, w: 626, url: "https://pbs.twimg.com/profile_banners/6253282/1347394302/ipad"}}}} =
+             User.get_profile_banner(client, %{screen_name: "twitterapi"})
   end
 end

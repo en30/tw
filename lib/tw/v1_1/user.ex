@@ -982,4 +982,51 @@ defmodule Tw.V1_1.User do
       {:ok, res}
     end
   end
+
+  ##################################
+  # GET /users/profile_banner.json
+  ##################################
+
+  @type profile_banner_image :: %{w: non_neg_integer(), h: non_neg_integer(), url: binary()}
+  @typedoc """
+  Parameters for `get_profile_banner/3`.
+
+  > | name | description |
+  > | - | - |
+  > |user_id | The ID of the user for whom to return results. Helpful for disambiguating when a valid user ID is also a valid screen name. |
+  > |screen_name | The screen name of the user for whom to return results. Helpful for disambiguating when a valid screen name is also a user ID. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-users-profile_banner) for details.
+
+  """
+  @type get_profile_banner_params :: %{optional(:user_id) => integer(), optional(:screen_name) => binary()}
+  @spec get_profile_banner(Client.t(), get_profile_banner_params) ::
+          {:ok,
+           %{
+             sizes: %{
+               ipad: profile_banner_image(),
+               ipad_retina: profile_banner_image(),
+               web: profile_banner_image(),
+               web_retina: profile_banner_image(),
+               mobile: profile_banner_image(),
+               mobile_retina: profile_banner_image(),
+               "300x100": profile_banner_image(),
+               "600x200": profile_banner_image(),
+               "1500x500": profile_banner_image()
+             }
+           }}
+          | {:error, Client.error()}
+  @doc """
+  Request `GET /users/profile_banner.json` and return decoded result.
+  > Returns a map of the available size variations of the specified user's profile banner. If the user has not uploaded a profile banner, a HTTP 404 will be served instead. This method can be used instead of string manipulation on the profile_banner_url returned in user objects as described in Profile Images and Banners.
+  >
+  > The profile banner data available at each size variant's URL is in PNG format.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/get-users-profile_banner) for details.
+
+  """
+  def get_profile_banner(client, params) do
+    Client.request(client, :get, "/users/profile_banner.json", params)
+  end
 end
