@@ -26,6 +26,10 @@ defmodule Tw.V1_1.ListTest do
     test "decodes user into User", %{list: list} do
       assert %User{} = list.user
     end
+
+    test "decodes mode to atom", %{list: list} do
+      assert list.mode == :public
+    end
   end
 
   test "get/2 requests to /lists/show.json" do

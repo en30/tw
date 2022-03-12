@@ -12,6 +12,8 @@ defmodule Tw.V1_1.List do
   alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.User
 
+  @type mode :: :private | :public
+
   @enforce_keys [
     :created_at,
     :description,
@@ -52,7 +54,7 @@ defmodule Tw.V1_1.List do
           id: pos_integer(),
           id_str: binary(),
           member_count: non_neg_integer(),
-          mode: binary(),
+          mode: mode(),
           name: binary(),
           slug: binary(),
           subscriber_count: non_neg_integer(),
@@ -69,6 +71,7 @@ defmodule Tw.V1_1.List do
       json
       |> Map.update!(:created_at, &TwitterDateTime.decode!/1)
       |> Map.update!(:user, &User.decode!/1)
+      |> Map.update!(:mode, &String.to_atom/1)
 
     struct(__MODULE__, json)
   end
