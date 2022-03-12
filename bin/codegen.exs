@@ -387,6 +387,13 @@ defmodule Tw.V1_1.Schema.Endpoint do
            ] do
     quote(do: List.t())
   end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET lists/list"
+           ] do
+    quote(do: list(List.t()))
+  end
 end
 
 defmodule Tw.V1_1.Schema.ModelField do

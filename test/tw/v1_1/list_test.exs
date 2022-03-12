@@ -40,4 +40,17 @@ defmodule Tw.V1_1.ListTest do
     assert {:ok, %TwList{slug: "team", user: %User{screen_name: "twitter"}}} =
              TwList.get(client, %{slug: "team", owner_screen_name: "twitter"})
   end
+
+  test "list/2 requests to /lists/list.json" do
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/lists/list.json?screen_name=twitterapi"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/lists_list.json"))
+        }
+      ])
+
+    assert {:ok, [%TwList{slug: "meetup-20100301"}, %TwList{slug: "team"}]} =
+             TwList.list(client, %{screen_name: "twitterapi"})
+  end
 end
