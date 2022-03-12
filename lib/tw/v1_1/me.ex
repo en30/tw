@@ -266,4 +266,65 @@ defmodule Tw.V1_1.Me do
   defp decode_setting!(json) do
     json |> Map.update(:trend_location, nil, fn v -> v |> Enum.map(&TrendLocation.decode!/1) end)
   end
+
+  ##################################
+  # POST /account/update_profile_banner.json
+  ##################################
+
+  @typedoc """
+  Parameters for `update_profile_banner/3`.
+
+  > | name | description |
+  > | - | - |
+  > |banner | The Base64-encoded or raw image data being uploaded as the user's new profile banner. |
+  > |width | The width of the preferred section of the image being uploaded in pixels. Use with height , offset_left , and offset_top to select the desired region of the image to use. |
+  > |height | The height of the preferred section of the image being uploaded in pixels. Use with width , offset_left , and offset_top to select the desired region of the image to use. |
+  > |offset_left | The number of pixels by which to offset the uploaded image from the left. Use with height , width , and offset_top to select the desired region of the image to use. |
+  > |offset_top | The number of pixels by which to offset the uploaded image from the top. Use with height , width , and offset_left to select the desired region of the image to use. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-update_profile_banner) for details.
+
+  """
+  @type update_profile_banner_params :: %{
+          required(:banner) => binary(),
+          optional(:width) => binary(),
+          optional(:height) => binary(),
+          optional(:offset_left) => binary(),
+          optional(:offset_top) => binary()
+        }
+  @spec update_profile_banner(Client.t(), update_profile_banner_params) :: {:ok, binary()} | {:error, Client.error()}
+  @doc """
+  Request `POST /account/update_profile_banner.json` and return decoded result.
+  > Uploads a profile banner on behalf of the authenticating user. More information about sizing variations can be found in User Profile Images and Banners and GET users / profile_banner.
+  >
+  > Profile banner images are processed asynchronously. The profile_banner_url and its variant sizes will not necessary be available directly after upload.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-update_profile_banner) for details.
+
+  ## Examples
+      iex> banner = File.read!("/tmp/new_banner.png") |> Base.encode64()
+      iex> Tw.V1_1.Me.update_profile_banner(client, %{banner: banner})
+      {:ok, ""}
+
+  """
+  def update_profile_banner(client, params) do
+    Client.request(client, :post, "/account/update_profile_banner.json", params)
+  end
+
+  ##################################
+  # POST /account/remove_profile_banner.json
+  ##################################
+
+  @spec delete_profile_banner(Client.t()) :: {:ok, binary()} | {:error, Client.error()}
+  @doc """
+  Request `POST /account/remove_profile_banner.json` and return decoded result.
+  > Removes the uploaded profile banner for the authenticating user. Returns HTTP 200 upon success.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-remove_profile_banner) for details.
+
+  """
+  def delete_profile_banner(client) do
+    Client.request(client, :post, "/account/remove_profile_banner.json")
+  end
 end

@@ -364,6 +364,14 @@ defmodule Tw.V1_1.Schema.Endpoint do
       }
     )
   end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "POST account/update_profile_banner",
+             "POST account/remove_profile_banner"
+           ] do
+    quote(do: binary())
+  end
 end
 
 defmodule Tw.V1_1.Schema.ModelField do
