@@ -53,4 +53,43 @@ defmodule Tw.V1_1.ListTest do
     assert {:ok, [%TwList{slug: "meetup-20100301"}, %TwList{slug: "team"}]} =
              TwList.list(client, %{screen_name: "twitterapi"})
   end
+
+  test "owned_by/2 requests to /lists/ownerships.json" do
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/lists/ownerships.json?count=2&screen_name=twitter"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/lists_ownerships.json"))
+        }
+      ])
+
+    assert {:ok, %{lists: [%TwList{slug: "official-twitter-accts"} | _]}} =
+             TwList.owned_by(client, %{screen_name: "twitter", count: 2})
+  end
+
+  test "subscribed_by/2 requests to /lists/subscriptions.json" do
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/lists/subscriptions.json?count=5&cursor=-1&screen_name=episod"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/lists_subscriptions.json"))
+        }
+      ])
+
+    assert {:ok, %{lists: [%TwList{slug: "team"} | _]}} =
+             TwList.subscribed_by(client, %{count: 5, cursor: -1, screen_name: "episod"})
+  end
+
+  test "containing/2 requests to /lists/memberships.json" do
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/lists/memberships.json?cursor=-1&screen_name=twitter"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/lists_memberships.json"))
+        }
+      ])
+
+    assert {:ok, %{lists: [%TwList{slug: "vanessa-williams"} | _]}} =
+             TwList.containing(client, %{cursor: -1, screen_name: "twitter"})
+  end
 end

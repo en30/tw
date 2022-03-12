@@ -20,12 +20,14 @@ defmodule Tw.V1_1.CursoredResult do
   alias Tw.V1_1.CursoredResult.StreamError
   alias Tw.V1_1.TwitterAPIError
 
+  @type cursor :: integer()
+
   @type t(key, type) :: %{
           key => type,
-          next_cursor: integer,
-          next_cursor_str: binary,
-          previous_cursor: integer,
-          previous_cursor_str: binary
+          next_cursor: cursor(),
+          next_cursor_str: binary(),
+          previous_cursor: cursor(),
+          previous_cursor_str: binary()
         }
 
   @doc """

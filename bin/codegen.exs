@@ -172,10 +172,13 @@ defmodule Tw.V1_1.Schema.Type do
   def infer(_name, "true"), do: quote(do: boolean())
   def infer(_name, "false"), do: quote(do: boolean())
   def infer("skip_status", _), do: quote(do: boolean())
-  def infer("count", _), do: quote(do: integer())
+  def infer("count", _), do: quote(do: pos_integer())
   def infer("screen_name", "twitterapi twitter"), do: quote(do: list(binary()))
   def infer("user_id", "783214 6253282"), do: quote(do: list(integer()))
   def infer("id", "20 1050118621198921728"), do: quote(do: list(integer()))
+  def infer("user_id", _), do: quote(do: User.id())
+  def infer("screen_name", _), do: quote(do: User.screen_name())
+  def infer("cursor", _), do: quote(do: CursoredResult.cursor())
 
   def infer(_name, example) do
     case Integer.parse(example) do
@@ -393,6 +396,15 @@ defmodule Tw.V1_1.Schema.Endpoint do
              "GET lists/list"
            ] do
     quote(do: list(List.t()))
+  end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET lists/ownerships",
+             "GET lists/subscriptions",
+             "GET lists/memberships"
+           ] do
+    quote(do: CursoredResult.t(:lists, list(List.t())))
   end
 end
 
