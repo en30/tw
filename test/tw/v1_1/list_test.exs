@@ -45,6 +45,44 @@ defmodule Tw.V1_1.ListTest do
              TwList.get(client, %{slug: "team", owner_screen_name: "twitter"})
   end
 
+  test "create/2 requests to /lists/create.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/create.json",
+           %{name: "team", mode: "private"} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.create(client, %{name: "team", mode: :private})
+  end
+
+  test "update/2 requests to /lists/update.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/update.json",
+           %{list_id: 574, mode: "private"} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.update(client, %{list_id: 574, mode: :private})
+  end
+
+  test "delete/2 requests to /lists/destroy.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/destroy.json", %{list_id: 574} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.delete(client, %{list_id: 574})
+  end
+
   test "list/2 requests to /lists/list.json" do
     client =
       stub_client([

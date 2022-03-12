@@ -114,6 +114,149 @@ defmodule Tw.V1_1.List do
   end
 
   ##################################
+  # POST /lists/create.json
+  ##################################
+
+  @typedoc """
+  Parameters for `create/3`.
+
+  > | name | description |
+  > | - | - |
+  > |name | The name for the list. A list's name must start with a letter and can consist only of 25 or fewer letters, numbers, \"-\", or \"_\" characters. |
+  > |mode | Whether your list is public or private. Values can be public or private . If no mode is specified the list will be public. |
+  > |description | The description to give the list. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-create) for details.
+
+  """
+  @type create_params :: %{
+          required(:name) => binary(),
+          optional(:mode) => mode(),
+          optional(:description) => binary()
+        }
+  @spec create(Client.t(), create_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/create.json` and return decoded result.
+  > Creates a new list for the authenticated user. Note that you can create up to 1000 lists per account.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-create) for details.
+
+  """
+  def create(client, params) do
+    params = params |> Map.update(:mode, :public, &to_string/1)
+
+    with {:ok, json} <- Client.request(client, :post, "/lists/create.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # POST /lists/update.json
+  ##################################
+
+  @typedoc """
+  Parameters for `update/3`.
+
+  > | name | description |
+  > | - | - |
+  > |list_id | The numerical id of the list. |
+  > |slug | You can identify a list by its slug instead of its numerical id. If you decide to do so, note that you'll also have to specify the list owner using the owner_id or owner_screen_name parameters. |
+  > |name | The name for the list. |
+  > |mode | Whether your list is public or private. Values can be public or private . If no mode is specified the list will be public. |
+  > |description | The description to give the list. |
+  > |owner_screen_name | The screen name of the user who owns the list being requested by a slug . |
+  > |owner_id | The user ID of the user who owns the list being requested by a slug . |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-update) for details.
+
+  """
+  @type update_params ::
+          %{
+            required(:list_id) => non_neg_integer(),
+            optional(:name) => binary(),
+            optional(:mode) => mode(),
+            optional(:description) => binary()
+          }
+          | %{
+              required(:slug) => binary(),
+              required(:owner_id) => User.id(),
+              optional(:name) => binary(),
+              optional(:mode) => mode(),
+              optional(:description) => binary()
+            }
+          | %{
+              required(:slug) => binary(),
+              required(:owner_screen_name) => User.screen_name(),
+              optional(:name) => binary(),
+              optional(:mode) => mode(),
+              optional(:description) => binary()
+            }
+  @spec update(Client.t(), update_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/update.json` and return decoded result.
+  > Updates the specified list. The authenticated user must own the list to be able to update it.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-update) for details.
+
+  """
+  def update(client, params) do
+    params = params |> Map.update(:mode, :public, &to_string/1)
+
+    with {:ok, json} <- Client.request(client, :post, "/lists/update.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # POST /lists/destroy.json
+  ##################################
+
+  @typedoc """
+  Parameters for `delete/3`.
+
+  > | name | description |
+  > | - | - |
+  > |owner_screen_name | The screen name of the user who owns the list being requested by a slug . |
+  > |owner_id | The user ID of the user who owns the list being requested by a slug . |
+  > |list_id | The numerical id of the list. |
+  > |slug | You can identify a list by its slug instead of its numerical id. If you decide to do so, note that you'll also have to specify the list owner using the owner_id or owner_screen_name parameters. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-destroy) for details.
+
+  """
+  @type delete_params ::
+          %{
+            required(:list_id) => non_neg_integer()
+          }
+          | %{
+              required(:slug) => binary(),
+              required(:owner_id) => User.id()
+            }
+          | %{
+              required(:slug) => binary(),
+              required(:owner_screen_name) => User.screen_name()
+            }
+  @spec delete(Client.t(), delete_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/destroy.json` and return decoded result.
+  > Deletes the specified list. The authenticated user must own the list to be able to destroy it.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-destroy) for details.
+
+  """
+  def delete(client, params) do
+    with {:ok, json} <- Client.request(client, :post, "/lists/destroy.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
   # GET /lists/list.json
   ##################################
 

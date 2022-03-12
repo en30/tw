@@ -386,7 +386,10 @@ defmodule Tw.V1_1.Schema.Endpoint do
 
   def return_type(endpoint)
       when endpoint in [
-             "GET lists/show"
+             "GET lists/show",
+             "POST lists/create",
+             "POST lists/update",
+             "POST lists/destroy"
            ] do
     quote(do: List.t())
   end
