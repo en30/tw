@@ -327,4 +327,48 @@ defmodule Tw.V1_1.Me do
   def delete_profile_banner(client) do
     Client.request(client, :post, "/account/remove_profile_banner.json")
   end
+
+  ##################################
+  # POST /account/update_profile_image.json
+  ##################################
+
+  @typedoc """
+  Parameters for `update_profile_image/3`.
+
+  > | name | description |
+  > | - | - |
+  > |image | The avatar image for the profile, base64-encoded. Must be a valid GIF, JPG, or PNG image of less than 700 kilobytes in size. Images with width larger than 400 pixels will be scaled down. Animated GIFs will be converted to a static GIF of the first frame, removing the animation. |
+  > |include_entities | The entities node will not be included when set to false . |
+  > |skip_status | When set to either true , t or 1 statuses will not be included in the returned user objects. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-update_profile_image) for details.
+
+  """
+  @type update_profile_image_params :: %{
+          required(:image) => binary(),
+          optional(:include_entities) => boolean(),
+          optional(:skip_status) => binary()
+        }
+  @spec update_profile_image(Client.t(), update_profile_image_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /account/update_profile_image.json` and return decoded result.
+  > Updates the authenticating user's profile image. Note that this method expects raw multipart data, not a URL to an image.
+  >
+  > This method asynchronously processes the uploaded file before updating the user's profile image URL. You can either update your local cache the next time you request the user's information, or, at least 5 seconds after uploading the image, ask for the updated URL using GET users / show.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-update_profile_image) for details.
+
+  ## Examples
+      iex> image = File.read!("/tmp/new_profile_image.png") |> Base.encode64()
+      iex> Tw.V1_1.Me.update_profile_image(client, %{image: image})
+      {:ok, %Tw.V1_1.Me{}}
+
+  """
+  def update_profile_image(client, params) do
+    with {:ok, json} <- Client.request(client, :post, "/account/update_profile_image.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
 end

@@ -260,7 +260,13 @@ defmodule Tw.V1_1.Schema.Endpoint do
     quote(do: %{relationship: %{source: FriendshipSource.t(), target: FriendshipTarget.t()}})
   end
 
-  def return_type("GET account/verify_credentials"), do: quote(do: Me.t())
+  def return_type(endpoint)
+      when endpoint in [
+             "GET account/verify_credentials",
+             "POST account/update_profile_image"
+           ] do
+    quote(do: Me.t())
+  end
 
   def return_type(endpoint)
       when endpoint in [
