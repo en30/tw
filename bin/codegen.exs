@@ -263,6 +263,7 @@ defmodule Tw.V1_1.Schema.Endpoint do
   def return_type(endpoint)
       when endpoint in [
              "GET account/verify_credentials",
+             "POST account/update_profile",
              "POST account/update_profile_image"
            ] do
     quote(do: Me.t())

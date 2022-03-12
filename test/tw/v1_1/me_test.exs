@@ -17,6 +17,19 @@ defmodule Tw.V1_1.MeTest do
     assert {:ok, %Me{}} = Me.get(client)
   end
 
+  test "update/2 requests to /account/update_profile.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/account/update_profile.json",
+           %{name: "foo"} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/account_verify_credentials.json"))
+        }
+      ])
+
+    assert {:ok, %Me{}} = Me.update(client, %{name: "foo"})
+  end
+
   test "get_setting/1 requests to /account/settings.json" do
     client =
       stub_client([

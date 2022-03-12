@@ -178,6 +178,51 @@ defmodule Tw.V1_1.Me do
     end
   end
 
+  ##################################
+  # POST /account/update_profile.json
+  ##################################
+
+  @typedoc """
+  Parameters for `update/3`.
+
+  > | name | description |
+  > | - | - |
+  > |name | Full name associated with the profile. |
+  > |url | URL associated with the profile. Will be prepended with http:// if not present. |
+  > |location | The city or country describing where the user of the account is located. The contents are not normalized or geocoded in any way. |
+  > |description | A description of the user owning the account. |
+  > |profile_link_color | Sets a hex value that controls the color scheme of links used on the authenticating user's profile page on twitter.com. This must be a valid hexadecimal value, and may be either three or six characters (ex: F00 or FF0000). This parameter replaces the deprecated (and separate) update_profile_colors API method. |
+  > |include_entities | The entities node will not be included when set to false . |
+  > |skip_status | When set to either true , t or 1 statuses will not be included in the returned user object. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-update_profile) for details.
+
+  """
+  @type update_params :: %{
+          optional(:name) => binary(),
+          optional(:url) => binary(),
+          optional(:location) => binary(),
+          optional(:description) => binary(),
+          optional(:profile_link_color) => binary(),
+          optional(:include_entities) => boolean(),
+          optional(:skip_status) => binary()
+        }
+  @spec update(Client.t(), update_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /account/update_profile.json` and return decoded result.
+  > Sets some values that users are able to set under the \"Account\" tab of their settings page. Only the parameters specified will be updated.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/manage-account-settings/api-reference/post-account-update_profile) for details.
+
+  """
+  def update(client, params) do
+    with {:ok, json} <- Client.request(client, :post, "/account/update_profile.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
   @type setting :: %{
           allow_contributor_request: binary(),
           allow_dm_groups_from: binary(),
