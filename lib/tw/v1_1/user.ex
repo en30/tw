@@ -11,6 +11,7 @@ defmodule Tw.V1_1.User do
   alias Tw.V1_1.UserEntities
 
   @type id :: pos_integer()
+  @type screen_name :: binary()
 
   @enforce_keys [
     :id,

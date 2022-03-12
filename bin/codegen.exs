@@ -380,6 +380,13 @@ defmodule Tw.V1_1.Schema.Endpoint do
            ] do
     quote(do: binary())
   end
+
+  def return_type(endpoint)
+      when endpoint in [
+             "GET lists/show"
+           ] do
+    quote(do: List.t())
+  end
 end
 
 defmodule Tw.V1_1.Schema.ModelField do

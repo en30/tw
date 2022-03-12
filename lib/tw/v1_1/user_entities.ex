@@ -18,7 +18,7 @@ defmodule Tw.V1_1.UserEntities do
   def decode!(json) do
     json =
       json
-      |> Map.update!(:description, &Entities.decode!/1)
+      |> Map.update(:description, nil, &Entities.decode!/1)
       |> Map.update(:url, nil, Schema.nilable(&Entities.decode!/1))
 
     struct(__MODULE__, json)
