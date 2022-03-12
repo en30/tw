@@ -76,12 +76,25 @@ defmodule Tw.V1_1.List do
     struct(__MODULE__, json)
   end
 
+  @type identifiable_params ::
+          %{
+            required(:list_id) => non_neg_integer()
+          }
+          | %{
+              required(:slug) => binary(),
+              required(:owner_id) => User.id()
+            }
+          | %{
+              required(:slug) => binary(),
+              required(:owner_screen_name) => User.screen_name()
+            }
+
   ##################################
   # GET /lists/show.json
   ##################################
 
   @typedoc """
-  Parameters for `get/3`.
+  Parameters for `get/2`.
 
   > | name | description |
   > | - | - |
@@ -94,10 +107,7 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-show) for details.
 
   """
-  @type get_params ::
-          %{list_id: binary()}
-          | %{slug: binary(), owner_screen_name: User.screen_name()}
-          | %{slug: binary(), owner_id: User.id()}
+  @type get_params :: identifiable_params()
   @spec get(Client.t(), get_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `GET /lists/show.json` and return decoded result.
@@ -118,7 +128,7 @@ defmodule Tw.V1_1.List do
   ##################################
 
   @typedoc """
-  Parameters for `create/3`.
+  Parameters for `create/2`.
 
   > | name | description |
   > | - | - |
@@ -156,54 +166,53 @@ defmodule Tw.V1_1.List do
   # POST /lists/update.json
   ##################################
 
-  @typedoc """
-  Parameters for `update/3`.
-
-  > | name | description |
-  > | - | - |
-  > |list_id | The numerical id of the list. |
-  > |slug | You can identify a list by its slug instead of its numerical id. If you decide to do so, note that you'll also have to specify the list owner using the owner_id or owner_screen_name parameters. |
-  > |name | The name for the list. |
-  > |mode | Whether your list is public or private. Values can be public or private . If no mode is specified the list will be public. |
-  > |description | The description to give the list. |
-  > |owner_screen_name | The screen name of the user who owns the list being requested by a slug . |
-  > |owner_id | The user ID of the user who owns the list being requested by a slug . |
-  >
-
-  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-update) for details.
-
-  """
-  @type update_params ::
-          %{
-            required(:list_id) => non_neg_integer(),
-            optional(:name) => binary(),
-            optional(:mode) => mode(),
-            optional(:description) => binary()
-          }
-          | %{
-              required(:slug) => binary(),
-              required(:owner_id) => User.id(),
-              optional(:name) => binary(),
-              optional(:mode) => mode(),
-              optional(:description) => binary()
-            }
-          | %{
-              required(:slug) => binary(),
-              required(:owner_screen_name) => User.screen_name(),
-              optional(:name) => binary(),
-              optional(:mode) => mode(),
-              optional(:description) => binary()
-            }
-  @spec update(Client.t(), update_params) :: {:ok, t()} | {:error, Client.error()}
+  @spec update(Client.t(), t()) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/update.json` and return decoded result.
   > Updates the specified list. The authenticated user must own the list to be able to update it.
 
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-update) for details.
 
+  ## Examples
+      iex> {:ok, list} = Tw.V1_1.List.get(client, %{list_id: 574})
+      iex> {:ok, list} = Tw.V1_1.List.update(client, list |> Map.put(:name, "updated"))
+      {:ok, %Tw.V1_1.List{name: "updated"}}
   """
-  def update(client, params) do
-    params = params |> Map.update(:mode, :public, &to_string/1)
+  def update(client, %__MODULE__{id: id, name: name, mode: mode, description: description}) do
+    update(client, %{list_id: id}, %{name: name, mode: mode, description: description})
+  end
+
+  @typedoc """
+  Parameters for `update/3`.
+
+  > | name | description |
+  > | - | - |
+  > |name | The name for the list. |
+  > |mode | Whether your list is public or private. Values can be public or private . If no mode is specified the list will be public. |
+  > |description | The description to give the list. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-update) for details.
+
+  """
+  @type update_params :: %{
+          optional(:name) => binary(),
+          optional(:mode) => mode(),
+          optional(:description) => binary()
+        }
+  @spec update(Client.t(), identifiable_params(), update_params()) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/update.json` and return decoded result.
+  > Updates the specified list. The authenticated user must own the list to be able to update it.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-update) for details.
+
+  ## Examples
+      iex> {:ok, list} = Tw.V1_1.List.update(client, %{list_id: 574}, %{name: "updated"})
+      {:ok, %Tw.V1_1.List{name: "updated"}}
+  """
+  def update(client, list_params, params) do
+    params = Map.merge(list_params, params) |> Map.update(:mode, :public, &to_string/1)
 
     with {:ok, json} <- Client.request(client, :post, "/lists/update.json", params) do
       res = json |> decode!()
@@ -216,7 +225,7 @@ defmodule Tw.V1_1.List do
   ##################################
 
   @typedoc """
-  Parameters for `delete/3`.
+  Parameters for `delete/2`.
 
   > | name | description |
   > | - | - |
@@ -229,18 +238,7 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-destroy) for details.
 
   """
-  @type delete_params ::
-          %{
-            required(:list_id) => non_neg_integer()
-          }
-          | %{
-              required(:slug) => binary(),
-              required(:owner_id) => User.id()
-            }
-          | %{
-              required(:slug) => binary(),
-              required(:owner_screen_name) => User.screen_name()
-            }
+  @type delete_params :: t() | identifiable_params()
   @spec delete(Client.t(), delete_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/destroy.json` and return decoded result.
@@ -248,7 +246,19 @@ defmodule Tw.V1_1.List do
 
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-destroy) for details.
 
+  ## Examples
+      iex> {:ok, list} = Tw.V1_1.List.get(client, %{list_id: 574})
+      iex> {:ok, list} = Tw.V1_1.List.delete(client, list)
+      {:ok, %Tw.V1_1.List{}}
+
+      iex> {:ok, list} = Tw.V1_1.List.delete(client, %{list_id: 574})
+      {:ok, %Tw.V1_1.List{}}
+
   """
+  def delete(client, %__MODULE__{id: id}) do
+    delete(client, %{list_id: id})
+  end
+
   def delete(client, params) do
     with {:ok, json} <- Client.request(client, :post, "/lists/destroy.json", params) do
       res = json |> decode!()
@@ -261,7 +271,7 @@ defmodule Tw.V1_1.List do
   ##################################
 
   @typedoc """
-  Parameters for `list/3`.
+  Parameters for `list/2`.
 
   > | name | description |
   > | - | - |
@@ -338,7 +348,7 @@ defmodule Tw.V1_1.List do
   ##################################
 
   @typedoc """
-  Parameters for `subscribed_by/3`.
+  Parameters for `subscribed_by/2`.
 
   > | name | description |
   > | - | - |
@@ -378,7 +388,7 @@ defmodule Tw.V1_1.List do
   ##################################
 
   @typedoc """
-  Parameters for `containing/3`.
+  Parameters for `containing/2`.
 
   > | name | description |
   > | - | - |

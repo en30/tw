@@ -58,7 +58,7 @@ defmodule Tw.V1_1.ListTest do
     assert {:ok, %TwList{}} = TwList.create(client, %{name: "team", mode: :private})
   end
 
-  test "update/2 requests to /lists/update.json" do
+  test "update/3 requests to /lists/update.json" do
     client =
       stub_client([
         {
@@ -68,7 +68,23 @@ defmodule Tw.V1_1.ListTest do
         }
       ])
 
-    assert {:ok, %TwList{}} = TwList.update(client, %{list_id: 574, mode: :private})
+    assert {:ok, %TwList{}} = TwList.update(client, %{list_id: 574}, %{mode: :private})
+  end
+
+  test "update/2 accepts a List" do
+    list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/update.json",
+           %{list_id: list.id, mode: list.mode, name: "updated", description: list.description}
+           |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.update(client, list |> Map.put(:name, "updated"))
   end
 
   test "delete/2 requests to /lists/destroy.json" do
@@ -81,6 +97,20 @@ defmodule Tw.V1_1.ListTest do
       ])
 
     assert {:ok, %TwList{}} = TwList.delete(client, %{list_id: 574})
+  end
+
+  test "delete/2 accepts a List" do
+    list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/destroy.json", %{list_id: list.id} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.delete(client, list)
   end
 
   test "list/2 requests to /lists/list.json" do
