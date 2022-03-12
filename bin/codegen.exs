@@ -171,6 +171,7 @@ defmodule Tw.V1_1.Schema.Type do
   def infer(name, example)
   def infer(_name, "true"), do: quote(do: boolean())
   def infer(_name, "false"), do: quote(do: boolean())
+  def infer("skip_status", _), do: quote(do: boolean())
   def infer("count", _), do: quote(do: integer())
   def infer("screen_name", "twitterapi twitter"), do: quote(do: list(binary()))
   def infer("user_id", "783214 6253282"), do: quote(do: list(integer()))

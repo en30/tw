@@ -206,7 +206,7 @@ defmodule Tw.V1_1.Me do
           optional(:description) => binary(),
           optional(:profile_link_color) => binary(),
           optional(:include_entities) => boolean(),
-          optional(:skip_status) => binary()
+          optional(:skip_status) => boolean()
         }
   @spec update(Client.t(), update_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
@@ -393,7 +393,7 @@ defmodule Tw.V1_1.Me do
   @type update_profile_image_params :: %{
           required(:image) => binary(),
           optional(:include_entities) => boolean(),
-          optional(:skip_status) => binary()
+          optional(:skip_status) => boolean()
         }
   @spec update_profile_image(Client.t(), update_profile_image_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """

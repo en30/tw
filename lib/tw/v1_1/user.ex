@@ -485,7 +485,7 @@ defmodule Tw.V1_1.User do
   """
   @type blocking_users_params :: %{
           optional(:include_entities) => boolean,
-          optional(:skip_status) => binary,
+          optional(:skip_status) => boolean,
           optional(:cursor) => integer
         }
   @spec blocking_users(Client.t(), blocking_users_params) ::
@@ -647,7 +647,7 @@ defmodule Tw.V1_1.User do
             :"The response from the API will include a previous_cursor and next_cursor to allow paging back and forth. See Using cursors to navigate collections for more information."
           ) => binary,
           optional(:include_entities) => boolean,
-          optional(:skip_status) => binary
+          optional(:skip_status) => boolean
         }
   @spec list_members(Client.t(), list_members_params) ::
           {:ok, CursoredResult.t(:users, list(t()))} | {:error, Client.error()}
@@ -697,7 +697,7 @@ defmodule Tw.V1_1.User do
           optional(:count) => integer,
           optional(:cursor) => binary,
           optional(:include_entities) => binary,
-          optional(:skip_status) => binary
+          optional(:skip_status) => boolean
         }
   @spec list_subscribers(Client.t(), list_subscribers_params) ::
           {:ok, CursoredResult.t(:users, list(t()))} | {:error, Client.error()}
@@ -780,7 +780,7 @@ defmodule Tw.V1_1.User do
           optional(:screen_name) => binary,
           optional(:user_id) => integer,
           optional(:include_entities) => boolean,
-          optional(:skip_status) => binary
+          optional(:skip_status) => boolean
         }
   @spec unblock(Client.t(), unblock_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
