@@ -1059,7 +1059,7 @@ defmodule Tw.V1_1.Schema do
     endpoint = "#{method |> to_string() |> String.upcase()} #{path}"
 
     typedoc = """
-    Parameters for `#{fn_name}/3`.
+    Parameters for `#{fn_name}/2`.
 
     #{cite(params_type_table(schema))}
 
