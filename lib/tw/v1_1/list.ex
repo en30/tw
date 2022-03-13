@@ -12,6 +12,8 @@ defmodule Tw.V1_1.List do
   alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.User
 
+  import Tw.V1_1.Endpoint
+
   @type mode :: :private | :public
 
   @enforce_keys [
@@ -76,19 +78,6 @@ defmodule Tw.V1_1.List do
     struct(__MODULE__, json)
   end
 
-  @type identifiable_params ::
-          %{
-            required(:list_id) => non_neg_integer()
-          }
-          | %{
-              required(:slug) => binary(),
-              required(:owner_id) => User.id()
-            }
-          | %{
-              required(:slug) => binary(),
-              required(:owner_screen_name) => User.screen_name()
-            }
-
   ##################################
   # GET /lists/show.json
   ##################################
@@ -107,7 +96,7 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-show) for details.
 
   """
-  @type get_params :: identifiable_params()
+  @type get_params :: Tw.V1_1.Endpoint.list_params()
   @spec get(Client.t(), get_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `GET /lists/show.json` and return decoded result.
@@ -117,6 +106,8 @@ defmodule Tw.V1_1.List do
 
   """
   def get(client, params) do
+    params = params |> preprocess_list_params()
+
     with {:ok, json} <- Client.request(client, :get, "/lists/show.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -145,6 +136,7 @@ defmodule Tw.V1_1.List do
           optional(:mode) => mode(),
           optional(:description) => binary()
         }
+
   @spec create(Client.t(), create_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/create.json` and return decoded result.
@@ -166,7 +158,13 @@ defmodule Tw.V1_1.List do
   # POST /lists/update.json
   ##################################
 
-  @spec update(Client.t(), t()) :: {:ok, t()} | {:error, Client.error()}
+  deftype_cross_merge(update_params, list_params(), %{
+    optional(:name) => binary(),
+    optional(:mode) => mode(),
+    optional(:description) => binary()
+  })
+
+  @spec update(Client.t(), update_params()) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/update.json` and return decoded result.
   > Updates the specified list. The authenticated user must own the list to be able to update it.
@@ -175,44 +173,14 @@ defmodule Tw.V1_1.List do
 
   ## Examples
       iex> {:ok, list} = Tw.V1_1.List.get(client, %{list_id: 574})
-      iex> {:ok, list} = Tw.V1_1.List.update(client, list |> Map.put(:name, "updated"))
+      iex> {:ok, list} = Tw.V1_1.List.update(client, %{list: list, name: "updated"})
       {:ok, %Tw.V1_1.List{name: "updated"}}
-  """
-  def update(client, %__MODULE__{id: id, name: name, mode: mode, description: description}) do
-    update(client, %{list_id: id}, %{name: name, mode: mode, description: description})
-  end
 
-  @typedoc """
-  Parameters for `update/3`.
-
-  > | name | description |
-  > | - | - |
-  > |name | The name for the list. |
-  > |mode | Whether your list is public or private. Values can be public or private . If no mode is specified the list will be public. |
-  > |description | The description to give the list. |
-  >
-
-  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-update) for details.
-
-  """
-  @type update_params :: %{
-          optional(:name) => binary(),
-          optional(:mode) => mode(),
-          optional(:description) => binary()
-        }
-  @spec update(Client.t(), identifiable_params(), update_params()) :: {:ok, t()} | {:error, Client.error()}
-  @doc """
-  Request `POST /lists/update.json` and return decoded result.
-  > Updates the specified list. The authenticated user must own the list to be able to update it.
-
-  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-update) for details.
-
-  ## Examples
       iex> {:ok, list} = Tw.V1_1.List.update(client, %{list_id: 574}, %{name: "updated"})
       {:ok, %Tw.V1_1.List{name: "updated"}}
   """
-  def update(client, list_params, params) do
-    params = Map.merge(list_params, params) |> Map.update(:mode, :public, &to_string/1)
+  def update(client, params) do
+    params = params |> preprocess_list_params() |> Map.update(:mode, :public, &to_string/1)
 
     with {:ok, json} <- Client.request(client, :post, "/lists/update.json", params) do
       res = json |> decode!()
@@ -238,7 +206,7 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-destroy) for details.
 
   """
-  @type delete_params :: t() | identifiable_params()
+  @type delete_params :: Tw.V1_1.Endpoint.list_params()
   @spec delete(Client.t(), delete_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/destroy.json` and return decoded result.
@@ -248,18 +216,16 @@ defmodule Tw.V1_1.List do
 
   ## Examples
       iex> {:ok, list} = Tw.V1_1.List.get(client, %{list_id: 574})
-      iex> {:ok, list} = Tw.V1_1.List.delete(client, list)
+      iex> {:ok, list} = Tw.V1_1.List.delete(client, %{list: list})
       {:ok, %Tw.V1_1.List{}}
 
       iex> {:ok, list} = Tw.V1_1.List.delete(client, %{list_id: 574})
       {:ok, %Tw.V1_1.List{}}
 
   """
-  def delete(client, %__MODULE__{id: id}) do
-    delete(client, %{list_id: id})
-  end
-
   def delete(client, params) do
+    params = params |> preprocess_list_params()
+
     with {:ok, json} <- Client.request(client, :post, "/lists/destroy.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -270,9 +236,9 @@ defmodule Tw.V1_1.List do
   # POST /lists/members/create.json
   ##################################
 
-  @type put_member_params :: User.t() | %{user_id: User.id()} | %{screen_name: User.screen_name()}
-  @spec put_member(Client.t(), t() | identifiable_params(), put_member_params) ::
-          {:ok, t()} | {:error, Client.error()}
+  deftype_cross_merge(put_member_params, list_params(), user_params())
+
+  @spec put_member(Client.t(), put_member_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/members/create.json` and return decoded result.
   > Add a member to a list. The authenticated user must own the list to be able to add members to it. Note that lists cannot have more than 5,000 members.
@@ -280,16 +246,8 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-members-create) for details.
 
   """
-  def put_member(client, %__MODULE__{id: id}, params) do
-    put_member(client, %{list_id: id}, params)
-  end
-
-  def put_member(client, list_params, %User{id: id}) do
-    put_member(client, list_params, %{user_id: id})
-  end
-
-  def put_member(client, list_params, params) do
-    params = Map.merge(list_params, params)
+  def put_member(client, params) do
+    params = params |> preprocess_list_params() |> preprocess_user_params()
 
     with {:ok, json} <- Client.request(client, :post, "/lists/members/create.json", params) do
       res = json |> decode!()
@@ -301,10 +259,9 @@ defmodule Tw.V1_1.List do
   # POST /lists/members/create_all.json
   ##################################
 
-  @type put_members_params ::
-          list(User.t()) | %{user_id: list(User.id())} | %{screen_name: list(User.screen_name())}
-  @spec put_members(Client.t(), t() | identifiable_params(), put_members_params) ::
-          {:ok, t()} | {:error, Client.error()}
+  deftype_cross_merge(put_members_params, list_params(), user_list_params())
+
+  @spec put_members(Client.t(), put_members_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/members/create_all.json` and return decoded result.
   > Adds multiple members to a list, by specifying a comma-separated list of member ids or screen names. The authenticated user must own the list to be able to add members to it. Note that lists can't have more than 5,000 members, and you are limited to adding up to 100 members to a list at a time with this method.
@@ -314,19 +271,8 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-members-create_all) for details.
 
   """
-  def put_members(client, %__MODULE__{id: id}, params) do
-    put_members(client, %{list_id: id}, params)
-  end
-
-  def put_members(client, list_params, [%User{} | _] = users) do
-    put_members(client, list_params, %{user_id: Enum.map(users, & &1.id)})
-  end
-
-  def put_members(client, list_params, params) do
-    params =
-      Map.merge(list_params, params)
-      |> Map.replace(:user_id, Enum.join(params[:user_id] || [], ","))
-      |> Map.replace(:screen_name, Enum.join(params[:screen_name] || [], ","))
+  def put_members(client, params) do
+    params = params |> preprocess_list_params() |> preprocess_user_list_params()
 
     with {:ok, json} <- Client.request(client, :post, "/lists/members/create_all.json", params) do
       res = json |> decode!()
@@ -338,10 +284,9 @@ defmodule Tw.V1_1.List do
   # POST /lists/members/destroy.json
   ##################################
 
-  @type delete_member_params ::
-          User.t() | %{user_id: User.id()} | %{screen_name: User.screen_name()}
-  @spec delete_member(Client.t(), t() | identifiable_params(), delete_member_params()) ::
-          {:ok, t()} | {:error, Client.error()}
+  deftype_cross_merge(delete_member_params, list_params(), user_params())
+
+  @spec delete_member(Client.t(), delete_member_params()) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/members/destroy.json` and return decoded result.
   > Removes the specified member from the list. The authenticated user must be the list's owner to remove members from the list.
@@ -349,16 +294,8 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-members-destroy) for details.
 
   """
-  def delete_member(client, %__MODULE__{id: id}, params) do
-    delete_member(client, %{list_id: id}, params)
-  end
-
-  def delete_member(client, list_params, %User{id: id}) do
-    delete_member(client, list_params, %{user_id: id})
-  end
-
-  def delete_member(client, list_params, params) do
-    params = Map.merge(list_params, params)
+  def delete_member(client, params) do
+    params = params |> preprocess_list_params() |> preprocess_user_params()
 
     with {:ok, json} <- Client.request(client, :post, "/lists/members/destroy.json", params) do
       res = json |> decode!()
@@ -370,9 +307,8 @@ defmodule Tw.V1_1.List do
   # POST /lists/members/destroy_all.json
   ##################################
 
-  @type delete_members_params :: list(User.t()) | %{user_id: list(User.id())} | %{screen_name: list(User.screen_name())}
-  @spec delete_members(Client.t(), t() | identifiable_params(), delete_members_params()) ::
-          {:ok, t()} | {:error, Client.error()}
+  deftype_cross_merge(delete_members_params, list_params(), user_list_params())
+  @spec delete_members(Client.t(), delete_members_params()) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/members/destroy_all.json` and return decoded result.
   > Removes multiple members from a list, by specifying a comma-separated list of member ids or screen names. The authenticated user must own the list to be able to remove members from it. Note that lists can't have more than 500 members, and you are limited to removing up to 100 members to a list at a time with this method.
@@ -382,19 +318,8 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-members-destroy_all) for details.
 
   """
-  def delete_members(client, %__MODULE__{id: id}, params) do
-    delete_members(client, %{list_id: id}, params)
-  end
-
-  def delete_members(client, list_params, [%User{} | _] = users) do
-    delete_members(client, list_params, %{user_id: Enum.map(users, & &1.id)})
-  end
-
-  def delete_members(client, list_params, params) do
-    params =
-      Map.merge(list_params, params)
-      |> Map.replace(:user_id, Enum.join(params[:user_id] || [], ","))
-      |> Map.replace(:screen_name, Enum.join(params[:screen_name] || [], ","))
+  def delete_members(client, params) do
+    params = params |> preprocess_list_params() |> preprocess_user_list_params()
 
     with {:ok, json} <- Client.request(client, :post, "/lists/members/destroy_all.json", params) do
       res = json |> decode!()
@@ -458,13 +383,13 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-ownerships) for details.
 
   """
-  @type owned_by_params :: %{
-          optional(:user_id) => User.id(),
-          optional(:screen_name) => User.screen_name(),
-          optional(:count) => pos_integer(),
-          optional(:cursor) => CursoredResult.cursor()
-        }
-  @spec owned_by(Client.t(), owned_by_params) :: {:ok, CursoredResult.t(:lists, list(t()))} | {:error, Client.error()}
+  deftype_cross_merge(owned_by_params, optional_user_params(), %{
+    optional(:count) => pos_integer(),
+    optional(:cursor) => CursoredResult.cursor()
+  })
+
+  @spec owned_by(Client.t(), owned_by_params) ::
+          {:ok, CursoredResult.t(:lists, list(t()))} | {:error, Client.error()}
   @doc """
   Request `GET /lists/ownerships.json` and return decoded result.
   > Returns the lists owned by the specified Twitter user. Private lists will only be shown if the authenticated user is also the owner of the lists.
@@ -472,7 +397,9 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-ownerships) for details.
 
   """
-  def owned_by(client, params) do
+  def owned_by(client, params \\ %{}) do
+    params = params |> preprocess_optional_user_params()
+
     with {:ok, json} <- Client.request(client, :get, "/lists/ownerships.json", params) do
       res = json |> Map.update!(:lists, fn v -> v |> Enum.map(&decode!/1) end)
       {:ok, res}
@@ -497,12 +424,11 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-subscriptions) for details.
 
   """
-  @type subscribed_by_params :: %{
-          optional(:user_id) => User.id(),
-          optional(:screen_name) => User.screen_name(),
-          optional(:count) => pos_integer(),
-          optional(:cursor) => CursoredResult.cursor()
-        }
+  deftype_cross_merge(subscribed_by_params, optional_user_params(), %{
+    optional(:count) => pos_integer(),
+    optional(:cursor) => CursoredResult.cursor()
+  })
+
   @spec subscribed_by(Client.t(), subscribed_by_params) ::
           {:ok, CursoredResult.t(:lists, list(t()))} | {:error, Client.error()}
   @doc """
@@ -512,7 +438,9 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-subscriptions) for details.
 
   """
-  def subscribed_by(client, params) do
+  def subscribed_by(client, params \\ %{}) do
+    params = params |> preprocess_optional_user_params()
+
     with {:ok, json} <- Client.request(client, :get, "/lists/subscriptions.json", params) do
       res = json |> Map.update!(:lists, fn v -> v |> Enum.map(&decode!/1) end)
       {:ok, res}
@@ -538,13 +466,12 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-memberships) for details.
 
   """
-  @type containing_params :: %{
-          optional(:user_id) => User.id(),
-          optional(:screen_name) => User.screen_name(),
-          optional(:count) => pos_integer(),
-          optional(:cursor) => CursoredResult.cursor(),
-          optional(:filter_to_owned_lists) => boolean()
-        }
+  deftype_cross_merge(containing_params, optional_user_params(), %{
+    optional(:count) => pos_integer(),
+    optional(:cursor) => CursoredResult.cursor(),
+    optional(:filter_to_owned_lists) => boolean()
+  })
+
   @spec containing(Client.t(), containing_params) ::
           {:ok, CursoredResult.t(:lists, list(t()))} | {:error, Client.error()}
   @doc """
@@ -554,7 +481,9 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-memberships) for details.
 
   """
-  def containing(client, params) do
+  def containing(client, params \\ %{}) do
+    params = params |> preprocess_optional_user_params()
+
     with {:ok, json} <- Client.request(client, :get, "/lists/memberships.json", params) do
       res = json |> Map.update!(:lists, fn v -> v |> Enum.map(&decode!/1) end)
       {:ok, res}
@@ -579,7 +508,7 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-subscribers-create) for details.
 
   """
-  @type subscribe_params :: t() | identifiable_params()
+  @type subscribe_params :: Tw.V1_1.Endpoint.list_params()
   @spec subscribe(Client.t(), subscribe_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/subscribers/create.json` and return decoded result.
@@ -589,7 +518,7 @@ defmodule Tw.V1_1.List do
 
   ## Examples
       iex> {:ok, list} = Tw.V1_1.List.get(client, %{list_id: 574})
-      iex> {:ok, list} = Tw.V1_1.List.subscribe(client, list)
+      iex> {:ok, list} = Tw.V1_1.List.subscribe(client, %{list: list})
       {:ok, %Tw.V1_1.List{}}
 
       iex> {:ok, list} = Tw.V1_1.List.subscribe(client, %{list_id: 574})
@@ -597,11 +526,10 @@ defmodule Tw.V1_1.List do
 
 
   """
-  def subscribe(client, %__MODULE__{id: id}) do
-    subscribe(client, %{list_id: id})
-  end
 
   def subscribe(client, params) do
+    params = params |> preprocess_list_params()
+
     with {:ok, json} <- Client.request(client, :post, "/lists/subscribers/create.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -626,7 +554,7 @@ defmodule Tw.V1_1.List do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-subscribers-destroy) for details.
 
   """
-  @type unsubscribe_params :: t() | identifiable_params()
+  @type unsubscribe_params :: Tw.V1_1.Endpoint.list_params()
   @spec unsubscribe(Client.t(), unsubscribe_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /lists/subscribers/destroy.json` and return decoded result.
@@ -636,17 +564,16 @@ defmodule Tw.V1_1.List do
 
   ## Examples
       iex> {:ok, list} = Tw.V1_1.List.get(client, %{list_id: 574})
-      iex> {:ok, list} = Tw.V1_1.List.unsubscribe(client, list)
+      iex> {:ok, list} = Tw.V1_1.List.unsubscribe(client, %{list: list})
       {:ok, %Tw.V1_1.List{}}
 
       iex> {:ok, list} = Tw.V1_1.List.unsubscribe(client, %{list_id: 574})
       {:ok, %Tw.V1_1.List{}}
   """
-  def unsubscribe(client, %__MODULE__{id: id}) do
-    unsubscribe(client, %{list_id: id})
-  end
 
   def unsubscribe(client, params) do
+    params = params |> preprocess_list_params()
+
     with {:ok, json} <- Client.request(client, :post, "/lists/subscribers/destroy.json", params) do
       res = json |> decode!()
       {:ok, res}

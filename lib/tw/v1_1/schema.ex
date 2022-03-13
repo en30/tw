@@ -1,6 +1,4 @@
 defmodule Tw.V1_1.Schema do
-  @moduledoc false
-
   # https://developer.twitter.com/en/docs/twitter-for-websites/supported-languages
   @type language ::
           :en
