@@ -5,6 +5,7 @@ defmodule Tw.V1_1.ListTest do
   use ExUnit.Case, async: true
 
   import Tw.V1_1.EndpointHelper
+  import Tw.V1_1.Fixture
 
   @json_path "test/support/fixtures/v1_1/list.json"
 
@@ -72,7 +73,7 @@ defmodule Tw.V1_1.ListTest do
   end
 
   test "update/2 accepts a List" do
-    list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+    list = list_fixture()
 
     client =
       stub_client([
@@ -100,7 +101,7 @@ defmodule Tw.V1_1.ListTest do
   end
 
   test "delete/2 accepts a List" do
-    list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+    list = list_fixture()
 
     client =
       stub_client([
@@ -129,8 +130,8 @@ defmodule Tw.V1_1.ListTest do
     end
 
     test "accepts struct as parameters" do
-      list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
-      user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+      list = list_fixture()
+      user = user_fixture()
 
       client =
         stub_client([
@@ -165,8 +166,8 @@ defmodule Tw.V1_1.ListTest do
     end
 
     test "accepts struct as parameters" do
-      list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
-      user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+      list = list_fixture()
+      user = user_fixture()
 
       client =
         stub_client([
@@ -197,8 +198,8 @@ defmodule Tw.V1_1.ListTest do
     end
 
     test "accepts struct as parameters" do
-      list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
-      user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+      list = list_fixture()
+      user = user_fixture()
 
       client =
         stub_client([
@@ -233,8 +234,8 @@ defmodule Tw.V1_1.ListTest do
     end
 
     test "accepts struct as parameters" do
-      list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
-      user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+      list = list_fixture()
+      user = user_fixture()
 
       client =
         stub_client([
@@ -276,7 +277,7 @@ defmodule Tw.V1_1.ListTest do
   end
 
   test "owned_by/2 accepts a User" do
-    user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+    user = user_fixture()
 
     client =
       stub_client([
@@ -304,7 +305,7 @@ defmodule Tw.V1_1.ListTest do
   end
 
   test "subscribed_by/2 accepts a User" do
-    user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+    user = user_fixture()
 
     client =
       stub_client([
@@ -332,7 +333,7 @@ defmodule Tw.V1_1.ListTest do
   end
 
   test "containing/2 accepts a User" do
-    user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+    user = user_fixture()
 
     client =
       stub_client([
@@ -360,7 +361,7 @@ defmodule Tw.V1_1.ListTest do
   end
 
   test "subscribe/2 accepts a List" do
-    list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+    list = list_fixture()
 
     client =
       stub_client([
@@ -388,7 +389,7 @@ defmodule Tw.V1_1.ListTest do
   end
 
   test "unsubscribe/2 accepts a List" do
-    list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+    list = list_fixture()
 
     client =
       stub_client([
