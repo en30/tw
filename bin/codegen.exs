@@ -208,6 +208,8 @@ defmodule Tw.V1_1.Schema.Endpoint do
   def return_type(endpoint)
       when endpoint in [
              "GET users/show",
+             "GET lists/members/show",
+             "GET lists/subscribers/show",
              "POST blocks/create",
              "POST blocks/destroy",
              "POST mutes/users/create",

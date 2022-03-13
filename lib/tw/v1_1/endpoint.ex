@@ -48,6 +48,14 @@ defmodule Tw.V1_1.Endpoint do
     end
   end
 
+  defmacro deftype_cross_merge(name, u1, u2, u3) do
+    type = [u1, u2, u3] |> Enum.map(&Macro.expand(&1, __ENV__)) |> Enum.reduce(fn e, a -> cross_merge(e, a) end)
+
+    quote do
+      @type unquote(name) :: unquote(type)
+    end
+  end
+
   def cross_merge(u1, u2) do
     for keys1 <- type_keys(u1), keys2 <- type_keys(u2) do
       {:%{}, [], keys1 ++ keys2}

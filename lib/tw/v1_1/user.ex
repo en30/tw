@@ -10,6 +10,8 @@ defmodule Tw.V1_1.User do
   alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.UserEntities
 
+  import Tw.V1_1.Endpoint
+
   @type id :: pos_integer()
   @type screen_name :: binary()
 
@@ -612,6 +614,103 @@ defmodule Tw.V1_1.User do
   """
   def retweeter_ids(client, params) do
     Client.request(client, :get, "/statuses/retweeters/ids.json", params)
+  end
+
+  ##################################
+  # GET /lists/members/show.json
+  ##################################
+
+  @typedoc """
+  Parameters for `get_list_member/2`.
+
+  > | name | description |
+  > | - | - |
+  > |list_id | The numerical id of the list. |
+  > |slug | You can identify a list by its slug instead of its numerical id. If you decide to do so, note that you'll also have to specify the list owner using the owner_id or owner_screen_name parameters. |
+  > |user_id | The ID of the user for whom to return results. Helpful for disambiguating when a valid user ID is also a valid screen name. |
+  > |screen_name | The screen name of the user for whom to return results. Helpful for disambiguating when a valid screen name is also a user ID. |
+  > |owner_screen_name | The screen name of the user who owns the list being requested by a slug. |
+  > |owner_id | The user ID of the user who owns the list being requested by a slug. |
+  > |include_entities | When set to either true, t or 1, each tweet will include a node called \"entities\". This node offers a variety of metadata about the tweet in a discreet structure, including: user_mentions, urls, and hashtags. While entities are opt-in on timelines at present, they will be made a default component of output in the future. See Tweet Entities for more details. |
+  > |skip_status | When set to either true, t or 1 statuses will not be included in the returned user objects. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-members-show) for details.
+
+  """
+
+  deftype_cross_merge(get_list_member_params, list_params(), user_params(), %{
+    optional(:include_entities) => binary(),
+    optional(:skip_status) => boolean()
+  })
+
+  @spec get_list_member(Client.t(), get_list_member_params) :: {:ok, t() | nil} | {:error, Client.error()}
+  @doc """
+  Check if the specified user is a member of the specified list.
+
+  Request `GET /lists/members/show.json` and return decoded result.
+
+  - If the list is not found, return `{:error, error}` which satfisfies `Tw.V1_1.TwitterAPIError.resource_not_found?(error)`.
+  - If the user is not member of the list, return `{:error, error}` which satfisfies `Tw.V1_1.TwitterAPIError.member_not_found?(error)`.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-members-show) for details.
+
+  """
+  def get_list_member(client, params) do
+    params = params |> preprocess_list_params() |> preprocess_user_params()
+
+    with {:ok, json} <- Client.request(client, :get, "/lists/members/show.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # GET /lists/subscribers/show.json
+  ##################################
+
+  @typedoc """
+  Parameters for `get_list_subscriber/2`.
+
+  > | name | description |
+  > | - | - |
+  > |owner_screen_name | The screen name of the user who owns the list being requested by a slug. |
+  > |owner_id | The user ID of the user who owns the list being requested by a slug. |
+  > |list_id | The numerical id of the list. |
+  > |slug | You can identify a list by its slug instead of its numerical id. If you decide to do so, note that you'll also have to specify the list owner using the owner_id or owner_screen_name parameters. |
+  > |user_id | The ID of the user for whom to return results. Helpful for disambiguating when a valid user ID is also a valid screen name. |
+  > |screen_name | The screen name of the user for whom to return results. Helpful for disambiguating when a valid screen name is also a user ID. |
+  > |include_entities | When set to either true, t or 1, each Tweet will include a node called \"entities\". This node offers a variety of metadata about the tweet in a discreet structure, including: user_mentions, urls, and hashtags. While entities are opt-in on timelines at present, they will be made a default component of output in the future. See Tweet Entities for more details. |
+  > |skip_status | When set to either true , t or 1 statuses will not be included in the returned user objects. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-subscribers-show) for details.
+
+  """
+  deftype_cross_merge(get_list_subscriber_params, list_params(), user_params(), %{
+    optional(:include_entities) => binary(),
+    optional(:skip_status) => boolean()
+  })
+
+  @spec get_list_subscriber(Client.t(), get_list_subscriber_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Check if the specified user is a subscriber of the specified list. Returns the user if they are a subscriber.
+
+  Request `GET /lists/subscribers/show.json` and return decoded result.
+
+  - If the list is not found, return `{:error, error}` which satfisfies `Tw.V1_1.TwitterAPIError.resource_not_found?(error)`.
+  - If the user is not subscriber of the list, return `{:error, error}` which satfisfies `Tw.V1_1.TwitterAPIError.subscriber_not_found?(error)`.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-subscribers-show) for details.
+
+  """
+  def get_list_subscriber(client, params) do
+    params = params |> preprocess_list_params() |> preprocess_user_params()
+
+    with {:ok, json} <- Client.request(client, :get, "/lists/subscribers/show.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
   end
 
   ##################################

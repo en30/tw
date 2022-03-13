@@ -32,6 +32,13 @@ defmodule Tw.V1_1.TwitterAPIError do
     error.response.status == 429 && Enum.any?(error.errors, &(&1.code == 88))
   end
 
+  for {name, code} <- [resource_not_found?: 34, member_not_found?: 108, subscriber_not_found?: 109] do
+    @spec unquote(name)(t()) :: boolean
+    def unquote(name)(%__MODULE__{} = error) do
+      Enum.any?(error.errors, &(&1.code == unquote(code)))
+    end
+  end
+
   @doc """
   Return `DateTime` when the rate limit is reset.
   If the given error is not related to rate limiting, return `nil`.

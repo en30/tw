@@ -5,6 +5,7 @@ defmodule Tw.V1_1.UserTest do
   use ExUnit.Case, async: true
 
   import Tw.V1_1.EndpointHelper
+  import Tw.V1_1.Fixture
 
   @deprecated_keys ~W[
     utc_offset
@@ -73,5 +74,63 @@ defmodule Tw.V1_1.UserTest do
     assert {:ok,
             %{sizes: %{ipad: %{h: 313, w: 626, url: "https://pbs.twimg.com/profile_banners/6253282/1347394302/ipad"}}}} =
              User.get_profile_banner(client, %{screen_name: "twitterapi"})
+  end
+
+  test "get_list_subscriber/2 requests to /lists/subscribers/show.json" do
+    client =
+      stub_client([
+        {
+          {:get,
+           "https://api.twitter.com/1.1/lists/subscribers/show.json?owner_screen_name=twitter&screen_name=episod&slug=team"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/user.json"))
+        }
+      ])
+
+    assert {:ok, %User{}} =
+             User.get_list_subscriber(client, %{slug: "team", owner_screen_name: "twitter", screen_name: "episod"})
+  end
+
+  test "get_list_subscriber/2 accepts structs" do
+    user = user_fixture()
+    list = list_fixture()
+
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/lists/subscribers/show.json?list_id=#{list.id}&user_id=#{user.id}"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/user.json"))
+        }
+      ])
+
+    assert {:ok, %User{}} = User.get_list_subscriber(client, %{list: list, user: user})
+  end
+
+  test "get_list_member/2 requests to /lists/members/show.json" do
+    client =
+      stub_client([
+        {
+          {:get,
+           "https://api.twitter.com/1.1/lists/members/show.json?owner_screen_name=twitter&screen_name=episod&slug=team"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/user.json"))
+        }
+      ])
+
+    assert {:ok, %User{}} =
+             User.get_list_member(client, %{slug: "team", owner_screen_name: "twitter", screen_name: "episod"})
+  end
+
+  test "get_list_member/2 accepts structs" do
+    user = user_fixture()
+    list = list_fixture()
+
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/lists/members/show.json?list_id=#{list.id}&user_id=#{user.id}"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/user.json"))
+        }
+      ])
+
+    assert {:ok, %User{}} = User.get_list_member(client, %{list: list, user: user})
   end
 end

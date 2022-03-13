@@ -579,4 +579,7 @@ defmodule Tw.V1_1.List do
       {:ok, res}
     end
   end
+
+  defdelegate get_member(client, paramas), to: User, as: :get_list_member
+  defdelegate get_subscriber(client, paramas), to: User, as: :get_list_subscriber
 end
