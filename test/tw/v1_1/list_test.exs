@@ -113,6 +113,142 @@ defmodule Tw.V1_1.ListTest do
     assert {:ok, %TwList{}} = TwList.delete(client, list)
   end
 
+  describe "put_member/2" do
+    test "requests to /lists/members/create.json" do
+      client =
+        stub_client([
+          {
+            {:post, "https://api.twitter.com/1.1/lists/members/create.json",
+             %{owner_screen_name: "twitter", screen_name: "kurrik", slug: "team"} |> URI.encode_query(:www_form)},
+            json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+          }
+        ])
+
+      assert {:ok, %TwList{}} =
+               TwList.put_member(client, %{owner_screen_name: "twitter", slug: "team"}, %{screen_name: "kurrik"})
+    end
+
+    test "accepts struct as parameters" do
+      list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+      user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+
+      client =
+        stub_client([
+          {
+            {:post, "https://api.twitter.com/1.1/lists/members/create.json",
+             %{list_id: list.id, user_id: user.id} |> URI.encode_query(:www_form)},
+            json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+          }
+        ])
+
+      assert {:ok, %TwList{}} = TwList.put_member(client, list, user)
+    end
+  end
+
+  describe "put_members/2" do
+    test "requests to /lists/members/create_all.json" do
+      client =
+        stub_client([
+          {
+            {:post, "https://api.twitter.com/1.1/lists/members/create_all.json",
+             %{list_id: 23, screen_name: "rsarver,episod,jasoncosta,theseancook,kurrik,froginthevalley"}
+             |> URI.encode_query(:www_form)},
+            json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+          }
+        ])
+
+      assert {:ok, %TwList{}} =
+               TwList.put_members(client, %{list_id: 23}, %{
+                 screen_name: ~w[rsarver episod jasoncosta theseancook kurrik froginthevalley]
+               })
+    end
+
+    test "accepts struct as parameters" do
+      list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+      user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+
+      client =
+        stub_client([
+          {
+            {:post, "https://api.twitter.com/1.1/lists/members/create_all.json",
+             %{list_id: list.id, user_id: user.id} |> URI.encode_query(:www_form)},
+            json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+          }
+        ])
+
+      assert {:ok, %TwList{}} = TwList.put_members(client, list, [user])
+    end
+  end
+
+  describe "delete_member/2" do
+    test "requests to /lists/members/destroy.json" do
+      client =
+        stub_client([
+          {
+            {:post, "https://api.twitter.com/1.1/lists/members/destroy.json",
+             %{owner_screen_name: "twitter", screen_name: "kurrik", slug: "cool_people"} |> URI.encode_query(:www_form)},
+            json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+          }
+        ])
+
+      assert {:ok, %TwList{}} =
+               TwList.delete_member(client, %{owner_screen_name: "twitter", slug: "cool_people"}, %{
+                 screen_name: "kurrik"
+               })
+    end
+
+    test "accepts struct as parameters" do
+      list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+      user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+
+      client =
+        stub_client([
+          {
+            {:post, "https://api.twitter.com/1.1/lists/members/destroy.json",
+             %{list_id: list.id, user_id: user.id} |> URI.encode_query(:www_form)},
+            json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+          }
+        ])
+
+      assert {:ok, %TwList{}} = TwList.delete_member(client, list, user)
+    end
+  end
+
+  describe "delete_members/2" do
+    test "requests to /lists/members/destroy_all.json" do
+      client =
+        stub_client([
+          {
+            {:post, "https://api.twitter.com/1.1/lists/members/destroy_all.json",
+             %{list_id: 23, screen_name: "rsarver,episod,jasoncosta,theseancook,kurrik,froginthevalley"}
+             |> URI.encode_query(:www_form)},
+            json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+          }
+        ])
+
+      assert {:ok, %TwList{}} =
+               TwList.delete_members(client, %{list_id: 23}, %{
+                 screen_name: ~w[rsarver episod jasoncosta theseancook kurrik froginthevalley]
+               })
+    end
+
+    test "accepts struct as parameters" do
+      list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+      user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms) |> User.decode!()
+
+      client =
+        stub_client([
+          {
+            {:post, "https://api.twitter.com/1.1/lists/members/destroy_all.json",
+             %{list_id: list.id, user_id: user.id} |> URI.encode_query(:www_form)},
+            json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+          }
+        ])
+
+      assert {:ok, %TwList{}} = TwList.delete_members(client, list, [user])
+    end
+  end
+
   test "list/2 requests to /lists/list.json" do
     client =
       stub_client([
@@ -163,5 +299,61 @@ defmodule Tw.V1_1.ListTest do
 
     assert {:ok, %{lists: [%TwList{slug: "vanessa-williams"} | _]}} =
              TwList.containing(client, %{cursor: -1, screen_name: "twitter"})
+  end
+
+  test "subscribe/2 requests to /lists/subscribers/create.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/subscribers/create.json",
+           %{list_id: 574} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.subscribe(client, %{list_id: 574})
+  end
+
+  test "subscribe/2 accepts a List" do
+    list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/subscribers/create.json",
+           %{list_id: list.id} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.subscribe(client, list)
+  end
+
+  test "unsubscribe/2 requests to /lists/subscribers/destroy.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/subscribers/destroy.json",
+           %{list_id: 574} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.unsubscribe(client, %{list_id: 574})
+  end
+
+  test "unsubscribe/2 accepts a List" do
+    list = File.read!("test/support/fixtures/v1_1/list.json") |> Jason.decode!(keys: :atoms) |> TwList.decode!()
+
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/lists/subscribers/destroy.json",
+           %{list_id: list.id} |> URI.encode_query(:www_form)},
+          json_response(200, File.read!("test/support/fixtures/v1_1/list.json"))
+        }
+      ])
+
+    assert {:ok, %TwList{}} = TwList.unsubscribe(client, list)
   end
 end

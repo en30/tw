@@ -267,6 +267,142 @@ defmodule Tw.V1_1.List do
   end
 
   ##################################
+  # POST /lists/members/create.json
+  ##################################
+
+  @type put_member_params :: User.t() | %{user_id: User.id()} | %{screen_name: User.screen_name()}
+  @spec put_member(Client.t(), t() | identifiable_params(), put_member_params) ::
+          {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/members/create.json` and return decoded result.
+  > Add a member to a list. The authenticated user must own the list to be able to add members to it. Note that lists cannot have more than 5,000 members.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-members-create) for details.
+
+  """
+  def put_member(client, %__MODULE__{id: id}, params) do
+    put_member(client, %{list_id: id}, params)
+  end
+
+  def put_member(client, list_params, %User{id: id}) do
+    put_member(client, list_params, %{user_id: id})
+  end
+
+  def put_member(client, list_params, params) do
+    params = Map.merge(list_params, params)
+
+    with {:ok, json} <- Client.request(client, :post, "/lists/members/create.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # POST /lists/members/create_all.json
+  ##################################
+
+  @type put_members_params ::
+          list(User.t()) | %{user_id: list(User.id())} | %{screen_name: list(User.screen_name())}
+  @spec put_members(Client.t(), t() | identifiable_params(), put_members_params) ::
+          {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/members/create_all.json` and return decoded result.
+  > Adds multiple members to a list, by specifying a comma-separated list of member ids or screen names. The authenticated user must own the list to be able to add members to it. Note that lists can't have more than 5,000 members, and you are limited to adding up to 100 members to a list at a time with this method.
+  >
+  > Please note that there can be issues with lists that rapidly remove and add memberships. Take care when using these methods such that you are not too rapidly switching between removals and adds on the same list.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-members-create_all) for details.
+
+  """
+  def put_members(client, %__MODULE__{id: id}, params) do
+    put_members(client, %{list_id: id}, params)
+  end
+
+  def put_members(client, list_params, [%User{} | _] = users) do
+    put_members(client, list_params, %{user_id: Enum.map(users, & &1.id)})
+  end
+
+  def put_members(client, list_params, params) do
+    params =
+      Map.merge(list_params, params)
+      |> Map.replace(:user_id, Enum.join(params[:user_id] || [], ","))
+      |> Map.replace(:screen_name, Enum.join(params[:screen_name] || [], ","))
+
+    with {:ok, json} <- Client.request(client, :post, "/lists/members/create_all.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # POST /lists/members/destroy.json
+  ##################################
+
+  @type delete_member_params ::
+          User.t() | %{user_id: User.id()} | %{screen_name: User.screen_name()}
+  @spec delete_member(Client.t(), t() | identifiable_params(), delete_member_params()) ::
+          {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/members/destroy.json` and return decoded result.
+  > Removes the specified member from the list. The authenticated user must be the list's owner to remove members from the list.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-members-destroy) for details.
+
+  """
+  def delete_member(client, %__MODULE__{id: id}, params) do
+    delete_member(client, %{list_id: id}, params)
+  end
+
+  def delete_member(client, list_params, %User{id: id}) do
+    delete_member(client, list_params, %{user_id: id})
+  end
+
+  def delete_member(client, list_params, params) do
+    params = Map.merge(list_params, params)
+
+    with {:ok, json} <- Client.request(client, :post, "/lists/members/destroy.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # POST /lists/members/destroy_all.json
+  ##################################
+
+  @type delete_members_params :: list(User.t()) | %{user_id: list(User.id())} | %{screen_name: list(User.screen_name())}
+  @spec delete_members(Client.t(), t() | identifiable_params(), delete_members_params()) ::
+          {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/members/destroy_all.json` and return decoded result.
+  > Removes multiple members from a list, by specifying a comma-separated list of member ids or screen names. The authenticated user must own the list to be able to remove members from it. Note that lists can't have more than 500 members, and you are limited to removing up to 100 members to a list at a time with this method.
+  >
+  > Please note that there can be issues with lists that rapidly remove and add memberships. Take care when using these methods such that you are not too rapidly switching between removals and adds on the same list.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-members-destroy_all) for details.
+
+  """
+  def delete_members(client, %__MODULE__{id: id}, params) do
+    delete_members(client, %{list_id: id}, params)
+  end
+
+  def delete_members(client, list_params, [%User{} | _] = users) do
+    delete_members(client, list_params, %{user_id: Enum.map(users, & &1.id)})
+  end
+
+  def delete_members(client, list_params, params) do
+    params =
+      Map.merge(list_params, params)
+      |> Map.replace(:user_id, Enum.join(params[:user_id] || [], ","))
+      |> Map.replace(:screen_name, Enum.join(params[:screen_name] || [], ","))
+
+    with {:ok, json} <- Client.request(client, :post, "/lists/members/destroy_all.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
   # GET /lists/list.json
   ##################################
 
@@ -421,6 +557,98 @@ defmodule Tw.V1_1.List do
   def containing(client, params) do
     with {:ok, json} <- Client.request(client, :get, "/lists/memberships.json", params) do
       res = json |> Map.update!(:lists, fn v -> v |> Enum.map(&decode!/1) end)
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # POST /lists/subscribers/create.json
+  ##################################
+
+  @typedoc """
+  Parameters for `subscribe/2`.
+
+  > | name | description |
+  > | - | - |
+  > |owner_screen_name | The screen name of the user who owns the list being requested by a slug . |
+  > |owner_id | The user ID of the user who owns the list being requested by a slug . |
+  > |list_id | The numerical id of the list. |
+  > |slug | You can identify a list by its slug instead of its numerical id. If you decide to do so, note that you'll also have to specify the list owner using the owner_id or owner_screen_name parameters. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-subscribers-create) for details.
+
+  """
+  @type subscribe_params :: t() | identifiable_params()
+  @spec subscribe(Client.t(), subscribe_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/subscribers/create.json` and return decoded result.
+  > Subscribes the authenticated user to the specified list.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-subscribers-create) for details.
+
+  ## Examples
+      iex> {:ok, list} = Tw.V1_1.List.get(client, %{list_id: 574})
+      iex> {:ok, list} = Tw.V1_1.List.subscribe(client, list)
+      {:ok, %Tw.V1_1.List{}}
+
+      iex> {:ok, list} = Tw.V1_1.List.subscribe(client, %{list_id: 574})
+      {:ok, %Tw.V1_1.List{}}
+
+
+  """
+  def subscribe(client, %__MODULE__{id: id}) do
+    subscribe(client, %{list_id: id})
+  end
+
+  def subscribe(client, params) do
+    with {:ok, json} <- Client.request(client, :post, "/lists/subscribers/create.json", params) do
+      res = json |> decode!()
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # POST /lists/subscribers/destroy.json
+  ##################################
+
+  @typedoc """
+  Parameters for `unsubscribe/2`.
+
+  > | name | description |
+  > | - | - |
+  > |list_id | The numerical id of the list. |
+  > |slug | You can identify a list by its slug instead of its numerical id. If you decide to do so, note that you'll also have to specify the list owner using the owner_id or owner_screen_name parameters. |
+  > |owner_screen_name | The screen name of the user who owns the list being requested by a slug . |
+  > |owner_id | The user ID of the user who owns the list being requested by a slug . |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-subscribers-destroy) for details.
+
+  """
+  @type unsubscribe_params :: t() | identifiable_params()
+  @spec unsubscribe(Client.t(), unsubscribe_params) :: {:ok, t()} | {:error, Client.error()}
+  @doc """
+  Request `POST /lists/subscribers/destroy.json` and return decoded result.
+  > Unsubscribes the authenticated user from the specified list.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/post-lists-subscribers-destroy) for details.
+
+  ## Examples
+      iex> {:ok, list} = Tw.V1_1.List.get(client, %{list_id: 574})
+      iex> {:ok, list} = Tw.V1_1.List.unsubscribe(client, list)
+      {:ok, %Tw.V1_1.List{}}
+
+      iex> {:ok, list} = Tw.V1_1.List.unsubscribe(client, %{list_id: 574})
+      {:ok, %Tw.V1_1.List{}}
+  """
+  def unsubscribe(client, %__MODULE__{id: id}) do
+    unsubscribe(client, %{list_id: id})
+  end
+
+  def unsubscribe(client, params) do
+    with {:ok, json} <- Client.request(client, :post, "/lists/subscribers/destroy.json", params) do
+      res = json |> decode!()
       {:ok, res}
     end
   end

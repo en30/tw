@@ -389,7 +389,13 @@ defmodule Tw.V1_1.Schema.Endpoint do
              "GET lists/show",
              "POST lists/create",
              "POST lists/update",
-             "POST lists/destroy"
+             "POST lists/destroy",
+             "POST lists/subscribers/create",
+             "POST lists/subscribers/destroy",
+             "POST lists/members/create",
+             "POST lists/members/create_all",
+             "POST lists/members/destroy",
+             "POST lists/members/destroy_all"
            ] do
     quote(do: List.t())
   end
