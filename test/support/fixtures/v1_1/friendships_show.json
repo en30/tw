@@ -1,0 +1,31 @@
+{
+  "relationship": {
+    "source": {
+      "id": 783214,
+      "id_str": "783214",
+      "screen_name": "Twitter",
+      "following": true,
+      "followed_by": true,
+      "live_following": false,
+      "following_received": null,
+      "following_requested": null,
+      "notifications_enabled": null,
+      "can_dm": true,
+      "blocking": null,
+      "blocked_by": null,
+      "muting": null,
+      "want_retweets": null,
+      "all_replies": null,
+      "marked_spam": null
+    },
+    "target": {
+      "id": 2244994945,
+      "id_str": "2244994945",
+      "screen_name": "TwitterDev",
+      "following": true,
+      "followed_by": true,
+      "following_received": null,
+      "following_requested": null
+    }
+  }
+}

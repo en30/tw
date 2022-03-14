@@ -1171,4 +1171,269 @@ defmodule Tw.V1_1.User do
         end
     end
   end
+
+  ##################################
+  # GET /friendships/incoming.json
+  ##################################
+
+  @typedoc """
+  Parameters for `list_pending_follower_ids/2`.
+
+  > | name | description |
+  > | - | - |
+  > |cursor | Causes the list of connections to be broken into pages of no more than 5000 IDs at a time. The number of IDs returned is not guaranteed to be 5000 as suspended users are filtered out after connections are queried. If no cursor is provided, a value of -1 will be assumed, which is the first \"page.\"The response from the API will include a previous_cursor and next_cursor to allow paging back and forth. |
+  > |stringify_ids | Many programming environments will not consume our Tweet ids due to their size. Provide this option to have ids returned as strings instead. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-incoming) for details.
+
+  """
+  @type list_pending_follower_ids_params :: %{
+          optional(:cursor) => CursoredResult.cursor(),
+          optional(:stringify_ids) => boolean
+        }
+  @spec list_pending_follower_ids(Client.t(), list_pending_follower_ids_params) ::
+          {:ok, Tw.V1_1.CursoredResult.t(:ids, list(id()))} | {:error, Client.error()}
+  @doc """
+  Request `GET /friendships/incoming.json` and return decoded result.
+  > Returns a collection of numeric IDs for every user who has a pending request to follow the authenticating user.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-incoming) for details.
+
+  """
+  def list_pending_follower_ids(client, params \\ %{}) do
+    Client.request(client, :get, "/friendships/incoming.json", params)
+  end
+
+  ##################################
+  # GET /friendships/outgoing.json
+  ##################################
+
+  @typedoc """
+  Parameters for `list_pending_friend_ids/2`.
+
+  > | name | description |
+  > | - | - |
+  > |cursor | Causes the list of connections to be broken into pages of no more than 5000 IDs at a time. The number of IDs returned is not guaranteed to be 5000 as suspended users are filtered out after connections are queried. If no cursor is provided, a value of -1 will be assumed, which is the first \"page.\"The response from the API will include a previous_cursor and next_cursor to allow paging back and forth. See Using cursors to navigate collections for more information. |
+  > |stringify_ids | Some programming environments will not consume Twitter IDs due to their size. Provide this option to have IDs returned as strings instead. More about Twitter IDs. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-outgoing) for details.
+
+  """
+  @type list_pending_friend_ids_params :: %{
+          optional(:cursor) => CursoredResult.cursor(),
+          optional(:stringify_ids) => boolean
+        }
+  @spec list_pending_friend_ids(Client.t(), list_pending_friend_ids_params) ::
+          {:ok, CursoredResult.t(:ids, list(id()))} | {:error, Client.error()}
+  @doc """
+  Request `GET /friendships/outgoing.json` and return decoded result.
+  > Returns a collection of numeric IDs for every protected user for whom the authenticating user has a pending follow request.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-outgoing) for details.
+
+  """
+  def list_pending_friend_ids(client, params \\ %{}) do
+    Client.request(client, :get, "/friendships/outgoing.json", params)
+  end
+
+  ##################################
+  # GET /friendships/no_retweets/ids.json
+  ##################################
+
+  @typedoc """
+  Parameters for `list_no_retweet_ids/2`.
+
+  > | name | description |
+  > | - | - |
+  > |stringify_ids | Some programming environments will not consume Twitter IDs due to their size. Provide this option to have IDs returned as strings instead. Read more about Twitter IDs. This parameter is important to use in Javascript environments. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-no_retweets-ids) for details.
+
+  """
+  @type list_no_retweet_ids_params :: %{optional(:stringify_ids) => boolean}
+  @spec list_no_retweet_ids(Client.t(), list_no_retweet_ids_params) :: {:ok, list(id())} | {:error, Client.error()}
+  @doc """
+  Request `GET /friendships/no_retweets/ids.json` and return decoded result.
+  > Returns a collection of user_ids that the currently authenticated user does not want to receive retweets from.
+  >
+  > Use POST friendships / update to set the \"no retweets\" status for a given user account on behalf of the current user.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-no_retweets-ids) for details.
+
+  """
+  def list_no_retweet_ids(client, params \\ %{}) do
+    Client.request(client, :get, "/friendships/no_retweets/ids.json", params)
+  end
+
+  ##################################
+  # GET /friendships/lookup.json
+  ##################################
+
+  @type friendship :: %{
+          name: binary(),
+          screen_name: screen_name(),
+          id: id(),
+          id_str: binary,
+          connections: list(:following | :following_requested | :followed_by | :none | :blocking | :muting)
+        }
+
+  @typedoc """
+  Parameters for `list_friendships/2`.
+
+  | name | description |
+  | - | - |
+  |screen_names | list of up to 100 screen names  |
+  |user_ids | list of up to 100 user ids |
+  |users | list of up to 100 `t()`  |
+  """
+  @type list_friendships_params :: Tw.V1_1.Endpoint.user_list_params()
+  @spec list_friendships(Client.t(), list_friendships_params) ::
+          {:ok, list(friendship())} | {:error, Client.error()}
+  @doc """
+  Request `GET /friendships/lookup.json` and return decoded result.
+  > Returns the relationships of the authenticating user to the comma-separated list of up to 100 screen_names or user_ids provided. Values for connections can be: following, following_requested, followed_by, none, blocking, muting.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-lookup) for details.
+
+  """
+  def list_friendships(client, params) do
+    params = params |> preprocess_user_list_params()
+
+    with {:ok, json} <- Client.request(client, :get, "/friendships/lookup.json", params) do
+      res =
+        json
+        |> Enum.map(fn e ->
+          e
+          |> Map.update!(:connections, fn cs -> cs |> Enum.map(&String.to_atom/1) end)
+        end)
+
+      {:ok, res}
+    end
+  end
+
+  ##################################
+  # GET /friendships/show.json
+  ##################################
+
+  @type relationship_source :: %{
+          id: id(),
+          id_str: binary(),
+          screen_name: screen_name(),
+          following: boolean(),
+          followed_by: boolean(),
+          live_following: boolean(),
+          following_received: boolean() | nil,
+          following_requested: boolean() | nil,
+          notifications_enabled: boolean() | nil,
+          can_dm: boolean(),
+          blocking: boolean() | nil,
+          blocked_by: boolean() | nil,
+          muting: boolean() | nil,
+          want_retweets: boolean() | nil,
+          all_replies: boolean() | nil,
+          marked_spam: boolean() | nil
+        }
+
+  @type relationship_target :: %{
+          id: id(),
+          id_str: binary(),
+          screen_name: screen_name(),
+          following: boolean(),
+          followed_by: boolean(),
+          following_received: boolean() | nil,
+          following_requested: boolean() | nil
+        }
+  @type friend_relationship :: %{
+          relationship: %{
+            source: relationship_source(),
+            target: relationship_target()
+          }
+        }
+  @typedoc """
+  Parameters for `get/2`.
+
+  > | name | description |
+  > | - | - |
+  > |source_id | The user_id of the subject user. |
+  > |source_screen_name | The screen_name of the subject user. |
+  > |target_id | The user_id of the target user. |
+  > |target_screen_name | The screen_name of the target user. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-show) for details.
+
+  """
+  deftype_cross_merge(
+    get_friendship_params,
+    %{source: t()} | %{source_id: id()} | %{source_screen_name: screen_name()},
+    %{target: t()} | %{target_id: id()} | %{target_screen_name: screen_name()}
+  )
+
+  @spec get_friendship(Client.t(), get_friendship_params) :: {:ok, friend_relationship()} | {:error, Client.error()}
+  @doc """
+  Request `GET /friendships/show.json` and return decoded result.
+  > Returns detailed information about the relationship between two arbitrary users.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-show) for details.
+
+  """
+  def get_friendship(client, params) do
+    params = params |> preprocess_source_params() |> preprocess_target_params()
+    Client.request(client, :get, "/friendships/show.json", params)
+  end
+
+  for name <- [:source, :target] do
+    fn_name = :"preprocess_#{name}_params"
+    id = :"#{name}_id"
+    screen_name = :"#{name}_screen_name"
+
+    def unquote(fn_name)(%{unquote(name) => %{id: id}} = params) do
+      params
+      |> Map.delete(unquote(name))
+      |> Map.put(unquote(id), id)
+    end
+
+    def unquote(fn_name)(%{unquote(id) => _} = params), do: params
+    def unquote(fn_name)(%{unquote(screen_name) => _} = params), do: params
+  end
+
+  ##################################
+  # POST /friendships/update.json
+  ##################################
+
+  @typedoc """
+  Parameters for `update_friendship/2`.
+
+  > | name | description |
+  > | - | - |
+  > |screen_name | The screen name of the user being followed. |
+  > |user_id | The ID of the user being followed. |
+  > |device | Turn on/off device notifications from the target user. |
+  > |retweets | Turn on/off Retweets from the target user. |
+  >
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/post-friendships-update) for details.
+
+  """
+  deftype_cross_merge(update_friendship_params, user_params(), %{
+    optional(:device) => boolean,
+    optional(:retweets) => boolean
+  })
+
+  @spec update_friendship(Client.t(), update_friendship_params) ::
+          {:ok, friend_relationship()} | {:error, Client.error()}
+  @doc """
+  Request `POST /friendships/update.json` and return decoded result.
+  > Turn on/off Retweets and device notifications from the specified user.
+
+  See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/post-friendships-update) for details.
+
+  """
+  def update_friendship(client, params) do
+    params = params |> preprocess_user_params()
+    Client.request(client, :post, "/friendships/update.json", params)
+  end
 end

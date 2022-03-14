@@ -766,4 +766,140 @@ defmodule Tw.V1_1.UserTest do
 
     assert {:ok, %User{}} = User.unfollow(client, %{user: user})
   end
+
+  test "list_pending_follower_ids/2 requests to /friendships/incoming.json" do
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/friendships/incoming.json?cursor=-1"},
+          json_response(200, """
+          {
+            "ids": [1, 2, 3],
+            "next_cursor": 0,
+            "next_cursor_str": "0",
+            "previous_cursor": 0,
+            "previous_cursor_str": "0"
+          }
+          """)
+        }
+      ])
+
+    assert {:ok, %{ids: [1, 2, 3]}} = User.list_pending_follower_ids(client, %{cursor: -1})
+  end
+
+  test "list_pending_friend_ids/2 requests to /friendships/outgoing.json" do
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/friendships/outgoing.json?cursor=-1"},
+          json_response(200, """
+          {
+            "ids": [1, 2, 3],
+            "next_cursor": 0,
+            "next_cursor_str": "0",
+            "previous_cursor": 0,
+            "previous_cursor_str": "0"
+          }
+          """)
+        }
+      ])
+
+    assert {:ok, %{ids: [1, 2, 3]}} = User.list_pending_friend_ids(client, %{cursor: -1})
+  end
+
+  test "list_no_retweet_ids/2 requests to /friendships/no_retweets/ids.json" do
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/friendships/no_retweets/ids.json?cursor=-1"},
+          json_response(200, """
+          {
+            "ids": [1, 2, 3],
+            "next_cursor": 0,
+            "next_cursor_str": "0",
+            "previous_cursor": 0,
+            "previous_cursor_str": "0"
+          }
+          """)
+        }
+      ])
+
+    assert {:ok, %{ids: [1, 2, 3]}} = User.list_no_retweet_ids(client, %{cursor: -1})
+  end
+
+  test "list_friendships/2 requests to /friendships/lookup.json" do
+    client =
+      stub_client([
+        {
+          {:get,
+           "https://api.twitter.com/1.1/friendships/lookup.json?screen_name=andypiper%2Cbinary_aaron%2Ctwitterdev%2Chappycamper%2Charris_0ff"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/friendships_lookup.json"))
+        }
+      ])
+
+    assert {:ok,
+            [
+              %{screen_name: "andypiper", connections: [:following]},
+              %{screen_name: "binary_aaron", connections: [:following, :followed_by]},
+              %{screen_name: "TwitterDev", connections: [:following]},
+              %{screen_name: "happycamper", connections: [:none]},
+              %{screen_name: "Harris_0ff", connections: [:following, :following_requested, :followed_by]}
+            ]} =
+             User.list_friendships(client, %{screen_names: ~w[andypiper binary_aaron twitterdev happycamper harris_0ff]})
+  end
+
+  test "get_friendship/2 requests to /friendships/show.json" do
+    client =
+      stub_client([
+        {
+          {:get,
+           "https://api.twitter.com/1.1/friendships/show.json?source_screen_name=twitter&target_screen_name=twitterdev"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/friendships_show.json"))
+        }
+      ])
+
+    assert {:ok, %{relationship: %{source: %{screen_name: "Twitter"}, target: %{screen_name: "TwitterDev"}}}} =
+             User.get_friendship(client, %{source_screen_name: "twitter", target_screen_name: "twitterdev"})
+  end
+
+  test "get_friendship/2 accepts source and target as User" do
+    source = user_fixture() |> Map.put(:id, 1)
+    target = user_fixture() |> Map.put(:id, 2)
+
+    client =
+      stub_client([
+        {
+          {:get, "https://api.twitter.com/1.1/friendships/show.json?source_id=#{source.id}&target_id=#{target.id}"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/friendships_show.json"))
+        }
+      ])
+
+    assert {:ok, %{}} = User.get_friendship(client, %{source: source, target: target})
+  end
+
+  test "update_friendship/2 requests to /friendships/update.json" do
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/friendships/update.json", "device=true&user_id=2244994945"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/friendships_show.json"))
+        }
+      ])
+
+    assert {:ok, _} = User.update_friendship(client, %{user_id: 2_244_994_945, device: true})
+  end
+
+  test "update_friendship/2 accepts a User" do
+    user = user_fixture()
+
+    client =
+      stub_client([
+        {
+          {:post, "https://api.twitter.com/1.1/friendships/update.json", "retweets=true&user_id=#{user.id}"},
+          json_response(200, File.read!("test/support/fixtures/v1_1/friendships_show.json"))
+        }
+      ])
+
+    assert {:ok, %{}} = User.update_friendship(client, %{user: user, retweets: true})
+  end
 end
