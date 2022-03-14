@@ -3,6 +3,13 @@ defmodule Tw.V1_1.Endpoint do
   Helpers for endpoint mapping functions.
   """
 
+  @type tweet_params :: Tw.V1_1.Tweet.t() | %{tweet_id: Tw.V1_1.Tweet.id()}
+  defmacro tweet_params do
+    quote do
+      %{tweet: Tw.V1_1.Tweet.t()} | %{tweet_id: Tw.V1_1.Tweet.id()}
+    end
+  end
+
   @type user_params :: Tw.V1_1.User.t() | %{user_id: Tw.V1_1.User.id()} | %{screen_name: Tw.V1_1.User.screen_name()}
   defmacro user_params do
     quote do
@@ -109,5 +116,17 @@ defmodule Tw.V1_1.Endpoint do
     params
     |> Map.delete(:screen_names)
     |> Map.put(:screen_name, Enum.join(names, ","))
+  end
+
+  def preprocess_tweet_params(%{tweet: %{id: id}} = params) do
+    params
+    |> Map.delete(:tweet)
+    |> Map.put(:id, id)
+  end
+
+  def preprocess_tweet_params(%{tweet_id: id} = params) do
+    params
+    |> Map.delete(:tweet_id)
+    |> Map.put(:id, id)
   end
 end

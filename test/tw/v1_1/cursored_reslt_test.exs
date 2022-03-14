@@ -35,7 +35,8 @@ defmodule Tw.V1_1.CursoredResultTest do
         }
       ])
 
-    assert CursoredResult.stream!(client, &User.follower_ids/2, %{screen_name: "twitterapi"}, :ids) |> Enum.to_list() ==
+    assert CursoredResult.stream!(client, &User.list_follower_ids/2, %{screen_name: "twitterapi"}, :ids)
+           |> Enum.to_list() ==
              [1, 2]
   end
 
@@ -81,7 +82,7 @@ defmodule Tw.V1_1.CursoredResultTest do
         }
       ])
 
-    assert CursoredResult.persevering_stream!(client, &User.follower_ids/2, %{screen_name: "twitterapi"}, :ids)
+    assert CursoredResult.persevering_stream!(client, &User.list_follower_ids/2, %{screen_name: "twitterapi"}, :ids)
            |> Enum.to_list() ==
              [1, 2]
   end

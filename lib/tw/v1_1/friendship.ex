@@ -45,7 +45,10 @@ defmodule Tw.V1_1.Friendship do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-incoming) for details.
 
   """
-  @type pending_incoming_requests_params :: %{optional(:cursor) => integer, optional(:stringify_ids) => boolean}
+  @type pending_incoming_requests_params :: %{
+          optional(:cursor) => CursoredResult.cursor(),
+          optional(:stringify_ids) => boolean
+        }
   @spec pending_incoming_requests(Client.t(), pending_incoming_requests_params) ::
           {:ok, Tw.V1_1.CursoredResult.t(:ids, list(integer))} | {:error, Client.error()}
   @doc """
@@ -75,7 +78,10 @@ defmodule Tw.V1_1.Friendship do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-outgoing) for details.
 
   """
-  @type pending_outgoing_requests_params :: %{optional(:cursor) => integer, optional(:stringify_ids) => boolean}
+  @type pending_outgoing_requests_params :: %{
+          optional(:cursor) => CursoredResult.cursor(),
+          optional(:stringify_ids) => boolean
+        }
   @spec pending_outgoing_requests(Client.t(), pending_outgoing_requests_params) ::
           {:ok, CursoredResult.t(:ids, list(integer))} | {:error, Client.error()}
   @doc """

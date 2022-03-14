@@ -32,7 +32,13 @@ defmodule Tw.V1_1.TwitterAPIError do
     error.response.status == 429 && Enum.any?(error.errors, &(&1.code == 88))
   end
 
-  for {name, code} <- [resource_not_found?: 34, member_not_found?: 108, subscriber_not_found?: 109] do
+  for {name, code} <- [
+        no_user_matched?: 17,
+        resource_not_found?: 34,
+        user_not_found?: 50,
+        member_not_found?: 108,
+        subscriber_not_found?: 109
+      ] do
     @spec unquote(name)(t()) :: boolean
     def unquote(name)(%__MODULE__{} = error) do
       Enum.any?(error.errors, &(&1.code == unquote(code)))

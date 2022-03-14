@@ -14,6 +14,8 @@ defmodule Tw.V1_1.Tweet do
   alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.User
 
+  @type id :: pos_integer()
+
   @enforce_keys [
     :created_at,
     :id,
@@ -211,7 +213,7 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type home_timeline_params :: %{
-          optional(:count) => integer,
+          optional(:count) => pos_integer,
           optional(:since_id) => integer,
           optional(:max_id) => integer,
           optional(:trim_user) => boolean,
@@ -264,7 +266,7 @@ defmodule Tw.V1_1.Tweet do
           optional(:user_id) => integer,
           optional(:screen_name) => binary,
           optional(:since_id) => integer,
-          optional(:count) => integer,
+          optional(:count) => pos_integer,
           optional(:max_id) => integer,
           optional(:trim_user) => boolean,
           optional(:exclude_replies) => boolean,
@@ -318,7 +320,7 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type mentions_timeline_params :: %{
-          optional(:count) => integer,
+          optional(:count) => pos_integer,
           optional(:since_id) => integer,
           optional(:max_id) => integer,
           optional(:trim_user) => boolean,
@@ -378,7 +380,7 @@ defmodule Tw.V1_1.Tweet do
           optional(:lang) => binary,
           optional(:locale) => binary,
           optional(:result_type) => binary,
-          optional(:count) => integer,
+          optional(:count) => pos_integer,
           optional(:until) => integer,
           optional(:since_id) => integer,
           optional(:max_id) => integer,
@@ -426,7 +428,7 @@ defmodule Tw.V1_1.Tweet do
   @type favorites_params :: %{
           optional(:user_id) => integer,
           optional(:screen_name) => binary,
-          optional(:count) => integer,
+          optional(:count) => pos_integer,
           optional(:since_id) => integer,
           optional(:max_id) => integer,
           optional(:include_entities) => boolean
@@ -478,7 +480,7 @@ defmodule Tw.V1_1.Tweet do
           optional(:owner_id) => binary,
           optional(:since_id) => binary,
           optional(:max_id) => binary,
-          optional(:count) => integer,
+          optional(:count) => pos_integer,
           optional(:include_entities) => binary,
           optional(:include_rts) => binary
         }
@@ -571,7 +573,7 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type retweets_of_me_params :: %{
-          optional(:count) => integer,
+          optional(:count) => pos_integer,
           optional(:since_id) => integer,
           optional(:max_id) => integer,
           optional(:trim_user) => boolean,
@@ -611,7 +613,7 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/get-statuses-retweets-id) for details.
 
   """
-  @type retweets_params :: %{required(:id) => integer, optional(:count) => integer, optional(:trim_user) => boolean}
+  @type retweets_params :: %{required(:id) => integer, optional(:count) => pos_integer, optional(:trim_user) => boolean}
   @spec retweets(Client.t(), retweets_params) :: {:ok, list(t())} | {:error, Client.error()}
   @doc """
   Request `GET /statuses/retweets/:id.json` and return decoded result.
