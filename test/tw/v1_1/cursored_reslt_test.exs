@@ -6,7 +6,7 @@ defmodule Tw.V1_1.CursoredResultTest do
 
   import Tw.V1_1.EndpointHelper
 
-  test "stream!/4 returns Stream of the resource requested" do
+  test "stream!/3 returns Stream of the resource requested" do
     client =
       stub_client([
         {
@@ -35,12 +35,14 @@ defmodule Tw.V1_1.CursoredResultTest do
         }
       ])
 
-    assert CursoredResult.stream!(client, &User.follower_ids/2, %{screen_name: "twitterapi"}, :ids)
+    assert CursoredResult.stream!(:ids, fn cursor ->
+             User.follower_ids(client, %{screen_name: "twitterapi", cursor: cursor})
+           end)
            |> Enum.to_list() ==
              [1, 2]
   end
 
-  test "persevering_stream!/4 returns Stream of the resource requested even if rate limit exceeded error happens" do
+  test "persevering_stream!/3 returns Stream of the resource requested even if rate limit exceeded error happens" do
     client =
       stub_client([
         {
@@ -82,7 +84,9 @@ defmodule Tw.V1_1.CursoredResultTest do
         }
       ])
 
-    assert CursoredResult.persevering_stream!(client, &User.follower_ids/2, %{screen_name: "twitterapi"}, :ids)
+    assert CursoredResult.persevering_stream!(:ids, fn cursor ->
+             User.follower_ids(client, %{screen_name: "twitterapi", cursor: cursor})
+           end)
            |> Enum.to_list() ==
              [1, 2]
   end

@@ -1,6 +1,6 @@
 defmodule Tw.V1_1.CursoredResult.StreamError do
   @moduledoc """
-  Wrap the error that occurred in `Tw.V1_1.CursedResult.stream!/4`.
+  Wrap the error that occurred in `Tw.V1_1.CursedResult.stream!/3`.
   """
   defexception [:cursor, :message, :original_error]
 
@@ -16,7 +16,6 @@ defmodule Tw.V1_1.CursoredResult do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/pagination) for details.
   """
 
-  alias Tw.V1_1.Client
   alias Tw.V1_1.CursoredResult.StreamError
   alias Tw.V1_1.TwitterAPIError
 
@@ -63,33 +62,33 @@ defmodule Tw.V1_1.CursoredResult do
 
   ## Examples
 
-      iex> Tw.V1_1.CursoredResult.stream!(client, &Tw.V1_1.User.fllower_ids/2, %{screen_name: "twitterapi"}, :ids)
+      iex> Tw.V1_1.CursoredResult.stream!(:ids, fn cursor -> Tw.V1_1.User.fllower_ids(client, %{screen_name: "twitterapi", cursor: cursor} end)
       ...> |> Enum.each(&IO.inspect/1)
 
-      iex> Tw.V1_1.CursoredResult.stream!(client, &Tw.V1_1.User.fllower_ids/2, %{screen_name: "twitterapi"}, :ids)
+      iex> Tw.V1_1.CursoredResult.stream!(:ids, fn cursor -> Tw.V1_1.User.fllower_ids(client, %{screen_name: "twitterapi", cursor: cursor} end)
       ...> |> Stream.run()
       ** (Tw.V1_1.CursoredResult.StreamError) Rate limit exceeded
 
   """
-  @spec stream!(Client.t(), (Client.t(), map -> map), map, atom()) :: Enumerable.t()
-  def stream!(client, func, params, keys) do
-    Stream.resource(
-      fn -> params[:cursor] || -1 end,
+  @spec stream!(atom(), (integer -> {:ok, map} | {:error, Exception.t()}), integer()) :: Enumerable.t()
+  def stream!(key, func, initial_cursor \\ -1) do
+    Stream.unfold(
+      initial_cursor,
       fn
         0 ->
-          {:halt, nil}
+          nil
 
         cursor ->
-          case func.(client, params |> Map.put(:cursor, cursor)) do
+          case func.(cursor) do
             {:ok, res} ->
-              {Map.get(res, keys), res.next_cursor}
+              {Map.get(res, key), res.next_cursor}
 
             {:error, error} ->
               raise StreamError.exception(cursor: cursor, error: error)
           end
-      end,
-      &Function.identity/1
+      end
     )
+    |> Stream.flat_map(&Function.identity/1)
   end
 
   @doc """
@@ -98,22 +97,22 @@ defmodule Tw.V1_1.CursoredResult do
 
   ## Examples
 
-      iex> Tw.V1_1.CursoredResult.persevering_stream!(client, &Tw.V1_1.User.fllower_ids/2, %{screen_name: "twitterapi"}, :ids)
+      iex> Tw.V1_1.CursoredResult.persevering_stream!(:ids, fn cursor -> Tw.V1_1.User.fllower_ids(client, %{screen_name: "twitterapi", cursor: cursor}) end)
       ...> |> Enum.each(&IO.inspect/1)
 
 
   """
-  @spec persevering_stream!(Client.t(), (Client.t(), map -> map), map, atom()) :: Enumerable.t()
-  def persevering_stream!(client, func, params, keys) do
-    next_fn = fn c ->
+  @spec persevering_stream!(atom(), (integer -> {:ok, map} | {:error, Exception.t()}), integer()) :: Enumerable.t()
+  def persevering_stream!(key, func, initial_cursor \\ -1) do
+    recursive_func = fn c ->
       g = fn
         0, _ ->
-          {:halt, nil}
+          nil
 
         cursor, f ->
-          case func.(client, params |> Map.put(:cursor, cursor)) do
+          case func.(cursor) do
             {:ok, res} ->
-              {Map.get(res, keys), res.next_cursor}
+              {Map.get(res, key), res.next_cursor}
 
             {:error, %TwitterAPIError{} = error} ->
               if TwitterAPIError.rate_limit_exceeded?(error) do
@@ -133,10 +132,7 @@ defmodule Tw.V1_1.CursoredResult do
       g.(c, g)
     end
 
-    Stream.resource(
-      fn -> params[:cursor] || -1 end,
-      next_fn,
-      &Function.identity/1
-    )
+    Stream.unfold(initial_cursor, recursive_func)
+    |> Stream.flat_map(&Function.identity/1)
   end
 end
