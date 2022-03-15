@@ -8,11 +8,14 @@ defmodule Tw.V1_1.Tweet do
   alias Tw.V1_1.Coordinates
   alias Tw.V1_1.Entities
   alias Tw.V1_1.ExtendedEntities
+  alias Tw.V1_1.Media
   alias Tw.V1_1.Place
   alias Tw.V1_1.Schema
   alias Tw.V1_1.SearchResult
   alias Tw.V1_1.TwitterDateTime
   alias Tw.V1_1.User
+
+  import Tw.V1_1.Endpoint
 
   @type id :: pos_integer()
 
@@ -197,7 +200,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `home_timeline/3`.
+  Parameters for `home_timeline/2`.
 
   > | name | description |
   > | - | - |
@@ -213,12 +216,12 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type home_timeline_params :: %{
-          optional(:count) => pos_integer,
-          optional(:since_id) => integer,
-          optional(:max_id) => integer,
-          optional(:trim_user) => boolean,
-          optional(:exclude_replies) => boolean,
-          optional(:include_entities) => boolean
+          optional(:count) => pos_integer(),
+          optional(:since_id) => id(),
+          optional(:max_id) => id(),
+          optional(:trim_user) => boolean(),
+          optional(:exclude_replies) => boolean(),
+          optional(:include_entities) => boolean()
         }
   @spec home_timeline(Client.t(), home_timeline_params) ::
           {:ok, list(t())} | {:error, Client.error()}
@@ -233,7 +236,7 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-home_timeline) for details.
 
   """
-  def home_timeline(client, params) do
+  def home_timeline(client, params \\ %{}) do
     with {:ok, json} <- Client.request(client, :get, "/statuses/home_timeline.json", params) do
       res = json |> Enum.map(&decode!/1)
       {:ok, res}
@@ -245,7 +248,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `user_timeline/3`.
+  Parameters for `user_timeline/2`.
 
   > | name | description |
   > | - | - |
@@ -262,16 +265,15 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-user_timeline) for details.
 
   """
-  @type user_timeline_params :: %{
-          optional(:user_id) => integer,
-          optional(:screen_name) => binary,
-          optional(:since_id) => integer,
-          optional(:count) => pos_integer,
-          optional(:max_id) => integer,
-          optional(:trim_user) => boolean,
-          optional(:exclude_replies) => boolean,
-          optional(:include_rts) => boolean
-        }
+  deftype_cross_merge(user_timeline_params, optional_user_params(), %{
+    optional(:since_id) => id(),
+    optional(:count) => pos_integer(),
+    optional(:max_id) => id(),
+    optional(:trim_user) => boolean(),
+    optional(:exclude_replies) => boolean(),
+    optional(:include_rts) => boolean()
+  })
+
   @spec user_timeline(Client.t(), user_timeline_params) ::
           {:ok, list(t())} | {:error, Client.error()}
   @doc """
@@ -293,7 +295,9 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-user_timeline) for details.
 
   """
-  def user_timeline(client, params) do
+  def user_timeline(client, params \\ %{}) do
+    params = params |> preprocess_optional_user_params()
+
     with {:ok, json} <- Client.request(client, :get, "/statuses/user_timeline.json", params) do
       res = json |> Enum.map(&decode!/1)
       {:ok, res}
@@ -305,7 +309,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `mentions_timeline/3`.
+  Parameters for `mentions_timeline/2`.
 
   > | name | description |
   > | - | - |
@@ -320,11 +324,11 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type mentions_timeline_params :: %{
-          optional(:count) => pos_integer,
-          optional(:since_id) => integer,
-          optional(:max_id) => integer,
-          optional(:trim_user) => boolean,
-          optional(:include_entities) => boolean
+          optional(:count) => pos_integer(),
+          optional(:since_id) => id(),
+          optional(:max_id) => id(),
+          optional(:trim_user) => boolean(),
+          optional(:include_entities) => boolean()
         }
   @spec mentions_timeline(Client.t(), mentions_timeline_params) ::
           {:ok, list(t())} | {:error, Client.error()}
@@ -355,7 +359,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `search/3`.
+  Parameters for `search/2`.
 
   > | name | description |
   > | - | - |
@@ -375,16 +379,16 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type search_params :: %{
-          required(:q) => binary,
-          optional(:geocode) => integer,
-          optional(:lang) => binary,
-          optional(:locale) => binary,
-          optional(:result_type) => binary,
-          optional(:count) => pos_integer,
-          optional(:until) => integer,
-          optional(:since_id) => integer,
-          optional(:max_id) => integer,
-          optional(:include_entities) => boolean
+          required(:q) => binary(),
+          optional(:geocode) => {latitude :: float(), longitude :: float(), radius :: binary()} | binary(),
+          optional(:lang) => binary(),
+          optional(:locale) => binary(),
+          optional(:result_type) => :mixed | :recent | :popular,
+          optional(:count) => pos_integer(),
+          optional(:until) => Date.t(),
+          optional(:since_id) => id(),
+          optional(:max_id) => id(),
+          optional(:include_entities) => boolean()
         }
   @spec search(Client.t(), search_params) :: {:ok, SearchResult.t()} | {:error, Client.error()}
   @doc """
@@ -399,6 +403,19 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def search(client, params) do
+    params =
+      params
+      |> Map.replace(:result_type, params[:result_type] |> to_string())
+      |> Map.replace(
+        :geocode,
+        case params[:geocode] do
+          nil -> nil
+          {latitude, longitude, radius} -> "#{latitude},#{longitude},#{radius}"
+          bin -> bin
+        end
+      )
+      |> Map.replace(:until, params[:until] && Date.to_iso8601(params[:until]))
+
     with {:ok, json} <- Client.request(client, :get, "/search/tweets.json", params) do
       res = json |> SearchResult.decode!()
       {:ok, res}
@@ -410,7 +427,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `favorites/3`.
+  Parameters for `favorites/2`.
 
   > | name | description |
   > | - | - |
@@ -425,14 +442,13 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/get-favorites-list) for details.
 
   """
-  @type favorites_params :: %{
-          optional(:user_id) => integer,
-          optional(:screen_name) => binary,
-          optional(:count) => pos_integer,
-          optional(:since_id) => integer,
-          optional(:max_id) => integer,
-          optional(:include_entities) => boolean
-        }
+  deftype_cross_merge(favorites_params, user_params(), %{
+    optional(:count) => pos_integer(),
+    optional(:since_id) => id(),
+    optional(:max_id) => id(),
+    optional(:include_entities) => boolean()
+  })
+
   @spec favorites(Client.t(), favorites_params) :: {:ok, list(t())} | {:error, Client.error()}
   @doc """
   Request `GET /favorites/list.json` and return decoded result.
@@ -443,7 +459,9 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/get-favorites-list) for details.
 
   """
-  def favorites(client, params) do
+  def favorites(client, params \\ %{}) do
+    params = params |> preprocess_optional_user_params()
+
     with {:ok, json} <- Client.request(client, :get, "/favorites/list.json", params) do
       res = json |> Enum.map(&decode!/1)
       {:ok, res}
@@ -455,7 +473,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `of_list/3`.
+  Parameters for `of_list/2`.
 
   > | name | description |
   > | - | - |
@@ -473,17 +491,14 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-statuses) for details.
 
   """
-  @type of_list_params :: %{
-          required(:list_id) => binary,
-          required(:slug) => binary,
-          optional(:owner_screen_name) => binary,
-          optional(:owner_id) => binary,
-          optional(:since_id) => binary,
-          optional(:max_id) => binary,
-          optional(:count) => pos_integer,
-          optional(:include_entities) => binary,
-          optional(:include_rts) => binary
-        }
+  deftype_cross_merge(of_list_params, list_params(), %{
+    optional(:since_id) => id(),
+    optional(:max_id) => id(),
+    optional(:count) => pos_integer(),
+    optional(:include_entities) => boolean(),
+    optional(:include_rts) => boolean()
+  })
+
   @spec of_list(Client.t(), of_list_params) :: {:ok, list(t())} | {:error, Client.error()}
   @doc """
   Request `GET /lists/statuses.json` and return decoded result.
@@ -495,6 +510,8 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def of_list(client, params) do
+    params = params |> preprocess_list_params()
+
     with {:ok, json} <- Client.request(client, :get, "/lists/statuses.json", params) do
       res = json |> Enum.map(&decode!/1)
       {:ok, res}
@@ -506,7 +523,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `list/3`.
+  Parameters for `list/2`.
 
   > | name | description |
   > | - | - |
@@ -522,12 +539,12 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type list_params :: %{
-          required(:id) => integer,
-          optional(:include_entities) => boolean,
-          optional(:trim_user) => boolean,
-          optional(:map) => boolean,
-          optional(:include_ext_alt_text) => boolean,
-          optional(:include_card_uri) => boolean
+          required(:tweet_ids) => list(id()),
+          optional(:include_entities) => boolean(),
+          optional(:trim_user) => boolean(),
+          optional(:map) => boolean(),
+          optional(:include_ext_alt_text) => boolean(),
+          optional(:include_card_uri) => boolean()
         }
   @spec list(Client.t(), list_params) :: {:ok, list(t())} | {:error, Client.error()}
   @doc """
@@ -546,6 +563,11 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def list(client, params) do
+    params =
+      params
+      |> Map.put(:id, Enum.join(params[:tweet_ids], ","))
+      |> Map.delete(:tweet_ids)
+
     with {:ok, json} <- Client.request(client, :get, "/statuses/lookup.json", params) do
       res = json |> Enum.map(&decode!/1)
       {:ok, res}
@@ -557,7 +579,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `retweets_of_me/3`.
+  Parameters for `retweets_of_me/2`.
 
   > | name | description |
   > | - | - |
@@ -573,12 +595,12 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type retweets_of_me_params :: %{
-          optional(:count) => pos_integer,
-          optional(:since_id) => integer,
-          optional(:max_id) => integer,
-          optional(:trim_user) => boolean,
-          optional(:include_entities) => boolean,
-          optional(:include_user_entities) => boolean
+          optional(:count) => pos_integer(),
+          optional(:since_id) => id(),
+          optional(:max_id) => id(),
+          optional(:trim_user) => boolean(),
+          optional(:include_entities) => boolean(),
+          optional(:include_user_entities) => boolean()
         }
   @spec retweets_of_me(Client.t(), retweets_of_me_params) ::
           {:ok, list(t())} | {:error, Client.error()}
@@ -589,7 +611,7 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/get-statuses-retweets_of_me) for details.
 
   """
-  def retweets_of_me(client, params) do
+  def retweets_of_me(client, params \\ %{}) do
     with {:ok, json} <- Client.request(client, :get, "/statuses/retweets_of_me.json", params) do
       res = json |> Enum.map(&decode!/1)
       {:ok, res}
@@ -601,7 +623,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `retweets/3`.
+  Parameters for `retweets/2`.
 
   > | name | description |
   > | - | - |
@@ -613,7 +635,11 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/get-statuses-retweets-id) for details.
 
   """
-  @type retweets_params :: %{required(:id) => integer, optional(:count) => pos_integer, optional(:trim_user) => boolean}
+  deftype_cross_merge(retweets_params, tweet_params(), %{
+    optional(:count) => pos_integer(),
+    optional(:trim_user) => boolean()
+  })
+
   @spec retweets(Client.t(), retweets_params) :: {:ok, list(t())} | {:error, Client.error()}
   @doc """
   Request `GET /statuses/retweets/:id.json` and return decoded result.
@@ -623,6 +649,8 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def retweets(client, params) do
+    params = params |> preprocess_tweet_params()
+
     with {:ok, json} <- Client.request(client, :get, "/statuses/retweets/:id.json", params) do
       res = json |> Enum.map(&decode!/1)
       {:ok, res}
@@ -634,7 +662,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `find/3`.
+  Parameters for `get/2`.
 
   > | name | description |
   > | - | - |
@@ -649,15 +677,15 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/get-statuses-show-id) for details.
 
   """
-  @type find_params :: %{
-          required(:id) => integer,
-          optional(:trim_user) => boolean,
-          optional(:include_my_retweet) => boolean,
-          optional(:include_entities) => boolean,
-          optional(:include_ext_alt_text) => boolean,
-          optional(:include_card_uri) => boolean
+  @type get_params :: %{
+          required(:tweet_id) => id(),
+          optional(:trim_user) => boolean(),
+          optional(:include_my_retweet) => boolean(),
+          optional(:include_entities) => boolean(),
+          optional(:include_ext_alt_text) => boolean(),
+          optional(:include_card_uri) => boolean()
         }
-  @spec find(Client.t(), find_params) :: {:ok, t()} | {:error, Client.error()}
+  @spec get(Client.t(), get_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `GET /statuses/show/:id.json` and return decoded result.
   > Returns a single Tweet, specified by the id parameter. The Tweet's author will also be embedded within the Tweet.
@@ -673,7 +701,9 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/get-statuses-show-id) for details.
 
   """
-  def find(client, params) do
+  def get(client, params) do
+    params = params |> Map.put(:id, params[:tweet_id]) |> Map.delete(:tweet_id)
+
     with {:ok, json} <- Client.request(client, :get, "/statuses/show/:id.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -685,7 +715,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `oembed/3`.
+  Parameters for `oembed/2`.
 
   > | name | description |
   > | - | - |
@@ -707,33 +737,33 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type oembed_params :: %{
-          required(:url) => binary,
-          optional(:maxwidth) => pos_integer,
-          optional(:hide_media) => boolean,
-          optional(:hide_thread) => boolean,
-          optional(:omit_script) => boolean,
+          required(:url) => binary(),
+          optional(:maxwidth) => pos_integer(),
+          optional(:hide_media) => boolean(),
+          optional(:hide_thread) => boolean(),
+          optional(:omit_script) => boolean(),
           optional(:align) => :left | :right | :center | :none,
-          optional(:related) => binary,
+          optional(:related) => list(User.screen_name()),
           optional(:lang) => Schema.language(),
           optional(:theme) => :light | :dark,
-          optional(:link_color) => binary,
+          optional(:link_color) => binary(),
           optional(:widget_type) => :video,
-          optional(:dnt) => boolean
+          optional(:dnt) => boolean()
         }
   @spec oembed(Client.t(), oembed_params) ::
           {:ok,
            %{
-             url: binary,
-             author_name: binary,
-             author_url: binary,
-             html: binary,
-             width: non_neg_integer,
-             height: non_neg_integer | nil,
-             type: binary,
-             cache_age: binary,
-             provider_name: binary,
-             provider_url: binary,
-             version: binary
+             url: binary(),
+             author_name: binary(),
+             author_url: binary(),
+             html: binary(),
+             width: non_neg_integer(),
+             height: non_neg_integer() | nil,
+             type: binary(),
+             cache_age: binary(),
+             provider_name: binary(),
+             provider_url: binary(),
+             version: binary()
            }}
           | {:error, Client.error()}
   @doc """
@@ -748,6 +778,14 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def oembed(client, params) do
+    params =
+      params
+      |> Map.replace(:related, (params[:related] || []) |> Enum.join(","))
+      |> Map.replace(:align, params[:align] |> to_string())
+      |> Map.replace(:lang, params[:lang] |> to_string())
+      |> Map.replace(:theme, params[:theme] |> to_string())
+      |> Map.replace(:widget_type, params[:widget_type] |> to_string())
+
     Client.request(client, :get, "/statuses/oembed.json", params)
   end
 
@@ -756,7 +794,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `create/3`.
+  Parameters for `create/2`.
 
   > | name | description |
   > | - | - |
@@ -781,21 +819,21 @@ defmodule Tw.V1_1.Tweet do
 
   """
   @type create_params :: %{
-          required(:status) => binary,
-          optional(:in_reply_to_status_id) => binary,
-          optional(:auto_populate_reply_metadata) => boolean,
-          optional(:exclude_reply_user_ids) => binary,
-          optional(:attachment_url) => binary,
-          optional(:media_ids) => integer,
-          optional(:possibly_sensitive) => boolean,
-          optional(:lat) => binary,
-          optional(:long) => binary,
-          optional(:place_id) => binary,
-          optional(:display_coordinates) => boolean,
-          optional(:trim_user) => boolean,
-          optional(:enable_dmcommands) => boolean,
-          optional(:fail_dmcommands) => boolean,
-          optional(:card_uri) => binary
+          required(:status) => binary(),
+          optional(:in_reply_to_status_id) => id(),
+          optional(:auto_populate_reply_metadata) => boolean(),
+          optional(:exclude_reply_user_ids) => list(id()),
+          optional(:attachment_url) => binary(),
+          optional(:media_ids) => list(Media.id()),
+          optional(:possibly_sensitive) => boolean(),
+          optional(:lat) => float() | binary(),
+          optional(:long) => float() | binary(),
+          optional(:place_id) => Place.id(),
+          optional(:display_coordinates) => boolean(),
+          optional(:trim_user) => boolean(),
+          optional(:enable_dmcommands) => boolean(),
+          optional(:fail_dmcommands) => boolean(),
+          optional(:card_uri) => binary()
         }
   @spec create(Client.t(), create_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
@@ -814,6 +852,13 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def create(client, params) do
+    params =
+      params
+      |> Map.replace(:exclude_reply_user_ids, (params[:exclude_reply_user_ids] || []) |> Enum.join(","))
+      |> Map.replace(:media_ids, (params[:media_ids] || []) |> Enum.join(","))
+      |> Map.replace(:lat, params[:lat] |> to_string())
+      |> Map.replace(:long, params[:long] |> to_string())
+
     with {:ok, json} <- Client.request(client, :post, "/statuses/update.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -825,7 +870,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `delete/3`.
+  Parameters for `delete/2`.
 
   > | name | description |
   > | - | - |
@@ -836,7 +881,7 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-statuses-destroy-id) for details.
 
   """
-  @type delete_params :: %{required(:id) => integer, optional(:trim_user) => boolean}
+  deftype_cross_merge(delete_params, tweet_params(), %{optional(:trim_user) => boolean()})
   @spec delete(Client.t(), delete_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /statuses/destroy/:id.json` and return decoded result.
@@ -846,6 +891,8 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def delete(client, params) do
+    params = params |> preprocess_tweet_params()
+
     with {:ok, json} <- Client.request(client, :post, "/statuses/destroy/:id.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -857,7 +904,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `retweet/3`.
+  Parameters for `retweet/2`.
 
   > | name | description |
   > | - | - |
@@ -868,7 +915,8 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-statuses-retweet-id) for details.
 
   """
-  @type retweet_params :: %{required(:id) => integer, optional(:trim_user) => boolean}
+
+  deftype_cross_merge(retweet_params, tweet_params(), %{optional(:trim_user) => boolean()})
   @spec retweet(Client.t(), retweet_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /statuses/retweet/:id.json` and return decoded result.
@@ -882,6 +930,8 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def retweet(client, params) do
+    params = params |> preprocess_tweet_params()
+
     with {:ok, json} <- Client.request(client, :post, "/statuses/retweet/:id.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -893,7 +943,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `unretweet/3`.
+  Parameters for `unretweet/2`.
 
   > | name | description |
   > | - | - |
@@ -904,7 +954,7 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-statuses-unretweet-id) for details.
 
   """
-  @type unretweet_params :: %{required(:id) => integer, optional(:trim_user) => boolean}
+  deftype_cross_merge(unretweet_params, tweet_params(), %{optional(:trim_user) => boolean()})
   @spec unretweet(Client.t(), unretweet_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /statuses/unretweet/:id.json` and return decoded result.
@@ -918,6 +968,8 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def unretweet(client, params) do
+    params = params |> preprocess_tweet_params()
+
     with {:ok, json} <- Client.request(client, :post, "/statuses/unretweet/:id.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -929,7 +981,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `favorite/3`.
+  Parameters for `favorite/2`.
 
   > | name | description |
   > | - | - |
@@ -940,7 +992,7 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-favorites-create) for details.
 
   """
-  @type favorite_params :: %{required(:id) => integer, optional(:include_entities) => boolean}
+  deftype_cross_merge(favorite_params, tweet_params(), %{optional(:include_entities) => boolean()})
   @spec favorite(Client.t(), favorite_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /favorites/create.json` and return decoded result.
@@ -954,6 +1006,8 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def favorite(client, params) do
+    params = params |> preprocess_tweet_params()
+
     with {:ok, json} <- Client.request(client, :post, "/favorites/create.json", params) do
       res = json |> decode!()
       {:ok, res}
@@ -965,7 +1019,7 @@ defmodule Tw.V1_1.Tweet do
   ##################################
 
   @typedoc """
-  Parameters for `unfavorite/3`.
+  Parameters for `unfavorite/2`.
 
   > | name | description |
   > | - | - |
@@ -976,7 +1030,7 @@ defmodule Tw.V1_1.Tweet do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-favorites-destroy) for details.
 
   """
-  @type unfavorite_params :: %{required(:id) => integer, optional(:include_entities) => boolean}
+  deftype_cross_merge(unfavorite_params, tweet_params(), %{optional(:include_entities) => boolean()})
   @spec unfavorite(Client.t(), unfavorite_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Request `POST /favorites/destroy.json` and return decoded result.
@@ -990,6 +1044,8 @@ defmodule Tw.V1_1.Tweet do
 
   """
   def unfavorite(client, params) do
+    params = params |> preprocess_tweet_params()
+
     with {:ok, json} <- Client.request(client, :post, "/favorites/destroy.json", params) do
       res = json |> decode!()
       {:ok, res}

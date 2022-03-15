@@ -7,7 +7,10 @@ defmodule Tw.V1_1.Media do
 
   alias Tw.V1_1.Client
   alias Tw.V1_1.Sizes
+  alias Tw.V1_1.Tweet
   alias Tw.V1_1.User
+
+  @type id :: pos_integer()
 
   @enforce_keys [
     :display_url,
@@ -56,18 +59,18 @@ defmodule Tw.V1_1.Media do
   >
   """
   @type t :: %__MODULE__{
-          display_url: binary,
-          expanded_url: binary,
-          id: integer,
-          id_str: binary,
-          indices: list(integer),
-          media_url: binary,
-          media_url_https: binary,
+          display_url: binary(),
+          expanded_url: binary(),
+          id: id(),
+          id_str: binary(),
+          indices: list(non_neg_integer()),
+          media_url: binary(),
+          media_url_https: binary(),
           sizes: Sizes.t(),
-          source_status_id: integer | nil,
-          source_status_id_str: integer | nil,
-          type: binary,
-          url: binary
+          source_status_id: Tweet.id() | nil,
+          source_status_id_str: Tweet.id() | nil,
+          type: binary(),
+          url: binary()
         }
   @spec decode!(map) :: t
   @doc """
@@ -102,13 +105,13 @@ defmodule Tw.V1_1.Media do
             }
 
   @type upload_ok_result :: %{
-          media_id: pos_integer(),
+          media_id: id(),
           media_id_string: binary(),
           expires_after_secs: pos_integer()
         }
 
   @type upload_error_result :: %{
-          media_id: pos_integer(),
+          media_id: id(),
           media_id_string: binary(),
           processing_info: %{
             state: binary(),
@@ -317,7 +320,7 @@ defmodule Tw.V1_1.Media do
   defp category_from_type("application/x-subrip"), do: "subtitles"
 
   @type create_metadata_params :: %{
-          media_id: pos_integer(),
+          media_id: id(),
           alt_text: %{
             text: binary()
           }
@@ -346,7 +349,7 @@ defmodule Tw.V1_1.Media do
 
   @type bind_subtitles_params ::
           %{
-            media_id: pos_integer(),
+            media_id: id(),
             subtitles: [%{media_id: binary() | pos_integer(), language_code: binary(), display_name: binary()}]
           }
 
@@ -379,7 +382,7 @@ defmodule Tw.V1_1.Media do
   end
 
   @type unbind_subtitles_params :: %{
-          media_id: pos_integer(),
+          media_id: id(),
           subtitles: [%{language_code: binary()}]
         }
   @doc """

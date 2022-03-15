@@ -6,6 +6,8 @@ defmodule Tw.V1_1.Place do
 
   alias Tw.V1_1.BoundingBox
 
+  @type id :: binary()
+
   @enforce_keys [:id, :url, :place_type, :name, :full_name, :country_code, :country, :bounding_box, :attributes]
   defstruct([:id, :url, :place_type, :name, :full_name, :country_code, :country, :bounding_box, :attributes])
 
@@ -24,7 +26,7 @@ defmodule Tw.V1_1.Place do
   >
   """
   @type t :: %__MODULE__{
-          id: binary,
+          id: id(),
           url: binary,
           place_type: binary,
           name: binary,
