@@ -65,7 +65,7 @@ defmodule Tw.MixProject do
 
   defp package do
     [
-      description: "A Twitter API client that has not been implemented at all yet.",
+      description: "Twitter API client for elixir.",
       maintainers: ["en30"],
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url}

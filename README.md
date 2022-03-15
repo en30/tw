@@ -1,8 +1,16 @@
 # Tw
 
+[![CI](https://github.com/en30/tw/actions/workflows/ci.yml/badge.svg)](https://github.com/en30/tw/actions/workflows/ci.yml)
+
+[Docs](https://hexdocs.pm/tw)
+
 <!-- MDOC !-->
 
-An unofficial Twitter API Client for Elixir that has not been implemented at all yet.
+Twitter API Client for elixir.
+
+- depends only on `jason` (optional) and `hackney` (optional).
+  - JSON library and HTTP client are replacable.
+- no implicit state (at least for now)
 
 ## Installation
 
@@ -11,6 +19,8 @@ The package can be installed by adding `tw` to your list of dependencies in `mix
 ```elixir
 def deps do
   [
+    {:jason, "~> 1.2"},   # only if you choose jason
+    {:hackney, "~> 1.0"}, # only if you choose hackney
     {:tw, "~> 0.1.0"}
   ]
 end
@@ -21,32 +31,52 @@ end
 ### Twitter API v1.1
 
 ```elixir
-credentials = Tw.OAuth.V1_0a.Credentials.new(
+alias Tw.OAuth.
+alias Tw.V1_1.Client
+alias Tw.V1_1.Tweet
+
+credentials = OAuth.V1_0a.Credentials.new(
   consumer_key: "xxx",
   consumer_secret: "xxx",
   access_token: "xxx",
   access_token_secret: "xxx",
 )
-client = Tw.V1_1.Client.new(
+client = Client.new(
   credentials: credentials,
 )
-Tw.V1_1.Tweet.home_timeline(client, %{count: 10})
+{:ok, [%Tweet{} | _]} = Tweet.home_timeline(client, %{count: 10})
 ```
 
-If you want to use an endpoint which is not implemented by this client, you can use low-level API.
+There are functions which wrap API endpoints. They provide functionality below.
+
+- parameter encoding from `Struct`, `List` etc.
+- response decoding into `Struct`.
+- documentation.
+- typespec.
+
+If the corresponding function is not implemented for your desired endpoint, or if the above is unnecessary/problematic, the `Client` can be used as is.
 
 ```elixir
-Tw.V1_1.Client.request(client, :get, "/foo/bar.json", %{})
+alias Tw.V1_1.Client
+{:ok, result_map} = Client.request(client, :get, "/foo/bar.json", %{param_1: 2})
 ```
+
+## HTTP Client is replacable
+
+You can use whichever HTTP client you want as long as it implements `Tw.HTTP.Client` (inspired by [the greate Goth redesign article](https://dashbit.co/blog/goth-redesign)).
+
+## JSON encoder/decoder is replacable
+
+You can also switch JSON encode/decoder to another one as long as it implements `Tw.JSON.Serializer`.
 
 <!-- MDOC !-->
 
 ## Development
 
-### Fetch schema for Twitter API v1.1
+### Generate base code from Twitter v1.1 documentation
 
 ```console
-$ elixir bin/fetch_schema.exs
+$ elixir bin/codegen.exs endpoint 'GET statuses/home_timeline' home_timeline
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
