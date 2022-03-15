@@ -118,14 +118,14 @@ defmodule Tw.V1_1.Client do
   defp encode_body(client, :post, "/media/subtitles/" <> _, params), do: encode_json_params(client, params)
 
   defp encode_body(_client, :post, "/media/upload" <> _, params) do
-    mp = HTTP.MultipartFormData.new(parts: params |> Enum.map(fn {k, v} -> to_binary_value({to_string(k), v}) end))
+    mp = HTTP.MultipartFormData.new(parts: params |> Enum.map(fn {k, v} -> {to_string(k), to_string(v)} end))
     {HTTP.MultipartFormData.content_type(mp), HTTP.MultipartFormData.encode(mp)}
   end
 
   defp encode_body(_client, _method, _path, params) do
     {
       "application/x-www-form-urlencoded; charset=UTF-8",
-      params |> Enum.map(&to_binary_value/1) |> URI.encode_query(:www_form)
+      params |> URI.encode_query(:www_form)
     }
   end
 
@@ -146,13 +146,8 @@ defmodule Tw.V1_1.Client do
     |> HTTP.Request.add_header("Authorization", value)
   end
 
-  defp to_binary_value({k, [e | _] = v}) when is_integer(e), do: {k, Enum.join(v, ",")}
-  defp to_binary_value({k, v}) when is_binary(v), do: {k, v}
-  defp to_binary_value({k, v}), do: {k, to_string(v)}
-
   defp encode_query_params(query_params) do
     query_params
-    |> Enum.map(&to_binary_value/1)
     |> URI.encode_query(:rfc3986)
   end
 
