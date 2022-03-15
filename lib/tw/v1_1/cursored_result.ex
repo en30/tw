@@ -35,7 +35,7 @@ defmodule Tw.V1_1.CursoredResult do
 
   ## Examples
 
-      iex> {:ok, res} = Tw.V1_1.User.list_follower_ids(client)
+      iex> {:ok, res} = Tw.V1_1.User.follower_ids(client)
       iex> Tw.V1_1.CursoredResult.has_next?(res)
       true
   """
@@ -49,7 +49,7 @@ defmodule Tw.V1_1.CursoredResult do
 
   ## Examples
 
-      iex> {:ok, res} = Tw.V1_1.User.list_follower_ids(client)
+      iex> {:ok, res} = Tw.V1_1.User.follower_ids(client)
       iex> Tw.V1_1.CursoredResult.has_previous?(res)
       false
   """

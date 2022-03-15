@@ -282,7 +282,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_follower_ids/2`.
+  Parameters for `follower_ids/2`.
 
   > | name | description |
   > | - | - |
@@ -296,13 +296,13 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-followers-ids) for details.
 
   """
-  deftype_cross_merge(list_follower_ids_params, optional_user_params(), %{
+  deftype_cross_merge(follower_ids_params, optional_user_params(), %{
     optional(:cursor) => CursoredResult.cursor(),
     optional(:stringify_ids) => boolean(),
     optional(:count) => pos_integer()
   })
 
-  @spec list_follower_ids(Client.t(), list_follower_ids_params()) ::
+  @spec follower_ids(Client.t(), follower_ids_params()) ::
           {:ok, CursoredResult.t(:ids, list(id()))} | {:error, Client.error()}
   @doc """
   Request `GET /followers/ids.json` and return decoded result.
@@ -316,7 +316,7 @@ defmodule Tw.V1_1.User do
 
   If no user found by the parameter, return `{:error, error}` which satfisfies `Tw.V1_1.TwitterAPIError.resource_not_found?(error)`.
   """
-  def list_follower_ids(client, params \\ %{}) do
+  def follower_ids(client, params \\ %{}) do
     params = params |> preprocess_optional_user_params()
     Client.request(client, :get, "/followers/ids.json", params)
   end
@@ -326,7 +326,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_friend_ids/2`.
+  Parameters for `friend_ids/2`.
 
   > | name | description |
   > | - | - |
@@ -340,13 +340,13 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friends-ids) for details.
 
   """
-  deftype_cross_merge(list_friend_ids_params, optional_user_params(), %{
+  deftype_cross_merge(friend_ids_params, optional_user_params(), %{
     optional(:cursor) => CursoredResult.cursor(),
     optional(:stringify_ids) => boolean(),
     optional(:count) => pos_integer()
   })
 
-  @spec list_friend_ids(Client.t(), list_friend_ids_params()) ::
+  @spec friend_ids(Client.t(), friend_ids_params()) ::
           {:ok, CursoredResult.t(:ids, list(id()))} | {:error, Client.error()}
   @doc """
   Request `GET /friends/ids.json` and return decoded result.
@@ -359,7 +359,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friends-ids) for details.
 
   """
-  def list_friend_ids(client, params \\ %{}) do
+  def friend_ids(client, params \\ %{}) do
     params = params |> preprocess_optional_user_params()
     Client.request(client, :get, "/friends/ids.json", params)
   end
@@ -369,7 +369,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_followers/2`.
+  Parameters for `followers/2`.
 
   > | name | description |
   > | - | - |
@@ -384,14 +384,14 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-followers-list) for details.
 
   """
-  deftype_cross_merge(list_followers_params, optional_user_params(), %{
+  deftype_cross_merge(followers_params, optional_user_params(), %{
     optional(:cursor) => CursoredResult.cursor(),
     optional(:count) => pos_integer(),
     optional(:skip_status) => boolean(),
     optional(:include_user_entities) => boolean()
   })
 
-  @spec list_followers(Client.t(), list_followers_params) ::
+  @spec followers(Client.t(), followers_params) ::
           {:ok, CursoredResult.t(:users, list(t()))} | {:error, Client.error()}
   @doc """
   Request `GET /followers/list.json` and return decoded result.
@@ -402,7 +402,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-followers-list) for details.
 
   """
-  def list_followers(client, params) do
+  def followers(client, params) do
     params = params |> preprocess_user_params()
 
     with {:ok, json} <- Client.request(client, :get, "/followers/list.json", params) do
@@ -431,14 +431,14 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friends-list) for details.
 
   """
-  deftype_cross_merge(list_friends_params, optional_user_params(), %{
+  deftype_cross_merge(friends_params, optional_user_params(), %{
     optional(:cursor) => CursoredResult.cursor(),
     optional(:count) => pos_integer(),
     optional(:skip_status) => boolean(),
     optional(:include_user_entities) => boolean()
   })
 
-  @spec list_friends(Client.t(), list_friends_params) ::
+  @spec friends(Client.t(), friends_params) ::
           {:ok, CursoredResult.t(:users, list(t()))} | {:error, Client.error()}
   @doc """
   Request `GET /friends/list.json` and return decoded result.
@@ -449,7 +449,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friends-list) for details.
 
   """
-  def list_friends(client, params) do
+  def friends(client, params) do
     params = params |> preprocess_user_params()
 
     with {:ok, json} <- Client.request(client, :get, "/friends/list.json", params) do
@@ -463,7 +463,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_blocking_ids/2`.
+  Parameters for `blocked_ids /2`.
 
   > | name | description |
   > | - | - |
@@ -474,11 +474,11 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-blocks-ids) for details.
 
   """
-  @type list_blocking_ids_params :: %{
+  @type blocked_ids_params :: %{
           optional(:stringify_ids) => boolean(),
           optional(:cursor) => CursoredResult.cursor()
         }
-  @spec list_blocking_ids(Client.t(), list_blocking_ids_params()) ::
+  @spec blocked_ids(Client.t(), blocked_ids_params()) ::
           {:ok, CursoredResult.t(:ids, list(id()))} | {:error, Client.error()}
   @doc """
   Request `GET /blocks/ids.json` and return decoded result.
@@ -489,7 +489,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-blocks-ids) for details.
 
   """
-  def list_blocking_ids(client, params \\ %{}) do
+  def blocked_ids(client, params \\ %{}) do
     Client.request(client, :get, "/blocks/ids.json", params)
   end
 
@@ -498,7 +498,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_blocking/2`.
+  Parameters for `blocked/2`.
 
   > | name | description |
   > | - | - |
@@ -510,12 +510,12 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-blocks-list) for details.
 
   """
-  @type list_blocking_params :: %{
+  @type blocked_params :: %{
           optional(:include_entities) => boolean(),
           optional(:skip_status) => boolean(),
           optional(:cursor) => CursoredResult.cursor()
         }
-  @spec list_blocking(Client.t(), list_blocking_params()) ::
+  @spec blocked(Client.t(), blocked_params()) ::
           {:ok, CursoredResult.t(:users, list(t()))} | {:error, Client.error()}
   @doc """
   Request `GET /blocks/list.json` and return decoded result.
@@ -526,7 +526,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-blocks-list) for details.
 
   """
-  def list_blocking(client, params \\ %{}) do
+  def blocked(client, params \\ %{}) do
     with {:ok, json} <- Client.request(client, :get, "/blocks/list.json", params) do
       res = json |> Map.update!(:users, fn v -> Enum.map(v, &decode!/1) end)
       {:ok, res}
@@ -538,7 +538,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_muting_ids/2`.
+  Parameters for `muted_ids /2`.
 
   > | name | description |
   > | - | - |
@@ -549,8 +549,8 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-mutes-users-ids) for details.
 
   """
-  @type list_muting_ids_params :: %{optional(:stringify_ids) => boolean, optional(:cursor) => CursoredResult.cursor()}
-  @spec list_muting_ids(Client.t(), list_muting_ids_params) ::
+  @type muted_ids_params :: %{optional(:stringify_ids) => boolean, optional(:cursor) => CursoredResult.cursor()}
+  @spec muted_ids(Client.t(), muted_ids_params) ::
           {:ok, CursoredResult.t(:ids, list(integer))} | {:error, Client.error()}
   @doc """
   Request `GET /mutes/users/ids.json` and return decoded result.
@@ -559,7 +559,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-mutes-users-ids) for details.
 
   """
-  def list_muting_ids(client, params \\ %{}) do
+  def muted_ids(client, params \\ %{}) do
     Client.request(client, :get, "/mutes/users/ids.json", params)
   end
 
@@ -568,7 +568,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_muting/2`.
+  Parameters for `muted/2`.
 
   > | name | description |
   > | - | - |
@@ -580,12 +580,12 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-mutes-users-list) for details.
 
   """
-  @type list_muting_params :: %{
+  @type muted_params :: %{
           optional(:cursor) => CursoredResult.cursor(),
           optional(:include_entities) => boolean(),
           optional(:skip_status) => boolean()
         }
-  @spec list_muting(Client.t(), list_muting_params()) ::
+  @spec muted(Client.t(), muted_params()) ::
           {:ok, CursoredResult.t(:users, list(t()))} | {:error, Client.error()}
   @doc """
   Request `GET /mutes/users/list.json` and return decoded result.
@@ -594,7 +594,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/mute-block-report-users/api-reference/get-mutes-users-list) for details.
 
   """
-  def list_muting(client, params \\ %{}) do
+  def muted(client, params \\ %{}) do
     with {:ok, json} <- Client.request(client, :get, "/mutes/users/list.json", params) do
       res = json |> Map.update!(:users, fn v -> Enum.map(v, &decode!/1) end)
       {:ok, res}
@@ -606,7 +606,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_retweeter_ids/2`.
+  Parameters for `retweeter_ids/2`.
 
   > | name | description |
   > | - | - |
@@ -620,13 +620,13 @@ defmodule Tw.V1_1.User do
 
   - If the tweet is not found, return `{:error, error}` which satfisfies `Tw.V1_1.TwitterAPIError.resource_not_found?(error)`.
   """
-  deftype_cross_merge(list_retweeter_ids_params, tweet_params(), %{
+  deftype_cross_merge(retweeter_ids_params, tweet_params(), %{
     optional(:count) => pos_integer(),
     optional(:cursor) => CursoredResult.cursor(),
     optional(:stringify_ids) => boolean()
   })
 
-  @spec list_retweeter_ids(Client.t(), list_retweeter_ids_params) ::
+  @spec retweeter_ids(Client.t(), retweeter_ids_params) ::
           {:ok, CursoredResult.t(:ids, list(id()))} | {:error, Client.error()}
   @doc """
   Request `GET /statuses/retweeters/ids.json` and return decoded result.
@@ -637,7 +637,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/get-statuses-retweeters-ids) for details.
 
   """
-  def list_retweeter_ids(client, params) do
+  def retweeter_ids(client, params) do
     params = params |> preprocess_tweet_params()
     Client.request(client, :get, "/statuses/retweeters/ids.json", params)
   end
@@ -647,7 +647,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `get_list_member/2`.
+  Parameters for `list_member/2`.
 
   > | name | description |
   > | - | - |
@@ -665,12 +665,12 @@ defmodule Tw.V1_1.User do
 
   """
 
-  deftype_cross_merge(get_list_member_params, list_params(), user_params(), %{
+  deftype_cross_merge(list_member_params, list_params(), user_params(), %{
     optional(:include_entities) => binary(),
     optional(:skip_status) => boolean()
   })
 
-  @spec get_list_member(Client.t(), get_list_member_params) :: {:ok, t() | nil} | {:error, Client.error()}
+  @spec list_member(Client.t(), list_member_params) :: {:ok, t() | nil} | {:error, Client.error()}
   @doc """
   Check if the specified user is a member of the specified list.
 
@@ -682,7 +682,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-members-show) for details.
 
   """
-  def get_list_member(client, params) do
+  def list_member(client, params) do
     params = params |> preprocess_list_params() |> preprocess_user_params()
 
     with {:ok, json} <- Client.request(client, :get, "/lists/members/show.json", params) do
@@ -696,7 +696,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `get_list_subscriber/2`.
+  Parameters for `list_subscriber/2`.
 
   > | name | description |
   > | - | - |
@@ -713,12 +713,12 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-subscribers-show) for details.
 
   """
-  deftype_cross_merge(get_list_subscriber_params, list_params(), user_params(), %{
+  deftype_cross_merge(list_subscriber_params, list_params(), user_params(), %{
     optional(:include_entities) => binary(),
     optional(:skip_status) => boolean()
   })
 
-  @spec get_list_subscriber(Client.t(), get_list_subscriber_params) :: {:ok, t()} | {:error, Client.error()}
+  @spec list_subscriber(Client.t(), list_subscriber_params) :: {:ok, t()} | {:error, Client.error()}
   @doc """
   Check if the specified user is a subscriber of the specified list. Returns the user if they are a subscriber.
 
@@ -730,7 +730,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/create-manage-lists/api-reference/get-lists-subscribers-show) for details.
 
   """
-  def get_list_subscriber(client, params) do
+  def list_subscriber(client, params) do
     params = params |> preprocess_list_params() |> preprocess_user_params()
 
     with {:ok, json} <- Client.request(client, :get, "/lists/subscribers/show.json", params) do
@@ -1177,7 +1177,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_pending_follower_ids/2`.
+  Parameters for `pending_follower_ids/2`.
 
   > | name | description |
   > | - | - |
@@ -1188,11 +1188,11 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-incoming) for details.
 
   """
-  @type list_pending_follower_ids_params :: %{
+  @type pending_follower_ids_params :: %{
           optional(:cursor) => CursoredResult.cursor(),
           optional(:stringify_ids) => boolean
         }
-  @spec list_pending_follower_ids(Client.t(), list_pending_follower_ids_params) ::
+  @spec pending_follower_ids(Client.t(), pending_follower_ids_params) ::
           {:ok, Tw.V1_1.CursoredResult.t(:ids, list(id()))} | {:error, Client.error()}
   @doc """
   Request `GET /friendships/incoming.json` and return decoded result.
@@ -1201,7 +1201,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-incoming) for details.
 
   """
-  def list_pending_follower_ids(client, params \\ %{}) do
+  def pending_follower_ids(client, params \\ %{}) do
     Client.request(client, :get, "/friendships/incoming.json", params)
   end
 
@@ -1210,7 +1210,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_pending_friend_ids/2`.
+  Parameters for `pending_friend_ids/2`.
 
   > | name | description |
   > | - | - |
@@ -1221,11 +1221,11 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-outgoing) for details.
 
   """
-  @type list_pending_friend_ids_params :: %{
+  @type pending_friend_ids_params :: %{
           optional(:cursor) => CursoredResult.cursor(),
           optional(:stringify_ids) => boolean
         }
-  @spec list_pending_friend_ids(Client.t(), list_pending_friend_ids_params) ::
+  @spec pending_friend_ids(Client.t(), pending_friend_ids_params) ::
           {:ok, CursoredResult.t(:ids, list(id()))} | {:error, Client.error()}
   @doc """
   Request `GET /friendships/outgoing.json` and return decoded result.
@@ -1234,7 +1234,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-outgoing) for details.
 
   """
-  def list_pending_friend_ids(client, params \\ %{}) do
+  def pending_friend_ids(client, params \\ %{}) do
     Client.request(client, :get, "/friendships/outgoing.json", params)
   end
 
@@ -1243,7 +1243,7 @@ defmodule Tw.V1_1.User do
   ##################################
 
   @typedoc """
-  Parameters for `list_no_retweet_ids/2`.
+  Parameters for `no_retweet_ids/2`.
 
   > | name | description |
   > | - | - |
@@ -1253,8 +1253,8 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-no_retweets-ids) for details.
 
   """
-  @type list_no_retweet_ids_params :: %{optional(:stringify_ids) => boolean}
-  @spec list_no_retweet_ids(Client.t(), list_no_retweet_ids_params) :: {:ok, list(id())} | {:error, Client.error()}
+  @type no_retweet_ids_params :: %{optional(:stringify_ids) => boolean}
+  @spec no_retweet_ids(Client.t(), no_retweet_ids_params) :: {:ok, list(id())} | {:error, Client.error()}
   @doc """
   Request `GET /friendships/no_retweets/ids.json` and return decoded result.
   > Returns a collection of user_ids that the currently authenticated user does not want to receive retweets from.
@@ -1264,7 +1264,7 @@ defmodule Tw.V1_1.User do
   See [the Twitter API documentation](https://developer.twitter.com/en/docs/twitter-api/v1/accounts-and-users/follow-search-get-users/api-reference/get-friendships-no_retweets-ids) for details.
 
   """
-  def list_no_retweet_ids(client, params \\ %{}) do
+  def no_retweet_ids(client, params \\ %{}) do
     Client.request(client, :get, "/friendships/no_retweets/ids.json", params)
   end
 

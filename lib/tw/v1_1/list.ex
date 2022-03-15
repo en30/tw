@@ -580,6 +580,6 @@ defmodule Tw.V1_1.List do
     end
   end
 
-  defdelegate get_member(client, paramas), to: User, as: :get_list_member
-  defdelegate get_subscriber(client, paramas), to: User, as: :get_list_subscriber
+  defdelegate get_member(client, paramas), to: User, as: :list_member
+  defdelegate get_subscriber(client, paramas), to: User, as: :list_subscriber
 end

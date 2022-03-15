@@ -122,7 +122,7 @@ defmodule Tw.V1_1.UserTest do
     assert {:ok, [%User{} | _]} = User.search(client, %{q: "Twitter API"})
   end
 
-  test "list_follower_ids/2 requests to /followers/ids.json" do
+  test "follower_ids/2 requests to /followers/ids.json" do
     client =
       stub_client([
         {
@@ -139,10 +139,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_follower_ids(client, %{screen_name: "twitterdev"})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.follower_ids(client, %{screen_name: "twitterdev"})
   end
 
-  test "list_follower_ids/2 accests a User" do
+  test "follower_ids/2 accests a User" do
     user = user_fixture()
 
     client =
@@ -161,10 +161,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_follower_ids(client, %{user: user})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.follower_ids(client, %{user: user})
   end
 
-  test "list_friend_ids/2 requests to /friends/ids.json" do
+  test "friend_ids/2 requests to /friends/ids.json" do
     client =
       stub_client([
         {
@@ -181,10 +181,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_friend_ids(client, %{screen_name: "twitterdev"})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.friend_ids(client, %{screen_name: "twitterdev"})
   end
 
-  test "list_friend_ids/2 accepts a User" do
+  test "friend_ids/2 accepts a User" do
     user = user_fixture()
 
     client =
@@ -203,10 +203,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_friend_ids(client, %{user: user})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.friend_ids(client, %{user: user})
   end
 
-  test "list_followers/2 requests to /followers/list.json" do
+  test "followers/2 requests to /followers/list.json" do
     client =
       stub_client([
         {
@@ -223,10 +223,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{users: [%User{} | _]}} = User.list_followers(client, %{screen_name: "twitterdev"})
+    assert {:ok, %{users: [%User{} | _]}} = User.followers(client, %{screen_name: "twitterdev"})
   end
 
-  test "list_followers/2 accespts a User" do
+  test "followers/2 accespts a User" do
     user = user_fixture()
 
     client =
@@ -245,10 +245,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{users: [%User{} | _]}} = User.list_followers(client, %{user: user})
+    assert {:ok, %{users: [%User{} | _]}} = User.followers(client, %{user: user})
   end
 
-  test "list_friends/2 requests to /friends/list.json" do
+  test "friends/2 requests to /friends/list.json" do
     client =
       stub_client([
         {
@@ -265,10 +265,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{users: [%User{} | _]}} = User.list_friends(client, %{screen_name: "twitterdev"})
+    assert {:ok, %{users: [%User{} | _]}} = User.friends(client, %{screen_name: "twitterdev"})
   end
 
-  test "list_friends/2 accespts a User" do
+  test "friends/2 accespts a User" do
     user = user_fixture()
 
     client =
@@ -287,10 +287,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{users: [%User{} | _]}} = User.list_friends(client, %{user: user})
+    assert {:ok, %{users: [%User{} | _]}} = User.friends(client, %{user: user})
   end
 
-  test "list_blocking_ids/2 requests to /blocks/ids.json" do
+  test "blocked_ids/2 requests to /blocks/ids.json" do
     client =
       stub_client([
         {
@@ -307,10 +307,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_blocking_ids(client, %{count: 10})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.blocked_ids(client, %{count: 10})
   end
 
-  test "list_blocking/2 requests to /blocks/list.json" do
+  test "blocked/2 requests to /blocks/list.json" do
     client =
       stub_client([
         {
@@ -327,10 +327,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{users: [%User{} | _]}} = User.list_blocking(client, %{count: "5"})
+    assert {:ok, %{users: [%User{} | _]}} = User.blocked(client, %{count: "5"})
   end
 
-  test "list_muting_ids/2 requests to /mutes/users/ids.json" do
+  test "muted_ids/2 requests to /mutes/users/ids.json" do
     client =
       stub_client([
         {
@@ -347,10 +347,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_muting_ids(client, %{count: 10})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.muted_ids(client, %{count: 10})
   end
 
-  test "list_muting/2 requests to /mutes/users/list.json" do
+  test "muted/2 requests to /mutes/users/list.json" do
     client =
       stub_client([
         {
@@ -367,10 +367,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{users: [%User{} | _]}} = User.list_muting(client, %{count: "5"})
+    assert {:ok, %{users: [%User{} | _]}} = User.muted(client, %{count: "5"})
   end
 
-  test "list_retweeter_ids/2 requests to /statuses/retweeters/ids.json" do
+  test "retweeter_ids/2 requests to /statuses/retweeters/ids.json" do
     client =
       stub_client([
         {
@@ -387,10 +387,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_retweeter_ids(client, %{tweet_id: 10})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.retweeter_ids(client, %{tweet_id: 10})
   end
 
-  test "list_retweeter_ids/2 accepts a Tweet" do
+  test "retweeter_ids/2 accepts a Tweet" do
     tweet = tweet_fixture()
 
     client =
@@ -409,7 +409,7 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_retweeter_ids(client, %{tweet: tweet})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.retweeter_ids(client, %{tweet: tweet})
   end
 
   test "get_profile_banner/2 requests to /users/profile_banner.json" do
@@ -442,7 +442,7 @@ defmodule Tw.V1_1.UserTest do
              User.get_profile_banner(client, %{user: user})
   end
 
-  test "get_list_subscriber/2 requests to /lists/subscribers/show.json" do
+  test "list_subscriber/2 requests to /lists/subscribers/show.json" do
     client =
       stub_client([
         {
@@ -453,10 +453,10 @@ defmodule Tw.V1_1.UserTest do
       ])
 
     assert {:ok, %User{}} =
-             User.get_list_subscriber(client, %{slug: "team", owner_screen_name: "twitter", screen_name: "episod"})
+             User.list_subscriber(client, %{slug: "team", owner_screen_name: "twitter", screen_name: "episod"})
   end
 
-  test "get_list_subscriber/2 accepts structs" do
+  test "list_subscriber/2 accepts structs" do
     user = user_fixture()
     list = list_fixture()
 
@@ -468,10 +468,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %User{}} = User.get_list_subscriber(client, %{list: list, user: user})
+    assert {:ok, %User{}} = User.list_subscriber(client, %{list: list, user: user})
   end
 
-  test "get_list_member/2 requests to /lists/members/show.json" do
+  test "list_member/2 requests to /lists/members/show.json" do
     client =
       stub_client([
         {
@@ -482,10 +482,10 @@ defmodule Tw.V1_1.UserTest do
       ])
 
     assert {:ok, %User{}} =
-             User.get_list_member(client, %{slug: "team", owner_screen_name: "twitter", screen_name: "episod"})
+             User.list_member(client, %{slug: "team", owner_screen_name: "twitter", screen_name: "episod"})
   end
 
-  test "get_list_member/2 accepts structs" do
+  test "list_member/2 accepts structs" do
     user = user_fixture()
     list = list_fixture()
 
@@ -497,7 +497,7 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %User{}} = User.get_list_member(client, %{list: list, user: user})
+    assert {:ok, %User{}} = User.list_member(client, %{list: list, user: user})
   end
 
   test "list_members/2 requests to /lists/members.json" do
@@ -767,7 +767,7 @@ defmodule Tw.V1_1.UserTest do
     assert {:ok, %User{}} = User.unfollow(client, %{user: user})
   end
 
-  test "list_pending_follower_ids/2 requests to /friendships/incoming.json" do
+  test "pending_follower_ids/2 requests to /friendships/incoming.json" do
     client =
       stub_client([
         {
@@ -784,10 +784,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_pending_follower_ids(client, %{cursor: -1})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.pending_follower_ids(client, %{cursor: -1})
   end
 
-  test "list_pending_friend_ids/2 requests to /friendships/outgoing.json" do
+  test "pending_friend_ids/2 requests to /friendships/outgoing.json" do
     client =
       stub_client([
         {
@@ -804,10 +804,10 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_pending_friend_ids(client, %{cursor: -1})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.pending_friend_ids(client, %{cursor: -1})
   end
 
-  test "list_no_retweet_ids/2 requests to /friendships/no_retweets/ids.json" do
+  test "no_retweet_ids/2 requests to /friendships/no_retweets/ids.json" do
     client =
       stub_client([
         {
@@ -824,7 +824,7 @@ defmodule Tw.V1_1.UserTest do
         }
       ])
 
-    assert {:ok, %{ids: [1, 2, 3]}} = User.list_no_retweet_ids(client, %{cursor: -1})
+    assert {:ok, %{ids: [1, 2, 3]}} = User.no_retweet_ids(client, %{cursor: -1})
   end
 
   test "list_friendships/2 requests to /friendships/lookup.json" do
@@ -845,7 +845,9 @@ defmodule Tw.V1_1.UserTest do
               %{screen_name: "happycamper", connections: [:none]},
               %{screen_name: "Harris_0ff", connections: [:following, :following_requested, :followed_by]}
             ]} =
-             User.list_friendships(client, %{screen_names: ~w[andypiper binary_aaron twitterdev happycamper harris_0ff]})
+             User.list_friendships(client, %{
+               screen_names: ~w[andypiper binary_aaron twitterdev happycamper harris_0ff]
+             })
   end
 
   test "get_friendship/2 requests to /friendships/show.json" do
