@@ -68,7 +68,10 @@ defmodule Tw.MixProject do
       description: "Twitter API client for elixir.",
       maintainers: ["en30"],
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url}
+      links: %{"GitHub" => @source_url},
+      exclude_patterns: [
+        "priv/plts"
+      ]
     ]
   end
 end
