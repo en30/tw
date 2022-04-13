@@ -59,7 +59,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/statuses/home_timeline.json?count=10", ""},
+            {:get, "https://api.twitter.com/1.1/statuses/home_timeline.json?count=10&tweet_mode=extended", ""},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -73,7 +73,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/statuses/user_timeline.json?count=9", ""},
+            {:get, "https://api.twitter.com/1.1/statuses/user_timeline.json?count=9&tweet_mode=extended", ""},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -87,7 +87,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/statuses/user_timeline.json?user_id=#{user.id}"},
+            {:get, "https://api.twitter.com/1.1/statuses/user_timeline.json?tweet_mode=extended&user_id=#{user.id}"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -101,7 +101,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/statuses/mentions_timeline.json?count=8", ""},
+            {:get, "https://api.twitter.com/1.1/statuses/mentions_timeline.json?count=8&tweet_mode=extended", ""},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -115,7 +115,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/search/tweets.json?q=nasa&result_type=popular"},
+            {:get, "https://api.twitter.com/1.1/search/tweets.json?q=nasa&result_type=popular&tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/search_tweets.json"))
           }
         ])
@@ -128,7 +128,7 @@ defmodule Tw.V1_1.TweetTest do
         stub_client([
           {
             {:get,
-             "https://api.twitter.com/1.1/search/tweets.json?geocode=37.781157%2C-122.39872%2C1mi&q=nasa&until=2015-07-19"},
+             "https://api.twitter.com/1.1/search/tweets.json?geocode=37.781157%2C-122.39872%2C1mi&q=nasa&tweet_mode=extended&until=2015-07-19"},
             json_response(200, File.read!("test/support/fixtures/v1_1/search_tweets.json"))
           }
         ])
@@ -143,7 +143,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/favorites/list.json?count=8", ""},
+            {:get, "https://api.twitter.com/1.1/favorites/list.json?count=8&tweet_mode=extended", ""},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -157,7 +157,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/favorites/list.json?user_id=#{user.id}"},
+            {:get, "https://api.twitter.com/1.1/favorites/list.json?tweet_mode=extended&user_id=#{user.id}"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -171,7 +171,9 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/lists/statuses.json?count=1&owner_screen_name=MLS&slug=teams", ""},
+            {:get,
+             "https://api.twitter.com/1.1/lists/statuses.json?count=1&owner_screen_name=MLS&slug=teams&tweet_mode=extended",
+             ""},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -185,7 +187,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/lists/statuses.json?list_id=#{list.id}"},
+            {:get, "https://api.twitter.com/1.1/lists/statuses.json?list_id=#{list.id}&tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -198,7 +200,7 @@ defmodule Tw.V1_1.TweetTest do
     client =
       stub_client([
         {
-          {:get, "https://api.twitter.com/1.1/statuses/lookup.json?id=1%2C2%2C3"},
+          {:get, "https://api.twitter.com/1.1/statuses/lookup.json?id=1%2C2%2C3&tweet_mode=extended"},
           json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
         }
       ])
@@ -211,7 +213,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/statuses/retweets/1128692733353218048.json?", ""},
+            {:get, "https://api.twitter.com/1.1/statuses/retweets/1128692733353218048.json?tweet_mode=extended", ""},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -225,7 +227,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:get, "https://api.twitter.com/1.1/statuses/retweets/#{tweet.id}.json?"},
+            {:get, "https://api.twitter.com/1.1/statuses/retweets/#{tweet.id}.json?tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweets.json"))
           }
         ])
@@ -238,7 +240,7 @@ defmodule Tw.V1_1.TweetTest do
     client =
       stub_client([
         {
-          {:get, "https://api.twitter.com/1.1/statuses/show/210462857140252672.json?"},
+          {:get, "https://api.twitter.com/1.1/statuses/show/210462857140252672.json?tweet_mode=extended"},
           json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
         }
       ])
@@ -264,7 +266,7 @@ defmodule Tw.V1_1.TweetTest do
       stub_client([
         {
           {:post, "https://api.twitter.com/1.1/statuses/update.json",
-           "exclude_reply_user_ids=786491%2C54931584&media_ids=471592142565957632&status=Test+tweet+using+the+POST+statuses%2Fupdate+endpoint"},
+           "exclude_reply_user_ids=786491%2C54931584&media_ids=471592142565957632&status=Test+tweet+using+the+POST+statuses%2Fupdate+endpoint&tweet_mode=extended"},
           json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
         }
       ])
@@ -282,7 +284,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/statuses/destroy/240854986559455234.json", ""},
+            {:post, "https://api.twitter.com/1.1/statuses/destroy/240854986559455234.json", "tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -296,7 +298,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/statuses/destroy/#{tweet.id}.json", ""},
+            {:post, "https://api.twitter.com/1.1/statuses/destroy/#{tweet.id}.json", "tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -310,7 +312,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/statuses/retweet/240854986559455234.json", ""},
+            {:post, "https://api.twitter.com/1.1/statuses/retweet/240854986559455234.json", "tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -324,7 +326,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/statuses/retweet/#{tweet.id}.json", ""},
+            {:post, "https://api.twitter.com/1.1/statuses/retweet/#{tweet.id}.json", "tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -338,7 +340,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/statuses/unretweet/240854986559455234.json", ""},
+            {:post, "https://api.twitter.com/1.1/statuses/unretweet/240854986559455234.json", "tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -352,7 +354,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/statuses/unretweet/#{tweet.id}.json", ""},
+            {:post, "https://api.twitter.com/1.1/statuses/unretweet/#{tweet.id}.json", "tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -366,7 +368,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/favorites/create.json", "id=240854986559455234"},
+            {:post, "https://api.twitter.com/1.1/favorites/create.json", "id=240854986559455234&tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -380,7 +382,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/favorites/create.json", "id=#{tweet.id}"},
+            {:post, "https://api.twitter.com/1.1/favorites/create.json", "id=#{tweet.id}&tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -394,7 +396,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/favorites/destroy.json", "id=240854986559455234"},
+            {:post, "https://api.twitter.com/1.1/favorites/destroy.json", "id=240854986559455234&tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
@@ -408,7 +410,7 @@ defmodule Tw.V1_1.TweetTest do
       client =
         stub_client([
           {
-            {:post, "https://api.twitter.com/1.1/favorites/destroy.json", "id=#{tweet.id}"},
+            {:post, "https://api.twitter.com/1.1/favorites/destroy.json", "id=#{tweet.id}&tweet_mode=extended"},
             json_response(200, File.read!("test/support/fixtures/v1_1/tweet.json"))
           }
         ])
