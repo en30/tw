@@ -13,6 +13,8 @@ defmodule Tw.V1_1.Media do
   @type id :: pos_integer()
 
   @enforce_keys [
+    :additional_media_info,
+    :video_info,
     :display_url,
     :expanded_url,
     :id,
@@ -27,6 +29,8 @@ defmodule Tw.V1_1.Media do
     :url
   ]
   defstruct([
+    :additional_media_info,
+    :video_info,
     :display_url,
     :expanded_url,
     :id,
@@ -59,6 +63,22 @@ defmodule Tw.V1_1.Media do
   >
   """
   @type t :: %__MODULE__{
+          additional_media_info:
+            %{
+              optional(:title) => binary(),
+              optional(:description) => binary(),
+              optional(:embeddable) => boolean(),
+              optional(:monetizable) => boolean(),
+              optional(:source_user) => User.t()
+            }
+            | nil,
+          video_info:
+            %{
+              optional(:duration_millis) => non_neg_integer(),
+              aspect_ratio: list(pos_integer()),
+              variants: list(%{bitrate: non_neg_integer(), content_type: binary(), url: binary()})
+            }
+            | nil,
           display_url: binary(),
           expanded_url: binary(),
           id: id(),
