@@ -14,6 +14,7 @@ defmodule Tw.V1_1.List do
 
   import Tw.V1_1.Endpoint
 
+  @type id :: pos_integer()
   @type mode :: :private | :public
 
   @enforce_keys [
