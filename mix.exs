@@ -47,7 +47,7 @@ defmodule Tw.MixProject do
 
   def docs do
     [
-      source_ref: "v:#{@version}",
+      source_ref: "v#{@version}",
       main: "Tw"
     ]
   end
