@@ -6,6 +6,7 @@ defmodule Tw.V1_1.Media do
   """
 
   alias Tw.V1_1.Client
+  alias Tw.V1_1.Schema
   alias Tw.V1_1.Sizes
   alias Tw.V1_1.Tweet
   alias Tw.V1_1.User
@@ -13,6 +14,8 @@ defmodule Tw.V1_1.Media do
   @type id :: pos_integer()
 
   @enforce_keys [
+    :additional_media_info,
+    :video_info,
     :display_url,
     :expanded_url,
     :id,
@@ -27,6 +30,8 @@ defmodule Tw.V1_1.Media do
     :url
   ]
   defstruct([
+    :additional_media_info,
+    :video_info,
     :display_url,
     :expanded_url,
     :id,
@@ -59,6 +64,22 @@ defmodule Tw.V1_1.Media do
   >
   """
   @type t :: %__MODULE__{
+          additional_media_info:
+            %{
+              optional(:title) => binary(),
+              optional(:description) => binary(),
+              optional(:embeddable) => boolean(),
+              optional(:monetizable) => boolean(),
+              optional(:source_user) => User.t()
+            }
+            | nil,
+          video_info:
+            %{
+              optional(:duration_millis) => non_neg_integer(),
+              aspect_ratio: list(pos_integer()),
+              variants: list(%{bitrate: non_neg_integer(), content_type: binary(), url: binary()})
+            }
+            | nil,
           display_url: binary(),
           expanded_url: binary(),
           id: id(),
@@ -68,8 +89,8 @@ defmodule Tw.V1_1.Media do
           media_url_https: binary(),
           sizes: Sizes.t(),
           source_status_id: Tweet.id() | nil,
-          source_status_id_str: Tweet.id() | nil,
-          type: binary(),
+          source_status_id_str: binary() | nil,
+          type: :photo | :video | :animated_gif,
           url: binary()
         }
   @spec decode!(map) :: t
@@ -79,6 +100,15 @@ defmodule Tw.V1_1.Media do
   def decode!(json) do
     json =
       json
+      |> Map.update!(:type, &String.to_atom/1)
+      |> Map.update(
+        :additional_media_info,
+        nil,
+        Schema.nilable(fn info ->
+          info
+          |> Map.update(:source_user, nil, Schema.nilable(&User.decode!/1))
+        end)
+      )
       |> Map.update!(:sizes, &Sizes.decode!/1)
 
     struct(__MODULE__, json)

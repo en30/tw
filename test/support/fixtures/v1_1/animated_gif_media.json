@@ -1,0 +1,49 @@
+{
+  "id": 870042654213459968,
+  "id_str": "870042654213459968",
+  "indices": [
+    29,
+    52
+  ],
+  "media_url": "http://pbs.twimg.com/tweet_video_thumb/DBMDLy_U0AAqUWP.jpg",
+  "media_url_https": "https://pbs.twimg.com/tweet_video_thumb/DBMDLy_U0AAqUWP.jpg",
+  "url": "https://t.co/nD6G4bWSKb",
+  "display_url": "pic.twitter.com/nD6G4bWSKb",
+  "expanded_url": "https://twitter.com/FloodSocial/status/870042717589340160/photo/1",
+  "type": "animated_gif",
+  "sizes": {
+    "medium": {
+      "w": 350,
+      "h": 262,
+      "resize": "fit"
+    },
+    "small": {
+      "w": 340,
+      "h": 255,
+      "resize": "fit"
+    },
+    "thumb": {
+      "w": 150,
+      "h": 150,
+      "resize": "crop"
+    },
+    "large": {
+      "w": 350,
+      "h": 262,
+      "resize": "fit"
+    }
+  },
+  "video_info": {
+    "aspect_ratio": [
+      175,
+      131
+    ],
+    "variants": [
+      {
+        "bitrate": 0,
+        "content_type": "video/mp4",
+        "url": "https://video.twimg.com/tweet_video/DBMDLy_U0AAqUWP.mp4"
+      }
+    ]
+  }
+}
