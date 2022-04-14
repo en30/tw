@@ -21,7 +21,7 @@ def deps do
   [
     {:jason, "~> 1.2"},   # only if you choose jason
     {:hackney, "~> 1.0"}, # only if you choose hackney
-    {:tw, "~> 0.1.0"}
+    {:tw, "~> 0.1.2"}
   ]
 end
 ```
