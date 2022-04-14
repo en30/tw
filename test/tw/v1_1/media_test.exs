@@ -7,21 +7,21 @@ defmodule Tw.V1_1.MediaTest do
 
   describe "decode!/1" do
     test "decodes photo" do
-      assert %Media{type: "photo", video_info: nil, additional_media_info: nil} =
+      assert %Media{type: :photo, video_info: nil, additional_media_info: nil} =
                File.read!("test/support/fixtures/v1_1/photo_media.json")
                |> Jason.decode!(keys: :atoms)
                |> Media.decode!()
     end
 
     test "decodes video" do
-      assert %Media{type: "video", video_info: %{}} =
+      assert %Media{type: :video, video_info: %{}} =
                File.read!("test/support/fixtures/v1_1/video_media.json")
                |> Jason.decode!(keys: :atoms)
                |> Media.decode!()
     end
 
     test "decodes animated_gif" do
-      assert %Media{type: "animated_gif", video_info: %{variants: [_]}} =
+      assert %Media{type: :animated_gif, video_info: %{variants: [_]}} =
                File.read!("test/support/fixtures/v1_1/animated_gif_media.json")
                |> Jason.decode!(keys: :atoms)
                |> Media.decode!()

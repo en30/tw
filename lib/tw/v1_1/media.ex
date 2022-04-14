@@ -89,7 +89,7 @@ defmodule Tw.V1_1.Media do
           sizes: Sizes.t(),
           source_status_id: Tweet.id() | nil,
           source_status_id_str: Tweet.id() | nil,
-          type: binary(),
+          type: :photo | :video | :animated_gif,
           url: binary()
         }
   @spec decode!(map) :: t
@@ -99,6 +99,7 @@ defmodule Tw.V1_1.Media do
   def decode!(json) do
     json =
       json
+      |> Map.update!(:type, &String.to_atom/1)
       |> Map.update!(:sizes, &Sizes.decode!/1)
 
     struct(__MODULE__, json)
