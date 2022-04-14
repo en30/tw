@@ -6,6 +6,7 @@ defmodule Tw.V1_1.Media do
   """
 
   alias Tw.V1_1.Client
+  alias Tw.V1_1.Schema
   alias Tw.V1_1.Sizes
   alias Tw.V1_1.Tweet
   alias Tw.V1_1.User
@@ -88,7 +89,7 @@ defmodule Tw.V1_1.Media do
           media_url_https: binary(),
           sizes: Sizes.t(),
           source_status_id: Tweet.id() | nil,
-          source_status_id_str: Tweet.id() | nil,
+          source_status_id_str: binary() | nil,
           type: :photo | :video | :animated_gif,
           url: binary()
         }
@@ -100,6 +101,14 @@ defmodule Tw.V1_1.Media do
     json =
       json
       |> Map.update!(:type, &String.to_atom/1)
+      |> Map.update(
+        :additional_media_info,
+        nil,
+        Schema.nilable(fn info ->
+          info
+          |> Map.update(:source_user, nil, Schema.nilable(&User.decode!/1))
+        end)
+      )
       |> Map.update!(:sizes, &Sizes.decode!/1)
 
     struct(__MODULE__, json)

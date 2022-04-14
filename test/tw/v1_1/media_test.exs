@@ -13,6 +13,16 @@ defmodule Tw.V1_1.MediaTest do
                |> Media.decode!()
     end
 
+    test "decodes additional_media_info.user to User" do
+      %{id: id} = raw_user = File.read!("test/support/fixtures/v1_1/user.json") |> Jason.decode!(keys: :atoms)
+
+      assert %Media{additional_media_info: %{source_user: %Tw.V1_1.User{id: ^id}}} =
+               File.read!("test/support/fixtures/v1_1/photo_media.json")
+               |> Jason.decode!(keys: :atoms)
+               |> Map.put(:additional_media_info, %{source_user: raw_user})
+               |> Media.decode!()
+    end
+
     test "decodes video" do
       assert %Media{type: :video, video_info: %{}} =
                File.read!("test/support/fixtures/v1_1/video_media.json")
